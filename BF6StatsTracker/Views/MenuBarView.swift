@@ -1,0 +1,420 @@
+//
+//  MenuBarView.swift
+//  BF6StatsTracker
+//
+//  Menu bar extra view for quick stats access
+//
+
+import SwiftUI
+
+struct MenuBarView: View {
+    @EnvironmentObject var viewModel: StatsViewModel
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            if viewModel.hasPlayerData, let stats = viewModel.playerStats {
+                // Player Header
+                playerHeader(stats: stats)
+                
+                Divider()
+                    .padding(.vertical, 8)
+                
+                // Quick Stats
+                quickStatsSection(stats: stats)
+                
+                Divider()
+                    .padding(.vertical, 8)
+                
+                // Top Class
+                if let topClass = viewModel.topClass {
+                    topClassSection(classStats: topClass)
+                    
+                    Divider()
+                        .padding(.vertical, 8)
+                }
+                
+                // Actions
+                actionsSection
+            } else {
+                noDataView
+            }
+        }
+        .padding()
+        .frame(width: 300)
+    }
+    
+    // MARK: - Player Header
+    
+    private func playerHeader(stats: PlayerStats) -> some View {
+        HStack(spacing: 12) {
+            // Player Icon
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.orange, .yellow],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: "person.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.black)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(stats.userName)
+                        .font(.headline)
+                        .fontWeight(.bold)
+
+                    PlatformIconView(platform: viewModel.settings.platform, size: 12)
+                }
+
+                // XP Info
+                if let xpArray = stats.xpData, let xp = xpArray.first {
+                    HStack(spacing: 6) {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+                            .foregroundColor(.yellow)
+                        Text("\(formatXP(xp.total)) XP")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                    }
+                } else {
+                    Text("\(viewModel.formattedPlayTime) played")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Spacer()
+
+            // Last Updated
+            VStack(alignment: .trailing, spacing: 2) {
+                Circle()
+                    .fill(viewModel.isLoading ? Color.yellow : Color.green)
+                    .frame(width: 8, height: 8)
+
+                Text(viewModel.formatTimeAgo(viewModel.lastUpdated))
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
+    // MARK: - Quick Stats Section
+    
+    private func quickStatsSection(stats: PlayerStats) -> some View {
+        VStack(spacing: 10) {
+            HStack {
+                Text("Quick Stats")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+            }
+            
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 10) {
+                MenuBarStatItem(
+                    icon: "target",
+                    label: "Kills",
+                    value: stats.kills.formatted(),
+                    color: .red
+                )
+                
+                MenuBarStatItem(
+                    icon: "xmark.circle",
+                    label: "Deaths",
+                    value: stats.deaths.formatted(),
+                    color: .gray
+                )
+                
+                MenuBarStatItem(
+                    icon: "chart.line.uptrend.xyaxis",
+                    label: "K/D Ratio",
+                    value: String(format: "%.2f", stats.kdRatio),
+                    color: stats.kdRatio >= 1 ? .green : .orange
+                )
+                
+                MenuBarStatItem(
+                    icon: "trophy.fill",
+                    label: "Wins",
+                    value: stats.wins.formatted(),
+                    color: .yellow
+                )
+                
+                MenuBarStatItem(
+                    icon: "scope",
+                    label: "Accuracy",
+                    value: String(format: "%.1f%%", stats.accuracy),
+                    color: .blue
+                )
+                
+                MenuBarStatItem(
+                    icon: "clock.fill",
+                    label: "Time Played",
+                    value: viewModel.formattedPlayTime,
+                    color: .purple
+                )
+            }
+
+            // XP Breakdown (if available)
+            if let xpArray = stats.xpData, let xp = xpArray.first {
+                VStack(spacing: 4) {
+                    HStack {
+                        Text("Experience Breakdown")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+
+                    HStack(spacing: 8) {
+                        MenuBarStatItem(
+                            icon: "target",
+                            label: "Performance",
+                            value: formatXP(xp.performance),
+                            color: .blue
+                        )
+
+                        MenuBarStatItem(
+                            icon: "trophy.fill",
+                            label: "Accolades",
+                            value: formatXP(xp.accolades),
+                            color: .orange
+                        )
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+    }
+
+    // MARK: - Top Class Section
+    
+    private func topClassSection(classStats: ClassStats) -> some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("Most Played Class")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+            }
+            
+            HStack(spacing: 12) {
+                ClassIconView(
+                    className: BF6Class(rawValue: classStats.className) ?? .assault,
+                    size: 36
+                )
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(classStats.className)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    HStack(spacing: 8) {
+                        Text("\(classStats.kills) kills")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("•")
+                            .foregroundColor(.secondary)
+                        
+                        Text("\(classStats.timePlayed / 3600)h played")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Text(String(format: "%.2f", classStats.kdRatio))
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(classStats.kdRatio >= 1 ? .green : .orange)
+            }
+            .padding(10)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(10)
+        }
+    }
+    
+    // MARK: - Actions Section
+    
+    private var actionsSection: some View {
+        VStack(spacing: 8) {
+            // Refresh Button
+            Button {
+                Task {
+                    await viewModel.forceRefreshStats()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "arrow.clockwise")
+                    Text(viewModel.isLoading ? "Refreshing..." : "Refresh Stats")
+                }
+                .font(.subheadline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(Color.blue.opacity(0.2))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isLoading)
+            
+            // Open Main Window Button
+            Button {
+                openMainWindow()
+            } label: {
+                HStack {
+                    Image(systemName: "macwindow")
+                    Text("Open Full Stats")
+                }
+                .font(.subheadline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            
+            Divider()
+            
+            // Quit Button
+            Button {
+                NSApplication.shared.terminate(nil)
+            } label: {
+                HStack {
+                    Image(systemName: "power")
+                    Text("Quit")
+                }
+                .font(.subheadline)
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+    
+    // MARK: - No Data View
+    
+    private var noDataView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "gamecontroller.fill")
+                .font(.system(size: 40))
+                .foregroundColor(.secondary)
+            
+            Text("No Player Data")
+                .font(.headline)
+            
+            Text("Search for a player to view stats")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button {
+                openMainWindow()
+            } label: {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                    Text("Search Player")
+                }
+                .font(.subheadline)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .background(Color.blue)
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            
+            Divider()
+            
+            Button {
+                NSApplication.shared.terminate(nil)
+            } label: {
+                Text("Quit")
+                    .font(.subheadline)
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.vertical, 20)
+    }
+    
+    // MARK: - Helpers
+
+    private func openMainWindow() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+
+        if let window = NSApp.windows.first(where: { $0.title.contains("BF6") || $0.isKeyWindow == false }) {
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            // Create new window if needed
+            for window in NSApp.windows {
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
+    }
+
+    private func formatXP(_ xp: Int) -> String {
+        if xp >= 1_000_000 {
+            return String(format: "%.1fM", Double(xp) / 1_000_000.0)
+        } else if xp >= 1_000 {
+            return String(format: "%.1fK", Double(xp) / 1_000.0)
+        } else {
+            return "\(xp)"
+        }
+    }
+}
+
+// MARK: - Menu Bar Stat Item
+
+struct MenuBarStatItem: View {
+    let icon: String
+    let label: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(color)
+                .frame(width: 16)
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(8)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(8)
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    MenuBarView()
+        .environmentObject(StatsViewModel())
+        .frame(width: 300)
+}

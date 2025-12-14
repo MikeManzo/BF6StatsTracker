@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild:*)",
+      "Bash(open BF6StatsTracker.xcodeproj)",
+      "Bash(open:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(swiftc:*)",
+      "Bash(find:*)",
+      "Bash(for endpoint in maps matches history gamemodes)",
+      "Bash(do echo:*)",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

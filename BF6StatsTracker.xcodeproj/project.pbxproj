@@ -1,0 +1,526 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0000000000000001 /* BF6StatsTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000001 /* BF6StatsTrackerApp.swift */; };
+		0000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000002 /* ContentView.swift */; };
+		0000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1000000000000003 /* Assets.xcassets */; };
+		0000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000004 /* Models.swift */; };
+		0000000000000005 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000005 /* APIService.swift */; };
+		0000000000000006 /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000006 /* CacheManager.swift */; };
+		0000000000000007 /* ClassTileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000007 /* ClassTileView.swift */; };
+		0000000000000008 /* WeaponStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000008 /* WeaponStatsView.swift */; };
+		0000000000000009 /* GadgetStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000009 /* GadgetStatsView.swift */; };
+		0000000000000010 /* VehicleStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000010 /* VehicleStatsView.swift */; };
+		0000000000000011 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000011 /* MenuBarView.swift */; };
+		0000000000000012 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000012 /* SettingsView.swift */; };
+		0000000000000013 /* StatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000013 /* StatsViewModel.swift */; };
+		0000000000000014 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000014 /* Extensions.swift */; };
+		0000000000000015 /* DraggableTileContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000015 /* DraggableTileContainer.swift */; };
+		0000000000000016 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000016 /* ImageLoader.swift */; };
+		0000000000000017 /* PlayerSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000017 /* PlayerSearchView.swift */; };
+		0000000000000018 /* OverviewStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000018 /* OverviewStatsView.swift */; };
+		0000000000000019 /* LastMatchStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000021 /* LastMatchStatsView.swift */; };
+		274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */; };
+		27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C267BB2EEF35AF006168AA /* MapTracker.swift */; };
+		27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543792EE98DF300B01618 /* StatsSnapshot.swift */; };
+		27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543782EE98DF300B01618 /* ServerModels.swift */; };
+		27E5437D2EE98E0800B01618 /* HistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E5437C2EE98E0800B01618 /* HistoryManager.swift */; };
+		27E5437F2EE98E2C00B01618 /* MapStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E5437E2EE98E2C00B01618 /* MapStatsView.swift */; };
+		27E543812EE98E4100B01618 /* LoadoutAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543802EE98E4100B01618 /* LoadoutAnalyzerView.swift */; };
+		27E543832EE98F1D00B01618 /* SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543822EE98F1D00B01618 /* SessionHistoryView.swift */; };
+		27E543852EE98F2D00B01618 /* PerformanceChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543842EE98F2D00B01618 /* PerformanceChartsView.swift */; };
+		27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543862EE98F4000B01618 /* ServerBrowserView.swift */; };
+		27E798052EE645220002311A /* EAIdentityKit in Frameworks */ = {isa = PBXBuildFile; productRef = 27E798042EE645220002311A /* EAIdentityKit */; };
+		27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798062EE645F80002311A /* EAIdentityManager.swift */; };
+		27E798092EE646350002311A /* EALoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798082EE646350002311A /* EALoginView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1000000000000000 /* BF6StatsTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BF6StatsTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1000000000000001 /* BF6StatsTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BF6StatsTrackerApp.swift; sourceTree = "<group>"; };
+		1000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1000000000000003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1000000000000004 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		1000000000000005 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		1000000000000006 /* CacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
+		1000000000000007 /* ClassTileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassTileView.swift; sourceTree = "<group>"; };
+		1000000000000008 /* WeaponStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeaponStatsView.swift; sourceTree = "<group>"; };
+		1000000000000009 /* GadgetStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GadgetStatsView.swift; sourceTree = "<group>"; };
+		1000000000000010 /* VehicleStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatsView.swift; sourceTree = "<group>"; };
+		1000000000000011 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		1000000000000012 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1000000000000013 /* StatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsViewModel.swift; sourceTree = "<group>"; };
+		1000000000000014 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		1000000000000015 /* DraggableTileContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableTileContainer.swift; sourceTree = "<group>"; };
+		1000000000000016 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
+		1000000000000017 /* PlayerSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerSearchView.swift; sourceTree = "<group>"; };
+		1000000000000018 /* OverviewStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewStatsView.swift; sourceTree = "<group>"; };
+		1000000000000019 /* BF6StatsTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BF6StatsTracker.entitlements; sourceTree = "<group>"; };
+		1000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1000000000000021 /* LastMatchStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastMatchStatsView.swift; sourceTree = "<group>"; };
+		274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatsViewModel+Logout.swift"; sourceTree = "<group>"; };
+		27C267BB2EEF35AF006168AA /* MapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTracker.swift; sourceTree = "<group>"; };
+		27E543782EE98DF300B01618 /* ServerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerModels.swift; sourceTree = "<group>"; };
+		27E543792EE98DF300B01618 /* StatsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsSnapshot.swift; sourceTree = "<group>"; };
+		27E5437C2EE98E0800B01618 /* HistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryManager.swift; sourceTree = "<group>"; };
+		27E5437E2EE98E2C00B01618 /* MapStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapStatsView.swift; sourceTree = "<group>"; };
+		27E543802EE98E4100B01618 /* LoadoutAnalyzerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadoutAnalyzerView.swift; sourceTree = "<group>"; };
+		27E543822EE98F1D00B01618 /* SessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHistoryView.swift; sourceTree = "<group>"; };
+		27E543842EE98F2D00B01618 /* PerformanceChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceChartsView.swift; sourceTree = "<group>"; };
+		27E543862EE98F4000B01618 /* ServerBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerBrowserView.swift; sourceTree = "<group>"; };
+		27E798062EE645F80002311A /* EAIdentityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAIdentityManager.swift; sourceTree = "<group>"; };
+		27E798082EE646350002311A /* EALoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALoginView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27E798052EE645220002311A /* EAIdentityKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				3000000000000002 /* BF6StatsTracker */,
+				3000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3000000000000002 /* BF6StatsTracker */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000001 /* BF6StatsTrackerApp.swift */,
+				1000000000000002 /* ContentView.swift */,
+				3000000000000004 /* Models */,
+				3000000000000005 /* Services */,
+				3000000000000006 /* Views */,
+				3000000000000007 /* ViewModels */,
+				3000000000000008 /* Utilities */,
+				1000000000000003 /* Assets.xcassets */,
+				1000000000000019 /* BF6StatsTracker.entitlements */,
+				1000000000000020 /* Info.plist */,
+			);
+			path = BF6StatsTracker;
+			sourceTree = "<group>";
+		};
+		3000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000000 /* BF6StatsTracker.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3000000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000004 /* Models.swift */,
+				274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */,
+				27E543782EE98DF300B01618 /* ServerModels.swift */,
+				27E543792EE98DF300B01618 /* StatsSnapshot.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3000000000000005 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000005 /* APIService.swift */,
+				1000000000000006 /* CacheManager.swift */,
+				1000000000000016 /* ImageLoader.swift */,
+				27E798062EE645F80002311A /* EAIdentityManager.swift */,
+				27E5437C2EE98E0800B01618 /* HistoryManager.swift */,
+				27C267BB2EEF35AF006168AA /* MapTracker.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		3000000000000006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000007 /* ClassTileView.swift */,
+				1000000000000008 /* WeaponStatsView.swift */,
+				1000000000000009 /* GadgetStatsView.swift */,
+				1000000000000010 /* VehicleStatsView.swift */,
+				1000000000000011 /* MenuBarView.swift */,
+				1000000000000012 /* SettingsView.swift */,
+				1000000000000015 /* DraggableTileContainer.swift */,
+				1000000000000017 /* PlayerSearchView.swift */,
+				1000000000000018 /* OverviewStatsView.swift */,
+				1000000000000021 /* LastMatchStatsView.swift */,
+				27E798082EE646350002311A /* EALoginView.swift */,
+				27E5437E2EE98E2C00B01618 /* MapStatsView.swift */,
+				27E543802EE98E4100B01618 /* LoadoutAnalyzerView.swift */,
+				27E543822EE98F1D00B01618 /* SessionHistoryView.swift */,
+				27E543842EE98F2D00B01618 /* PerformanceChartsView.swift */,
+				27E543862EE98F4000B01618 /* ServerBrowserView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		3000000000000007 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000013 /* StatsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		3000000000000008 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000014 /* Extensions.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4000000000000001 /* BF6StatsTracker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5000000000000003 /* Build configuration list for PBXNativeTarget "BF6StatsTracker" */;
+			buildPhases = (
+				4000000000000002 /* Sources */,
+				2000000000000001 /* Frameworks */,
+				4000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BF6StatsTracker;
+			productName = BF6StatsTracker;
+			productReference = 1000000000000000 /* BF6StatsTracker.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					4000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 5000000000000001 /* Build configuration list for PBXProject "BF6StatsTracker" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 3000000000000001;
+			packageReferences = (
+				27E798032EE645220002311A /* XCRemoteSwiftPackageReference "EAIdentityKit" */,
+			);
+			productRefGroup = 3000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4000000000000001 /* BF6StatsTracker */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000003 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */,
+				0000000000000001 /* BF6StatsTrackerApp.swift in Sources */,
+				0000000000000002 /* ContentView.swift in Sources */,
+				27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */,
+				27E5437F2EE98E2C00B01618 /* MapStatsView.swift in Sources */,
+				0000000000000004 /* Models.swift in Sources */,
+				0000000000000005 /* APIService.swift in Sources */,
+				0000000000000006 /* CacheManager.swift in Sources */,
+				0000000000000007 /* ClassTileView.swift in Sources */,
+				0000000000000008 /* WeaponStatsView.swift in Sources */,
+				0000000000000009 /* GadgetStatsView.swift in Sources */,
+				0000000000000010 /* VehicleStatsView.swift in Sources */,
+				27E543812EE98E4100B01618 /* LoadoutAnalyzerView.swift in Sources */,
+				0000000000000011 /* MenuBarView.swift in Sources */,
+				0000000000000012 /* SettingsView.swift in Sources */,
+				27E5437D2EE98E0800B01618 /* HistoryManager.swift in Sources */,
+				0000000000000013 /* StatsViewModel.swift in Sources */,
+				27E543852EE98F2D00B01618 /* PerformanceChartsView.swift in Sources */,
+				27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */,
+				27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */,
+				27E798092EE646350002311A /* EALoginView.swift in Sources */,
+				0000000000000014 /* Extensions.swift in Sources */,
+				0000000000000015 /* DraggableTileContainer.swift in Sources */,
+				0000000000000016 /* ImageLoader.swift in Sources */,
+				0000000000000017 /* PlayerSearchView.swift in Sources */,
+				27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */,
+				0000000000000018 /* OverviewStatsView.swift in Sources */,
+				27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */,
+				0000000000000019 /* LastMatchStatsView.swift in Sources */,
+				27E543832EE98F1D00B01618 /* SessionHistoryView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 3ETXMLGRJN;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3ETXMLGRJN;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		7000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BF6StatsTracker/BF6StatsTracker.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BF6StatsTracker/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bf6tracker.BF6StatsTracker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		7000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BF6StatsTracker/BF6StatsTracker.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BF6StatsTracker/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bf6tracker.BF6StatsTracker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5000000000000001 /* Build configuration list for PBXProject "BF6StatsTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7000000000000001 /* Debug */,
+				7000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5000000000000003 /* Build configuration list for PBXNativeTarget "BF6StatsTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7000000000000003 /* Debug */,
+				7000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		27E798032EE645220002311A /* XCRemoteSwiftPackageReference "EAIdentityKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MikeManzo/EAIdentityKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		27E798042EE645220002311A /* EAIdentityKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27E798032EE645220002311A /* XCRemoteSwiftPackageReference "EAIdentityKit" */;
+			productName = EAIdentityKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 6000000000000001 /* Project object */;
+}
