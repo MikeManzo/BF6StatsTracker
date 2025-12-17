@@ -61,19 +61,10 @@ actor APIService {
     // MARK: - Player Stats
 
     /// Fetch player statistics from GameTools.Network API using EA Identity
+    /// Uses nucleus_id and playerid when available for more reliable lookups
     /// - Parameter identifier: Player identifier containing name, platform, and optional EA identity
     /// - Returns: PlayerStats object with all available statistics
     func fetchPlayerStats(identifier: PlayerIdentifier) async throws -> PlayerStats {
-        // Use the identifier's name (which should be the EA ID if authenticated)
-        return try await fetchPlayerStats(playerName: identifier.name, platform: identifier.platform)
-    }
-
-    /// Fetch player statistics from GameTools.Network API
-    /// - Parameters:
-    ///   - playerName: Exact player name (case-sensitive) - preferably the EA ID
-    ///   - platform: Gaming platform (pc, ps5, xboxseries, steam)
-    /// - Returns: PlayerStats object with all available statistics
-    func fetchPlayerStats(playerName: String, platform: Platform) async throws -> PlayerStats {
         // Rate limiting
         if let lastRequest = lastRequestTime {
             let timeSinceLastRequest = Date().timeIntervalSince(lastRequest)
@@ -81,28 +72,48 @@ actor APIService {
                 try await Task.sleep(nanoseconds: UInt64((minimumRequestInterval - timeSinceLastRequest) * 1_000_000_000))
             }
         }
-        
-        let encodedName = playerName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? playerName
-        let urlString = "\(baseURL)/bf6/stats/?name=\(encodedName)&platform=\(platform.rawValue)"
-        
+
+        // Build URL with all available identity parameters and API options
+        let encodedName = identifier.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? identifier.name
+        var urlString = "\(baseURL)/bf6/stats/?categories=multiplayer&raw=false&format_values=true&name=\(encodedName)&platform=\(identifier.platform.rawValue)"
+
+        // Add playerid (persona ID) if available
+        if let personaId = identifier.personaId, !personaId.isEmpty {
+            urlString += "&playerid=\(personaId)"
+        } else {
+            print ("🚨 Warning: No persona ID found for \(identifier.name). Some statistics may be incomplete.")
+        }
+
+        // Add nucleus_id if available (master account identifier)
+        if let nucleusId = identifier.nucleusId, !nucleusId.isEmpty {
+            urlString += "&nucleus_id=\(nucleusId)"
+        } else {
+            print("🚨 Warning: No nucleus ID found for \(identifier.name). Some statistics may be incomplete.")
+        }
+
+        // Add skip_battlelog parameter to improve API performance
+        urlString += "&skip_battlelog=true"
+
+        print("📊 Fetching player stats from: \(urlString)")
+
         guard let url = URL(string: urlString) else {
             throw BF6TrackerError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("BF6StatsTracker/1.0", forHTTPHeaderField: "User-Agent")
-        
+
         lastRequestTime = Date()
-        
+
         do {
             let (data, response) = try await session.data(for: request)
-            
+
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw BF6TrackerError.unknown
             }
-            
+
             switch httpResponse.statusCode {
             case 200:
                 let decoder = JSONDecoder()
@@ -113,22 +124,21 @@ actor APIService {
                     return stats
                 } catch {
                     print("❌ Decoding error: \(error)")
-                    // DEBUG: Print raw response on decoding errors
                     if let jsonString = String(data: data, encoding: .utf8) {
                         print("📋 API Response (first 500 chars): \(jsonString.prefix(500))...")
                     }
                     throw BF6TrackerError.decodingError(error)
                 }
-                
+
             case 404:
                 throw BF6TrackerError.playerNotFound
-                
+
             case 429:
                 throw BF6TrackerError.rateLimited
-                
+
             case 500...599:
                 throw BF6TrackerError.serverError(httpResponse.statusCode)
-                
+
             default:
                 throw BF6TrackerError.serverError(httpResponse.statusCode)
             }
@@ -138,7 +148,18 @@ actor APIService {
             throw BF6TrackerError.networkError(error)
         }
     }
-    
+
+    /// Fetch player statistics from GameTools.Network API (legacy method using name only)
+    /// - Parameters:
+    ///   - playerName: Exact player name (case-sensitive) - preferably the EA ID
+    ///   - platform: Gaming platform (pc, ps5, xboxseries, steam)
+    /// - Returns: PlayerStats object with all available statistics
+    func fetchPlayerStats(playerName: String, platform: Platform) async throws -> PlayerStats {
+        // Delegate to the identifier-based method with no EA identity
+        let identifier = PlayerIdentifier(name: playerName, platform: platform)
+        return try await fetchPlayerStats(identifier: identifier)
+    }
+
     // MARK: - Detailed Stats Endpoints
 
     /// Fetch detailed weapon statistics using EA Identity

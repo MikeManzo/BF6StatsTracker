@@ -138,11 +138,11 @@ class StatsViewModel: ObservableObject {
 
         print("🔄 Retrying missing data sections...")
 
-        let playerName = settings.playerName
-        let platform = settings.platform
+        // Use current player identifier with EA identity if authenticated
+        let identifier = currentPlayerIdentifier
 
         // Force fetch all additional stats regardless of current state
-        await fetchAdditionalStats(playerName: playerName, platform: platform)
+        await fetchAdditionalStats(identifier: identifier)
     }
     
     private func fetchStats(forceRefresh: Bool) async {
@@ -187,7 +187,7 @@ class StatsViewModel: ObservableObject {
                 print("💾 Cache loaded - Classes: \(self.classStats.count), Weapons: \(self.weaponStats.count), Vehicles: \(self.vehicleStats.count), Gadgets: \(self.gadgetStats.count)")
 
                 // CRITICAL FIX: Always fetch additional stats even from cache to ensure completeness
-                await fetchAdditionalStats(playerName: playerName, platform: platform)
+                await fetchAdditionalStats(identifier: identifier)
 
                 self.isLoading = false
                 return
@@ -195,9 +195,9 @@ class StatsViewModel: ObservableObject {
         }
 
         do {
-            // Fetch main player stats
+            // Fetch main player stats using identifier (includes EA identity if authenticated)
             print("🌐 Fetching fresh stats from API")
-            let stats = try await APIService.shared.fetchPlayerStats(playerName: playerName, platform: platform)
+            let stats = try await APIService.shared.fetchPlayerStats(identifier: identifier)
 
             self.playerStats = stats
 
@@ -224,7 +224,7 @@ class StatsViewModel: ObservableObject {
             }
 
             // Fetch additional detailed stats if main stats are incomplete
-            await fetchAdditionalStats(playerName: playerName, platform: platform)
+            await fetchAdditionalStats(identifier: identifier)
 
         } catch let error as BF6TrackerError {
             print("❌ Error fetching stats: \(error.errorDescription ?? "unknown")")
@@ -238,7 +238,7 @@ class StatsViewModel: ObservableObject {
         print("✅ fetchStats completed")
     }
     
-    private func fetchAdditionalStats(playerName: String, platform: Platform) async {
+    private func fetchAdditionalStats(identifier: PlayerIdentifier) async {
         print("🔄 fetchAdditionalStats called")
 
         // IMPROVED LOGIC: Always attempt to fetch detailed stats to ensure data completeness
@@ -249,7 +249,7 @@ class StatsViewModel: ObservableObject {
         if shouldFetchWeapons {
             do {
                 print("   Attempting to fetch weapon stats...")
-                let weapons = try await APIService.shared.fetchWeaponStats(playerName: playerName, platform: platform)
+                let weapons = try await APIService.shared.fetchWeaponStats(identifier: identifier)
                 if !weapons.isEmpty {
                     self.weaponStats = weapons
                     print("   ✅ Updated weapon stats: \(weapons.count) items")
@@ -266,7 +266,7 @@ class StatsViewModel: ObservableObject {
         if shouldFetchVehicles {
             do {
                 print("   Attempting to fetch vehicle stats...")
-                let vehicles = try await APIService.shared.fetchVehicleStats(playerName: playerName, platform: platform)
+                let vehicles = try await APIService.shared.fetchVehicleStats(identifier: identifier)
                 if !vehicles.isEmpty {
                     self.vehicleStats = vehicles
                     print("   ✅ Updated vehicle stats: \(vehicles.count) items")
@@ -285,7 +285,7 @@ class StatsViewModel: ObservableObject {
         if shouldFetchClasses {
             do {
                 print("   Attempting to fetch class stats...")
-                let classes = try await APIService.shared.fetchClassStats(playerName: playerName, platform: platform)
+                let classes = try await APIService.shared.fetchClassStats(identifier: identifier)
                 if !classes.isEmpty {
                     // Filter out invalid entries with "Unknown" className and no meaningful data
                     let validClasses = classes.filter { classItem in
