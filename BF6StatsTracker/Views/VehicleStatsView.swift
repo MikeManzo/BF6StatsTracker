@@ -160,7 +160,7 @@ struct VehicleStatsView: View {
             LazyVGrid(columns: [
                 GridItem(.adaptive(minimum: 380, maximum: 500), spacing: 16)
             ], spacing: 16) {
-                ForEach(filteredVehicles, id: \.vehicleName) { vehicle in
+                ForEach(filteredVehicles) { vehicle in
                     VehicleCard(vehicle: vehicle)
                 }
             }
@@ -429,7 +429,7 @@ struct VehicleCard: View {
     private var vehicleIcon: String {
         switch vehicle.type.lowercased() {
         case let t where t.contains("tank"): return "shield.fill"
-        case let t where t.contains("heli"): return "helicopter"
+        case let t where t.contains("heli"): return "xmark"
         case let t where t.contains("jet") || t.contains("air"): return "airplane"
         case let t where t.contains("boat") || t.contains("water"): return "ferry.fill"
         default: return "car.fill"
