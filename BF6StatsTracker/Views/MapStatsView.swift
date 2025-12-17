@@ -351,7 +351,7 @@ struct MapPerformanceCard: View {
                     label: "Deaths",
                     value: "\(map.deaths)",
                     icon: "xmark.circle",
-                    color: .gray,
+                    color: Color(nsColor: .systemGray),
                     comparison: nil
                 )
                 DetailedStatItem(

@@ -978,7 +978,7 @@ enum VehicleCategory: String, CaseIterable, Identifiable {
         case .lightArmor: return "car.fill"
         case .antiAircraft: return "target"
         case .attackHelicopter: return "airplane"
-        case .transportHelicopter: return "helicopter.fill"
+        case .transportHelicopter: return "helicopter"
         case .jet: return "airplane"
         case .transportVehicle: return "bus.fill"
         case .watercraft: return "ferry.fill"

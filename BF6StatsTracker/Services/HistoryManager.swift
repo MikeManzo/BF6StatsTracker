@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 @MainActor
 class HistoryManager: ObservableObject {
@@ -213,11 +214,11 @@ enum TrendDirection {
         }
     }
 
-    var color: String {
+    var color: Color {
         switch self {
-        case .improving: return "green"
-        case .declining: return "red"
-        case .stable: return "gray"
+        case .improving: return .green
+        case .declining: return .red
+        case .stable: return Color(nsColor: .systemGray)
         }
     }
 }

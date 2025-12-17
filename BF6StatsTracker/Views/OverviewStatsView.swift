@@ -92,7 +92,7 @@ struct OverviewStatsView: View {
                         title: "Deaths",
                         value: stats.deaths.formatted(),
                         icon: "xmark.circle.fill",
-                        color: .gray,
+                        color: Color(nsColor: .systemGray),
                         subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))"
                     )
                     

@@ -196,7 +196,7 @@ struct VehicleStatsView: View {
     
     private func categoryColor(for category: VehicleCategory) -> Color {
         switch category {
-        case .mainBattleTank: return .gray
+        case .mainBattleTank: return Color(nsColor: .systemGray)
         case .lightArmor: return .green
         case .antiAircraft: return .blue
         case .attackHelicopter: return .red
@@ -337,7 +337,7 @@ struct VehicleCard: View {
                     icon: "xmark.circle",
                     label: "Deaths",
                     value: "\(vehicle.deaths)",
-                    color: .gray
+                    color: Color(nsColor: .systemGray)
                 )
                 
                 VehicleStatItem(
@@ -429,7 +429,7 @@ struct VehicleCard: View {
     private var vehicleIcon: String {
         switch vehicle.type.lowercased() {
         case let t where t.contains("tank"): return "shield.fill"
-        case let t where t.contains("heli"): return "helicopter.fill"
+        case let t where t.contains("heli"): return "helicopter"
         case let t where t.contains("jet") || t.contains("air"): return "airplane"
         case let t where t.contains("boat") || t.contains("water"): return "ferry.fill"
         default: return "car.fill"
@@ -438,7 +438,7 @@ struct VehicleCard: View {
     
     private var vehicleColor: Color {
         switch vehicle.type.lowercased() {
-        case let t where t.contains("tank"): return .gray
+        case let t where t.contains("tank"): return Color(nsColor: .systemGray)
         case let t where t.contains("attack") && t.contains("heli"): return .red
         case let t where t.contains("transport") && t.contains("heli"): return .teal
         case let t where t.contains("jet"): return .purple

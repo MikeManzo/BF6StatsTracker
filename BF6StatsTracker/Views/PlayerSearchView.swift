@@ -140,7 +140,7 @@ struct PlayerSearchView: View {
                     .padding()
                     .background(
                         LinearGradient(
-                            colors: playerName.isEmpty ? [.gray] : [.blue, .purple],
+                            colors: playerName.isEmpty ? [Color(nsColor: .systemGray)] : [.blue, .purple],
                             startPoint: .leading,
                             endPoint: .trailing
                         )

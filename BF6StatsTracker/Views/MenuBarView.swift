@@ -134,7 +134,7 @@ struct MenuBarView: View {
                     icon: "xmark.circle",
                     label: "Deaths",
                     value: stats.deaths.formatted(),
-                    color: .gray
+                    color: Color(nsColor: .systemGray)
                 )
                 
                 MenuBarStatItem(

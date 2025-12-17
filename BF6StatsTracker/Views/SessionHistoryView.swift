@@ -75,7 +75,7 @@ struct SessionHistoryView: View {
 
             HStack(spacing: 16) {
                 StatBadge(label: "Kills", value: "\(session.killsGained)", color: .red)
-                StatBadge(label: "Deaths", value: "\(session.deathsGained)", color: .gray)
+                StatBadge(label: "Deaths", value: "\(session.deathsGained)", color: Color(nsColor: .systemGray))
                 StatBadge(label: "Matches", value: "\(session.matchesPlayed)", color: .blue)
             }
 
@@ -231,7 +231,7 @@ struct SummaryCard: View {
         VStack(spacing: 8) {
             if let trend = trend {
                 Image(systemName: trend.icon)
-                    .foregroundColor(Color(trend.color))
+                    .foregroundColor(trend.color)
             }
 
             Text(value)

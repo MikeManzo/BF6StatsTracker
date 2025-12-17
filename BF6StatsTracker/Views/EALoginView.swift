@@ -163,7 +163,7 @@ struct EALoginView: View {
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(manualToken.isEmpty ? Color.gray : Color.blue)
+                                    .background(manualToken.isEmpty ? Color(nsColor: .systemGray) : Color.blue)
                                     .cornerRadius(8)
                             }
                             .buttonStyle(.plain)

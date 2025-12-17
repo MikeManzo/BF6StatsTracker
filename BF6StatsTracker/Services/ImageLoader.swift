@@ -298,7 +298,7 @@ struct PlatformIconView: View {
         case .pc: return .blue
         case .playstation: return .indigo
         case .xbox: return .green
-        case .steam: return .gray
+        case .steam: return Color(nsColor: .systemGray)
         }
     }
 }

@@ -224,7 +224,7 @@ struct ServerBrowserView: View {
                         .font(.caption)
                 }
                 .toggleStyle(.button)
-                .tint(showEmptyServers ? .gray.opacity(0.3) : .secondary.opacity(0.2))
+                .tint(showEmptyServers ? Color(nsColor: .systemGray).opacity(0.3) : .secondary.opacity(0.2))
                 .buttonStyle(.plain)
             }
 
@@ -281,7 +281,7 @@ struct ServerBrowserView: View {
             }
 
             if !showEmptyServers {
-                FilterChip(text: "Hide Empty", color: .gray) {
+                FilterChip(text: "Hide Empty", color: Color(nsColor: .systemGray)) {
                     showEmptyServers = true
                 }
             }
@@ -478,7 +478,7 @@ struct EnhancedServerCard: View {
     var statusColor: Color {
         if server.isFull { return .red }
         if fillPercentage > 0.8 { return .orange }
-        if server.slots.inGame == 0 { return .gray }
+        if server.slots.inGame == 0 { return Color(nsColor: .systemGray) }
         return .green
     }
 

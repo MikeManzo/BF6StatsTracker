@@ -115,7 +115,7 @@ struct ClassTileView: View {
                 label: "Deaths",
                 value: "\(classStats.deaths)",
                 icon: "xmark.circle",
-                color: .gray
+                color: Color(nsColor: .systemGray)
             )
             
             CompactStatItem(
@@ -149,7 +149,7 @@ struct ClassTileView: View {
                 ExpandedStatCircle(
                     value: classStats.deaths,
                     label: "Deaths",
-                    color: .gray
+                    color: Color(nsColor: .systemGray)
                 )
                 
                 VStack(spacing: 4) {
