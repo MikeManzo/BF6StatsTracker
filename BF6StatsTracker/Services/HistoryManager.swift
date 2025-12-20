@@ -216,9 +216,9 @@ enum TrendDirection {
 
     var color: Color {
         switch self {
-        case .improving: return .green
-        case .declining: return .red
-        case .stable: return Color(nsColor: .systemGray)
+        case .improving: return Theme.bf6Green
+        case .declining: return Theme.bf6Red
+        case .stable: return Theme.textSecondary
         }
     }
 }

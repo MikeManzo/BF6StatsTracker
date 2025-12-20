@@ -44,7 +44,7 @@ struct MenuBarView: View {
     }
     
     // MARK: - Player Header
-    
+
     private func playerHeader(stats: PlayerStats) -> some View {
         HStack(spacing: 12) {
             // Player Icon
@@ -52,7 +52,7 @@ struct MenuBarView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [.orange, .yellow],
+                            colors: [Theme.bf6Orange, .yellow],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -69,6 +69,7 @@ struct MenuBarView: View {
                     Text(stats.userName)
                         .font(.headline)
                         .fontWeight(.bold)
+                        .foregroundColor(Theme.textPrimary)
 
                     PlatformIconView(platform: viewModel.settings.platform, size: 12)
                 }
@@ -82,12 +83,12 @@ struct MenuBarView: View {
                         Text("\(formatXP(xp.total)) XP")
                             .font(.caption)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.textPrimary)
                     }
                 } else {
                     Text("\(viewModel.formattedPlayTime) played")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
 
@@ -96,29 +97,29 @@ struct MenuBarView: View {
             // Last Updated
             VStack(alignment: .trailing, spacing: 2) {
                 Circle()
-                    .fill(viewModel.isLoading ? Color.yellow : Color.green)
+                    .fill(viewModel.isLoading ? Color.yellow : Theme.bf6Green)
                     .frame(width: 8, height: 8)
 
                 Text(viewModel.formatTimeAgo(viewModel.lastUpdated))
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
     }
     
     // MARK: - Quick Stats Section
-    
+
     private func quickStatsSection(stats: PlayerStats) -> some View {
         VStack(spacing: 10) {
             HStack {
                 Text("Quick Stats")
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-                
+                    .foregroundColor(Theme.textSecondary)
+
                 Spacer()
             }
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible())
@@ -127,42 +128,42 @@ struct MenuBarView: View {
                     icon: "target",
                     label: "Kills",
                     value: stats.kills.formatted(),
-                    color: .red
+                    color: Theme.bf6Red
                 )
-                
+
                 MenuBarStatItem(
                     icon: "xmark.circle",
                     label: "Deaths",
                     value: stats.deaths.formatted(),
-                    color: Color(nsColor: .systemGray)
+                    color: Theme.textSecondary
                 )
-                
+
                 MenuBarStatItem(
                     icon: "chart.line.uptrend.xyaxis",
                     label: "K/D Ratio",
                     value: String(format: "%.2f", stats.kdRatio),
-                    color: stats.kdRatio >= 1 ? .green : .orange
+                    color: stats.kdRatio >= 1 ? Theme.bf6Green : Theme.bf6Orange
                 )
-                
+
                 MenuBarStatItem(
                     icon: "trophy.fill",
                     label: "Wins",
                     value: stats.wins.formatted(),
                     color: .yellow
                 )
-                
+
                 MenuBarStatItem(
                     icon: "scope",
                     label: "Accuracy",
                     value: String(format: "%.1f%%", stats.accuracy),
-                    color: .blue
+                    color: Theme.bf6Blue
                 )
-                
+
                 MenuBarStatItem(
                     icon: "clock.fill",
                     label: "Time Played",
                     value: viewModel.formattedPlayTime,
-                    color: .purple
+                    color: Theme.bf6Purple
                 )
             }
 
@@ -173,7 +174,7 @@ struct MenuBarView: View {
                         Text("Experience Breakdown")
                             .font(.caption2)
                             .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                         Spacer()
                     }
 
@@ -182,14 +183,14 @@ struct MenuBarView: View {
                             icon: "target",
                             label: "Performance",
                             value: formatXP(xp.performance),
-                            color: .blue
+                            color: Theme.bf6Blue
                         )
 
                         MenuBarStatItem(
                             icon: "trophy.fill",
                             label: "Accolades",
                             value: formatXP(xp.accolades),
-                            color: .orange
+                            color: Theme.bf6Orange
                         )
                     }
                 }
@@ -199,58 +200,59 @@ struct MenuBarView: View {
     }
 
     // MARK: - Top Class Section
-    
+
     private func topClassSection(classStats: ClassStats) -> some View {
         VStack(spacing: 8) {
             HStack {
                 Text("Most Played Class")
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-                
+                    .foregroundColor(Theme.textSecondary)
+
                 Spacer()
             }
-            
+
             HStack(spacing: 12) {
                 ClassIconView(
                     className: BF6Class(rawValue: classStats.className) ?? .assault,
                     size: 36
                 )
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(classStats.className)
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    
+                        .foregroundColor(Theme.textPrimary)
+
                     HStack(spacing: 8) {
                         Text("\(classStats.kills) kills")
                             .font(.caption)
-                            .foregroundColor(.secondary)
-                        
+                            .foregroundColor(Theme.textSecondary)
+
                         Text("•")
-                            .foregroundColor(.secondary)
-                        
+                            .foregroundColor(Theme.textSecondary)
+
                         Text("\(classStats.timePlayed / 3600)h played")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 Text(String(format: "%.2f", classStats.kdRatio))
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(classStats.kdRatio >= 1 ? .green : .orange)
+                    .foregroundColor(classStats.kdRatio >= 1 ? Theme.bf6Green : Theme.bf6Orange)
             }
             .padding(10)
-            .background(Color.white.opacity(0.05))
+            .background(Theme.overlayColor)
             .cornerRadius(10)
         }
     }
     
     // MARK: - Actions Section
-    
+
     private var actionsSection: some View {
         VStack(spacing: 8) {
             // Refresh Button
@@ -264,14 +266,15 @@ struct MenuBarView: View {
                     Text(viewModel.isLoading ? "Refreshing..." : "Refresh Stats")
                 }
                 .font(.subheadline)
+                .foregroundColor(Theme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(Color.blue.opacity(0.2))
+                .background(Theme.bf6Blue.opacity(0.2))
                 .cornerRadius(8)
             }
             .buttonStyle(.plain)
             .disabled(viewModel.isLoading)
-            
+
             // Open Main Window Button
             Button {
                 openMainWindow()
@@ -281,15 +284,16 @@ struct MenuBarView: View {
                     Text("Open Full Stats")
                 }
                 .font(.subheadline)
+                .foregroundColor(Theme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(Color.white.opacity(0.1))
+                .background(Theme.overlayColor)
                 .cornerRadius(8)
             }
             .buttonStyle(.plain)
-            
+
             Divider()
-            
+
             // Quit Button
             Button {
                 NSApplication.shared.terminate(nil)
@@ -299,7 +303,7 @@ struct MenuBarView: View {
                     Text("Quit")
                 }
                 .font(.subheadline)
-                .foregroundColor(.red)
+                .foregroundColor(Theme.bf6Red)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
             }
@@ -308,21 +312,22 @@ struct MenuBarView: View {
     }
     
     // MARK: - No Data View
-    
+
     private var noDataView: some View {
         VStack(spacing: 16) {
             Image(systemName: "gamecontroller.fill")
                 .font(.system(size: 40))
-                .foregroundColor(.secondary)
-            
+                .foregroundColor(Theme.textSecondary)
+
             Text("No Player Data")
                 .font(.headline)
-            
+                .foregroundColor(Theme.textPrimary)
+
             Text("Search for a player to view stats")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
-            
+
             Button {
                 openMainWindow()
             } label: {
@@ -331,21 +336,22 @@ struct MenuBarView: View {
                     Text("Search Player")
                 }
                 .font(.subheadline)
+                .foregroundColor(Theme.textPrimary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 8)
-                .background(Color.blue)
+                .background(Theme.bf6Blue)
                 .cornerRadius(8)
             }
             .buttonStyle(.plain)
-            
+
             Divider()
-            
+
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
                 Text("Quit")
                     .font(.subheadline)
-                    .foregroundColor(.red)
+                    .foregroundColor(Theme.bf6Red)
             }
             .buttonStyle(.plain)
         }
@@ -386,27 +392,28 @@ struct MenuBarStatItem: View {
     let label: String
     let value: String
     let color: Color
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.caption)
                 .foregroundColor(color)
                 .frame(width: 16)
-            
+
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
-                
+                    .foregroundColor(Theme.textPrimary)
+
                 Text(label)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
-            
+
             Spacer()
         }
         .padding(8)
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(8)
     }
 }

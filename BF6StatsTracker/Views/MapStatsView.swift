@@ -74,7 +74,7 @@ struct MapStatsView: View {
                 }
             }
         }
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
     }
 
     // MARK: - Info Banner
@@ -89,7 +89,7 @@ struct MapStatsView: View {
                 Text("Estimated Map Statistics")
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.textPrimary)
 
                 Text("BF6 API doesn't provide map-specific data. Stats shown are estimated based on your overall performance.")
                     .font(.caption2)
@@ -210,11 +210,11 @@ struct MapStatsView: View {
                 }
             }
             .padding(10)
-            .background(Color.white.opacity(0.05))
+            .background(Theme.overlayColor)
             .cornerRadius(10)
         }
         .padding()
-        .background(Color.black.opacity(0.3))
+        .background(Theme.overlayColor)
     }
 
     // MARK: - Map Comparison Chart
@@ -247,7 +247,7 @@ struct MapStatsView: View {
             }
         }
         .padding(.vertical)
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
         .padding(.horizontal)
         .transition(.scale.combined(with: .opacity))
@@ -332,7 +332,7 @@ struct MapPerformanceCard: View {
             }
 
             Divider()
-                .background(Color.white.opacity(0.2))
+                .background(Theme.borderColor)
 
             // Stats grid
             LazyVGrid(columns: [
@@ -351,7 +351,7 @@ struct MapPerformanceCard: View {
                     label: "Deaths",
                     value: "\(map.deaths)",
                     icon: "xmark.circle",
-                    color: Color(nsColor: .systemGray),
+                    color: Theme.textSecondary,
                     comparison: nil
                 )
                 DetailedStatItem(
@@ -393,7 +393,7 @@ struct MapPerformanceCard: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
@@ -460,7 +460,7 @@ struct CompactMapRow: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 

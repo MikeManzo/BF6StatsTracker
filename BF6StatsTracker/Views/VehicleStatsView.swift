@@ -67,7 +67,7 @@ struct VehicleStatsView: View {
             // Search
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 
                 TextField("Search vehicles...", text: $searchText)
                     .textFieldStyle(.plain)
@@ -77,13 +77,13 @@ struct VehicleStatsView: View {
                         searchText = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(10)
-            .background(Color.white.opacity(0.1))
+            .background(Theme.overlayColor)
             .cornerRadius(10)
             .frame(maxWidth: 300)
             
@@ -96,14 +96,14 @@ struct VehicleStatsView: View {
                         icon: "target",
                         value: viewModel.vehicleStats.reduce(0) { $0 + $1.kills }.formatted(),
                         label: "Total Kills",
-                        color: .red
+                        color: Theme.bf6Red
                     )
                     
                     SummaryBadge(
                         icon: "flame.fill",
                         value: viewModel.vehicleStats.reduce(0) { $0 + $1.destroyed }.formatted(),
                         label: "Destroyed",
-                        color: .orange
+                        color: Theme.bf6Orange
                     )
                 }
             }
@@ -111,7 +111,7 @@ struct VehicleStatsView: View {
             // Sort
             HStack(spacing: 8) {
                 Text("Sort:")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 
                 Picker("Sort", selection: $sortOption) {
                     ForEach(VehicleSortOption.allCases) { option in
@@ -133,7 +133,7 @@ struct VehicleStatsView: View {
                     title: "All",
                     icon: "square.grid.2x2.fill",
                     isSelected: selectedCategory == nil,
-                    color: .orange
+                    color: Theme.bf6Orange
                 ) {
                     selectedCategory = nil
                 }
@@ -174,7 +174,7 @@ struct VehicleStatsView: View {
         VStack(spacing: 16) {
             Image(systemName: "car.fill")
                 .font(.system(size: 50))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             
             Text("No Vehicles Found")
                 .font(.title2)
@@ -182,10 +182,10 @@ struct VehicleStatsView: View {
             
             if !searchText.isEmpty || selectedCategory != nil {
                 Text("Try adjusting your search or filters")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             } else {
                 Text("Vehicle data will appear after using vehicles in matches")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -196,7 +196,7 @@ struct VehicleStatsView: View {
     
     private func categoryColor(for category: VehicleCategory) -> Color {
         switch category {
-        case .mainBattleTank: return Color(nsColor: .systemGray)
+        case .mainBattleTank: return Theme.textSecondary
         case .lightArmor: return .green
         case .antiAircraft: return .blue
         case .attackHelicopter: return .red
@@ -227,7 +227,7 @@ struct SummaryBadge: View {
                 
                 Text(label)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding(.horizontal, 10)
@@ -257,10 +257,10 @@ struct VehicleCategoryPill: View {
                     .fontWeight(.medium)
                     .lineLimit(1)
             }
-            .foregroundColor(isSelected ? .white : .secondary)
+            .foregroundColor(isSelected ? Theme.selectedText : Theme.textSecondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(isSelected ? color : Color.white.opacity(0.1))
+            .background(isSelected ? color : Theme.overlayColor)
             .cornerRadius(20)
         }
         .buttonStyle(.plain)
@@ -305,7 +305,7 @@ struct VehicleCard: View {
                     HStack(spacing: 8) {
                         Label(vehicle.type, systemImage: vehicleIcon)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 
@@ -319,7 +319,7 @@ struct VehicleCard: View {
                     
                     Text("kills")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
             
@@ -337,7 +337,7 @@ struct VehicleCard: View {
                     icon: "xmark.circle",
                     label: "Deaths",
                     value: "\(vehicle.deaths)",
-                    color: Color(nsColor: .systemGray)
+                    color: Theme.textSecondary
                 )
                 
                 VehicleStatItem(
@@ -351,14 +351,14 @@ struct VehicleCard: View {
                     icon: "flame.fill",
                     label: "Destroyed",
                     value: "\(vehicle.destroyed)",
-                    color: .orange
+                    color: Theme.bf6Orange
                 )
                 
                 VehicleStatItem(
                     icon: "clock.fill",
                     label: "Time",
                     value: formatTime(vehicle.timePlayed),
-                    color: .blue
+                    color: Theme.bf6Blue
                 )
             }
             
@@ -377,14 +377,14 @@ struct VehicleCard: View {
                         icon: "speedometer",
                         label: "KPM",
                         value: String(format: "%.2f", vehicle.killsPerMinute),
-                        color: .red
+                        color: Theme.bf6Red
                     )
                     
                     VehicleStatItem(
                         icon: "figure.walk",
                         label: "Roadkills",
                         value: "\(vehicle.roadKills)",
-                        color: .purple
+                        color: Theme.bf6Purple
                     )
                     
                     VehicleStatItem(
@@ -406,7 +406,7 @@ struct VehicleCard: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
+                .fill(Theme.cardBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
@@ -438,7 +438,7 @@ struct VehicleCard: View {
     
     private var vehicleColor: Color {
         switch vehicle.type.lowercased() {
-        case let t where t.contains("tank"): return Color(nsColor: .systemGray)
+        case let t where t.contains("tank"): return Theme.textSecondary
         case let t where t.contains("attack") && t.contains("heli"): return .red
         case let t where t.contains("transport") && t.contains("heli"): return .teal
         case let t where t.contains("jet"): return .purple
@@ -480,11 +480,11 @@ struct VehicleStatItem: View {
             
             Text(value)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(Theme.textPrimary)
             
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
     }
 }
@@ -507,5 +507,5 @@ enum VehicleSortOption: String, CaseIterable, Identifiable {
     VehicleStatsView()
         .environmentObject(StatsViewModel())
         .frame(width: 1000, height: 700)
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
 }

@@ -55,7 +55,7 @@ struct LastMatchStatsView: View {
         .padding()
         .background(
             LinearGradient(
-                colors: [Color.orange.opacity(0.1), Color.black.opacity(0.3)],
+                colors: [Color.orange.opacity(0.1), Theme.overlayColor],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -169,7 +169,7 @@ struct LastMatchStatsView: View {
             }
 
             Divider()
-                .background(Color.white.opacity(0.2))
+                .background(Theme.borderColor)
 
             // Weapon Breakdown
             LazyVGrid(columns: [
@@ -219,7 +219,7 @@ struct LastMatchStatsView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 
@@ -237,7 +237,7 @@ struct LastMatchStatsView: View {
             }
 
             Divider()
-                .background(Color.white.opacity(0.2))
+                .background(Theme.borderColor)
 
             VStack(spacing: 8) {
                 LastMatchStatRow(label: "Revives", value: "\(baseStats.revives)", icon: "cross.case.fill")
@@ -248,7 +248,7 @@ struct LastMatchStatsView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
         .frame(maxWidth: .infinity)
     }
@@ -267,7 +267,7 @@ struct LastMatchStatsView: View {
             }
 
             Divider()
-                .background(Color.white.opacity(0.2))
+                .background(Theme.borderColor)
 
             VStack(spacing: 8) {
                 LastMatchStatRow(label: "Captured", value: "\(objective.captured)", icon: "flag.checkered")
@@ -276,7 +276,7 @@ struct LastMatchStatsView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
         .frame(maxWidth: .infinity)
     }
@@ -344,11 +344,11 @@ struct LastMatchStatCard: View {
             Text(value)
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(Theme.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 }
@@ -397,7 +397,7 @@ struct LastMatchStatRow: View {
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .foregroundColor(Theme.textPrimary)
         }
     }
 }
@@ -406,7 +406,7 @@ struct LastMatchStatRow: View {
 
 #Preview {
     ZStack {
-        Color(red: 0.05, green: 0.05, blue: 0.1).ignoresSafeArea()
+        Theme.backgroundPrimary.ignoresSafeArea()
 
         ScrollView {
             VStack(spacing: 20) {

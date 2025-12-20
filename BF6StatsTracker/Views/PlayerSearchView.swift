@@ -34,12 +34,12 @@ struct PlayerSearchView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(Color.black.opacity(0.2))
+            .background(Theme.overlayColor)
 
             // Search Form
             VStack(spacing: 20) {
@@ -60,37 +60,37 @@ struct PlayerSearchView: View {
                     HStack {
                         Text("Player Name")
                             .font(.headline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
 
                         if viewModel.isEAAuthenticated {
                             Text("(Using EA ID)")
                                 .font(.caption)
-                                .foregroundColor(.green)
+                                .foregroundColor(Theme.bf6Green)
                         }
                     }
 
                     HStack {
                         Image(systemName: "person.fill")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
 
                         TextField("Enter exact player name", text: $playerName)
                             .textFieldStyle(.plain)
                             .font(.title3)
                     }
                     .padding()
-                    .background(Color.white.opacity(0.1))
+                    .background(Theme.overlayColor)
                     .cornerRadius(10)
 
                     Text("Player names are case-sensitive")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 
                 // Platform Selection
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Platform")
                         .font(.headline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                     
                     HStack(spacing: 12) {
                         ForEach(Platform.allCases) { platform in
@@ -108,13 +108,13 @@ struct PlayerSearchView: View {
                 if let error = searchError {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.bf6Red)
                         
                         Text(error)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.bf6Red)
                     }
                     .padding()
-                    .background(Color.red.opacity(0.1))
+                    .background(Theme.bf6Red.opacity(0.1))
                     .cornerRadius(8)
                 }
                 
@@ -135,12 +135,12 @@ struct PlayerSearchView: View {
                     }
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.textPrimary)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(
                         LinearGradient(
-                            colors: playerName.isEmpty ? [Color(nsColor: .systemGray)] : [.blue, .purple],
+                            colors: playerName.isEmpty ? [Theme.textSecondary] : [.blue, .purple],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -159,7 +159,7 @@ struct PlayerSearchView: View {
                         HStack {
                             Text("Recent Searches")
                                 .font(.headline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                             
                             Spacer()
                             
@@ -168,7 +168,7 @@ struct PlayerSearchView: View {
                                 saveRecentSearches()
                             }
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                         }
                         
                         ForEach(recentSearches) { search in
@@ -186,7 +186,7 @@ struct PlayerSearchView: View {
             .padding()
         }
         .frame(width: 500, height: 700)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+        .background(Theme.backgroundPrimary)
         .onAppear {
             loadRecentSearches()
             // Pre-fill with EA ID if authenticated
@@ -218,7 +218,7 @@ struct PlayerSearchView: View {
                         .frame(width: 40, height: 40)
 
                     Image(systemName: "person.badge.key.fill")
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
                         .font(.system(size: 18))
                 }
 
@@ -226,16 +226,16 @@ struct PlayerSearchView: View {
                     HStack {
                         Text(viewModel.settings.eaId ?? "EA User")
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.textPrimary)
 
                         Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.bf6Green)
                             .font(.caption)
                     }
 
                     Text("EA Account Connected")
                         .font(.caption)
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.bf6Green)
                 }
 
                 Spacer()
@@ -250,20 +250,20 @@ struct PlayerSearchView: View {
                     Text("Use My Stats")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.green)
+                        .background(Theme.bf6Green)
                         .cornerRadius(6)
                 }
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(Color.green.opacity(0.1))
+            .background(Theme.bf6Green.opacity(0.1))
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.green.opacity(0.3), lineWidth: 1)
+                    .stroke(Theme.bf6Green.opacity(0.3), lineWidth: 1)
             )
 
             // Identity details (collapsible)
@@ -277,7 +277,7 @@ struct PlayerSearchView: View {
             } label: {
                 Text("View Identity Details")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
             .tint(.secondary)
         }
@@ -303,24 +303,24 @@ struct PlayerSearchView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Sign in with EA")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
 
                     Text("Automatically detect your EA ID")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
             .padding()
-            .background(Color.white.opacity(0.05))
+            .background(Theme.cardBackground)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                    .stroke(Theme.bf6Orange.opacity(0.3), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -413,14 +413,14 @@ struct PlatformButton: View {
                     .font(.caption)
                     .lineLimit(1)
             }
-            .foregroundColor(isSelected ? .white : .secondary)
+            .foregroundColor(isSelected ? Theme.selectedText : Theme.textSecondary)
             .frame(maxWidth: .infinity)
             .padding()
-            .background(isSelected ? Color.blue.opacity(0.3) : Color.white.opacity(0.05))
+            .background(isSelected ? Theme.bf6Blue.opacity(0.3) : Theme.cardBackground)
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? Theme.bf6Blue : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)
@@ -444,21 +444,21 @@ struct RecentSearchRow: View {
                     
                     Text(search.platform.displayName)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 
                 Spacer()
                 
                 Text(search.date.formatted(.relative(presentation: .named)))
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
             .padding()
-            .background(Color.white.opacity(0.05))
+            .background(Theme.cardBackground)
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
@@ -475,12 +475,12 @@ struct IdentityDetailRow: View {
         HStack {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .frame(width: 80, alignment: .leading)
 
             Text(value)
                 .font(.caption)
-                .foregroundColor(.white)
+                .foregroundColor(Theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -492,7 +492,7 @@ struct IdentityDetailRow: View {
             } label: {
                 Image(systemName: "doc.on.doc")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
             .buttonStyle(.plain)
             .help("Copy to clipboard")

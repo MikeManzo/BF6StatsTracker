@@ -915,10 +915,10 @@ enum BF6Class: String, CaseIterable, Identifiable {
     
     var color: Color {
         switch self {
-        case .assault: return .red
-        case .engineer: return .orange
-        case .support: return .green
-        case .recon: return .blue
+        case .assault: return Theme.bf6Red
+        case .engineer: return Theme.bf6Orange
+        case .support: return Theme.bf6Green
+        case .recon: return Theme.bf6Blue
         }
     }
     

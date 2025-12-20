@@ -30,7 +30,7 @@ struct SessionHistoryView: View {
             }
             .padding()
         }
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
     }
 
     private var header: some View {
@@ -75,7 +75,7 @@ struct SessionHistoryView: View {
 
             HStack(spacing: 16) {
                 StatBadge(label: "Kills", value: "\(session.killsGained)", color: .red)
-                StatBadge(label: "Deaths", value: "\(session.deathsGained)", color: Color(nsColor: .systemGray))
+                StatBadge(label: "Deaths", value: "\(session.deathsGained)", color: Theme.textSecondary)
                 StatBadge(label: "Matches", value: "\(session.matchesPlayed)", color: .blue)
             }
 
@@ -184,7 +184,7 @@ struct SessionRow: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 
@@ -244,7 +244,7 @@ struct SummaryCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 }

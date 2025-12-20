@@ -41,7 +41,7 @@ struct LoadoutAnalyzerView: View {
                 .padding()
             }
         }
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
     }
 
     // MARK: - Header
@@ -77,7 +77,7 @@ struct LoadoutAnalyzerView: View {
             }
         }
         .padding()
-        .background(Color.black.opacity(0.3))
+        .background(Theme.overlayColor)
     }
 
     // MARK: - Category Picker
@@ -93,10 +93,10 @@ struct LoadoutAnalyzerView: View {
                         }
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(selectedCategory == category ? .white : .secondary)
+                        .foregroundColor(selectedCategory == category ? Theme.selectedText : Theme.textSecondary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(selectedCategory == category ? Color.orange : Color.white.opacity(0.05))
+                        .background(selectedCategory == category ? Theme.bf6Orange : Theme.overlayColor)
                         .cornerRadius(8)
                     }
                     .buttonStyle(.plain)
@@ -105,7 +105,7 @@ struct LoadoutAnalyzerView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 8)
-        .background(Color.black.opacity(0.2))
+        .background(Theme.overlayColor)
     }
 
     // MARK: - Overview Content
@@ -214,7 +214,7 @@ struct LoadoutAnalyzerView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -250,7 +250,7 @@ struct LoadoutAnalyzerView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -292,7 +292,7 @@ struct LoadoutAnalyzerView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -308,11 +308,11 @@ struct LoadoutAnalyzerView: View {
             } else {
                 Text("Not enough data for recommendations")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -335,7 +335,7 @@ struct LoadoutAnalyzerView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -474,7 +474,7 @@ struct PerformanceBar: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color.white.opacity(0.1))
+                        .fill(Theme.overlayColor)
 
                     Rectangle()
                         .fill(color.gradient)
@@ -567,7 +567,7 @@ struct EnhancedWeaponRecommendationRow: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 }
@@ -623,7 +623,7 @@ struct EnhancedClassLoadoutCard: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 }
@@ -643,7 +643,7 @@ struct MiniPerformanceBar: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color.white.opacity(0.1))
+                        .fill(Theme.overlayColor)
 
                     Rectangle()
                         .fill(color.gradient)
@@ -694,7 +694,7 @@ struct GadgetPerformanceCard: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(12)
     }
 }
@@ -825,7 +825,7 @@ struct StrengthsWeaknessesCard: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 }
@@ -881,18 +881,18 @@ struct RoadmapStep: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(completed ? Color.green : Color.white.opacity(0.2))
+                    .fill(completed ? Color.green : Theme.borderColor)
                     .frame(width: 30, height: 30)
 
                 if completed {
                     Image(systemName: "checkmark")
                         .font(.caption)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.selectedText)
                 } else {
                     Text("\(number)")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.selectedText)
                 }
             }
 
@@ -939,9 +939,9 @@ enum RecommendationPriority {
 
     var color: Color {
         switch self {
-        case .high: return .red
-        case .medium: return .orange
-        case .low: return .green
+        case .high: return Theme.bf6Red
+        case .medium: return Theme.bf6Orange
+        case .low: return Theme.bf6Green
         }
     }
 }

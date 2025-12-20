@@ -38,7 +38,7 @@ struct EALoginView: View {
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(Color.black.opacity(0.2))
+            .background(Theme.overlayColor)
 
             ScrollView {
                 VStack(spacing: 24) {
@@ -74,7 +74,7 @@ struct EALoginView: View {
                         BenefitRow(icon: "checkmark.circle.fill", text: "No need to remember your exact username", color: .green)
                     }
                     .padding()
-                    .background(Color.white.opacity(0.05))
+                    .background(Theme.overlayColor)
                     .cornerRadius(12)
 
                     // Error message
@@ -100,7 +100,7 @@ struct EALoginView: View {
                                 if isLoading || viewModel.isAuthenticating {
                                     ProgressView()
                                         .scaleEffect(0.8)
-                                        .tint(.white)
+                                        .tint(Theme.selectedText)
                                 } else {
                                     Image(systemName: "globe")
                                 }
@@ -108,7 +108,7 @@ struct EALoginView: View {
                             }
                             .font(.title3)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.selectedText)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(
@@ -152,7 +152,7 @@ struct EALoginView: View {
                             TextField("Paste EA access token here", text: $manualToken)
                                 .textFieldStyle(.plain)
                                 .padding()
-                                .background(Color.white.opacity(0.1))
+                                .background(Theme.overlayColor)
                                 .cornerRadius(8)
 
                             Button {
@@ -160,17 +160,17 @@ struct EALoginView: View {
                             } label: {
                                 Text("Authenticate")
                                     .font(.headline)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Theme.selectedText)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(manualToken.isEmpty ? Color(nsColor: .systemGray) : Color.blue)
+                                    .background(manualToken.isEmpty ? Theme.textSecondary : Color.blue)
                                     .cornerRadius(8)
                             }
                             .buttonStyle(.plain)
                             .disabled(manualToken.isEmpty || isLoading)
                         }
                         .padding()
-                        .background(Color.white.opacity(0.05))
+                        .background(Theme.overlayColor)
                         .cornerRadius(12)
                     }
 
@@ -201,7 +201,7 @@ struct EALoginView: View {
             }
         }
         .frame(width: 500, height: 700)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+        .background(Theme.backgroundPrimary)
         .sheet(isPresented: $showWebAuth) {
             EAWebAuthView(onTokenReceived: { token in
                 showWebAuth = false
@@ -280,7 +280,7 @@ struct EAWebAuthView: View {
                 .foregroundColor(.secondary)
             }
             .padding()
-            .background(Color.black.opacity(0.2))
+            .background(Theme.overlayColor)
 
             Spacer()
 
@@ -341,7 +341,7 @@ struct EAWebAuthView: View {
                     } label: {
                         Text("Open EA Login")
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.selectedText)
                             .padding(.horizontal, 30)
                             .padding(.vertical, 12)
                             .background(
@@ -360,7 +360,7 @@ struct EAWebAuthView: View {
             Spacer()
         }
         .frame(width: 400, height: 400)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+        .background(Theme.backgroundPrimary)
     }
 
     private func startAuthentication() {

@@ -62,7 +62,7 @@ struct GadgetStatsView: View {
             // Search
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 
                 TextField("Search gadgets...", text: $searchText)
                     .textFieldStyle(.plain)
@@ -72,13 +72,13 @@ struct GadgetStatsView: View {
                         searchText = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(10)
-            .background(Color.white.opacity(0.1))
+            .background(Theme.overlayColor)
             .cornerRadius(10)
             .frame(maxWidth: 300)
             
@@ -87,7 +87,7 @@ struct GadgetStatsView: View {
             // Sort
             HStack(spacing: 8) {
                 Text("Sort by:")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 
                 Picker("Sort", selection: $sortOption) {
                     ForEach(GadgetSortOption.allCases) { option in
@@ -101,7 +101,7 @@ struct GadgetStatsView: View {
             // Count
             Text("\(filteredGadgets.count) gadgets")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(Color.secondary.opacity(0.2))
@@ -117,7 +117,7 @@ struct GadgetStatsView: View {
                 title: "All Classes",
                 icon: "square.grid.2x2.fill",
                 isSelected: selectedClass == nil,
-                color: .orange
+                color: Theme.bf6Orange
             ) {
                 selectedClass = nil
             }
@@ -156,14 +156,14 @@ struct GadgetStatsView: View {
         VStack(spacing: 16) {
             Image(systemName: "wrench.and.screwdriver.fill")
                 .font(.system(size: 50))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             
             Text("No Gadgets Found")
                 .font(.title2)
                 .fontWeight(.semibold)
             
             Text("Gadget data will appear after using gadgets in matches")
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(50)
@@ -189,10 +189,10 @@ struct ClassFilterButton: View {
                     .font(.caption)
                     .fontWeight(.medium)
             }
-            .foregroundColor(isSelected ? .white : .secondary)
+            .foregroundColor(isSelected ? Theme.selectedText : Theme.textSecondary)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(isSelected ? color : Color.white.opacity(0.1))
+            .background(isSelected ? color : Theme.overlayColor)
             .cornerRadius(20)
         }
         .buttonStyle(.plain)
@@ -215,7 +215,7 @@ struct GadgetCard: View {
                     placeholder: Image(systemName: "wrench.fill")
                 )
                 .frame(width: 60, height: 60)
-                .background(Color.white.opacity(0.1))
+                .background(Theme.overlayColor)
                 .cornerRadius(12)
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -225,7 +225,7 @@ struct GadgetCard: View {
                     
                     Text(gadget.type)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 
                 Spacer()
@@ -238,14 +238,14 @@ struct GadgetCard: View {
                             .foregroundColor(.red)
                         Text("kills")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     } else {
                         Text("\(gadget.uses)")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundColor(.blue)
                         Text("uses")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
             }
@@ -264,28 +264,28 @@ struct GadgetCard: View {
                     icon: "target",
                     label: "Kills",
                     value: "\(gadget.kills)",
-                    color: .red
+                    color: Theme.bf6Red
                 )
                 
                 GadgetStatItem(
                     icon: "hand.tap.fill",
                     label: "Uses",
                     value: "\(gadget.uses)",
-                    color: .blue
+                    color: Theme.bf6Blue
                 )
                 
                 GadgetStatItem(
                     icon: "flame.fill",
                     label: "Damage",
                     value: gadget.damageDealt.formatted(.number.notation(.compactName)),
-                    color: .orange
+                    color: Theme.bf6Orange
                 )
                 
                 GadgetStatItem(
                     icon: "car.fill",
                     label: "Vehicles",
                     value: "\(gadget.vehiclesDestroyed)",
-                    color: .green
+                    color: Theme.bf6Green
                 )
             }
             
@@ -299,7 +299,7 @@ struct GadgetCard: View {
                     Spacer()
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                     Spacer()
                 }
                 .padding(.top, 8)
@@ -321,11 +321,11 @@ struct GadgetCard: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
+                .fill(Theme.cardBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Theme.overlayColor, lineWidth: 1)
         )
     }
     
@@ -361,11 +361,11 @@ struct GadgetStatItem: View {
             
             Text(value)
                 .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(Theme.textPrimary)
             
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
     }
 }
@@ -380,7 +380,7 @@ struct DetailRow: View {
         HStack {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             
             Spacer()
             
@@ -409,5 +409,5 @@ enum GadgetSortOption: String, CaseIterable, Identifiable {
     GadgetStatsView()
         .environmentObject(StatsViewModel())
         .frame(width: 1000, height: 700)
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
 }

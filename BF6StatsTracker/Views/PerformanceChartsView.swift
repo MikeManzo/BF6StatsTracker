@@ -40,7 +40,7 @@ struct PerformanceChartsView: View {
             }
             .padding()
         }
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
     }
 
     // MARK: - Header
@@ -70,8 +70,8 @@ struct PerformanceChartsView: View {
                         .fontWeight(.medium)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(selectedPeriod == period ? Color.purple : Color.white.opacity(0.05))
-                        .foregroundColor(selectedPeriod == period ? .black : .white)
+                        .background(selectedPeriod == period ? Color.purple : Theme.overlayColor)
+                        .foregroundColor(selectedPeriod == period ? .black : Theme.textPrimary)
                         .cornerRadius(8)
                 }
             }
@@ -112,7 +112,7 @@ struct PerformanceChartsView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -138,7 +138,7 @@ struct PerformanceChartsView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -165,7 +165,7 @@ struct PerformanceChartsView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -187,7 +187,7 @@ struct PerformanceChartsView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
     }
 
@@ -254,7 +254,7 @@ struct RadarStatRow: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color.white.opacity(0.1))
+                        .fill(Theme.overlayColor)
 
                     Rectangle()
                         .fill(Color.purple.gradient)

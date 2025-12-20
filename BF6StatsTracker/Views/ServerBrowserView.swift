@@ -83,7 +83,7 @@ struct ServerBrowserView: View {
                 serverListView
             }
         }
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
         .task {
             await loadServers()
         }
@@ -149,8 +149,8 @@ struct ServerBrowserView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(selectedPlatform == platform ? Color.green : Color.white.opacity(0.05))
-                            .foregroundColor(selectedPlatform == platform ? .black : .white)
+                            .background(selectedPlatform == platform ? Color.green : Theme.overlayColor)
+                            .foregroundColor(selectedPlatform == platform ? .black : Theme.textPrimary)
                             .cornerRadius(8)
                         }
                         .buttonStyle(.plain)
@@ -190,7 +190,7 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(selectedRegion != .all ? Color.purple.opacity(0.2) : Color.white.opacity(0.05))
+                        .background(selectedRegion != .all ? Color.purple.opacity(0.2) : Theme.overlayColor)
                         .cornerRadius(8)
                 }
 
@@ -206,7 +206,7 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(selectedMode != .all ? Color.orange.opacity(0.2) : Color.white.opacity(0.05))
+                        .background(selectedMode != .all ? Color.orange.opacity(0.2) : Theme.overlayColor)
                         .cornerRadius(8)
                 }
 
@@ -224,7 +224,7 @@ struct ServerBrowserView: View {
                         .font(.caption)
                 }
                 .toggleStyle(.button)
-                .tint(showEmptyServers ? Color(nsColor: .systemGray).opacity(0.3) : .secondary.opacity(0.2))
+                .tint(showEmptyServers ? Theme.textSecondary.opacity(0.3) : .secondary.opacity(0.2))
                 .buttonStyle(.plain)
             }
 
@@ -245,11 +245,11 @@ struct ServerBrowserView: View {
                 }
             }
             .padding(10)
-            .background(Color.white.opacity(0.05))
+            .background(Theme.overlayColor)
             .cornerRadius(10)
         }
         .padding()
-        .background(Color.black.opacity(0.3))
+        .background(Theme.overlayColor)
     }
 
     private var activeFiltersBar: some View {
@@ -281,7 +281,7 @@ struct ServerBrowserView: View {
             }
 
             if !showEmptyServers {
-                FilterChip(text: "Hide Empty", color: Color(nsColor: .systemGray)) {
+                FilterChip(text: "Hide Empty", color: Theme.textSecondary) {
                     showEmptyServers = true
                 }
             }
@@ -478,7 +478,7 @@ struct EnhancedServerCard: View {
     var statusColor: Color {
         if server.isFull { return .red }
         if fillPercentage > 0.8 { return .orange }
-        if server.slots.inGame == 0 { return Color(nsColor: .systemGray) }
+        if server.slots.inGame == 0 { return Theme.textSecondary }
         return .green
     }
 
@@ -550,7 +550,7 @@ struct EnhancedServerCard: View {
                 ZStack(alignment: .leading) {
                     // Background
                     Rectangle()
-                        .fill(Color.white.opacity(0.1))
+                        .fill(Theme.overlayColor)
 
                     // Fill
                     Rectangle()
@@ -591,7 +591,7 @@ struct EnhancedServerCard: View {
             if isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
                     Divider()
-                        .background(Color.white.opacity(0.2))
+                        .background(Theme.borderColor)
 
                     // Server details grid
                     LazyVGrid(columns: [
@@ -675,7 +675,7 @@ struct EnhancedServerCard: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Theme.overlayColor)
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)

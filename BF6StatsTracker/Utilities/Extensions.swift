@@ -7,18 +7,43 @@
 
 import SwiftUI
 
-// MARK: - Color Extensions
+// MARK: - Theme Colors (Light/Dark Mode Support)
 
-extension Color {
-    static let bf6Orange = Color(red: 1.0, green: 0.5, blue: 0.0)
-    static let bf6Red = Color(red: 0.9, green: 0.2, blue: 0.2)
-    static let bf6Blue = Color(red: 0.2, green: 0.5, blue: 0.9)
-    static let bf6Green = Color(red: 0.2, green: 0.8, blue: 0.4)
-    static let bf6Purple = Color(red: 0.6, green: 0.3, blue: 0.9)
-    
-    static let backgroundDark = Color(red: 0.05, green: 0.05, blue: 0.1)
-    static let backgroundMedium = Color(red: 0.1, green: 0.1, blue: 0.15)
-    static let cardBackground = Color.white.opacity(0.05)
+// Theme provides convenient access to Asset Catalog colors without name collisions.
+// Usage: Theme.backgroundPrimary, Theme.textPrimary, Theme.bf6Red, etc.
+enum Theme {
+    // Background Colors - automatically adapt to light/dark mode
+    static let backgroundPrimary = Color("BackgroundPrimary")
+    static let backgroundSecondary = Color("BackgroundSecondary")
+    static let backgroundTertiary = Color("BackgroundTertiary")
+    static let cardBackground = Color("CardBackground")
+
+    // Text Colors
+    static let textPrimary = Color("TextPrimary")
+    static let textSecondary = Color("TextSecondary")
+
+    // UI Element Colors
+    static let borderColor = Color("BorderColor")
+    static let overlayColor = Color("OverlayColor")
+
+    // Brand Colors (BF6 Theme)
+    static let bf6Blue = Color("BF6Blue")
+    static let bf6Green = Color("BF6Green")
+    static let bf6Orange = Color("BF6Orange")
+    static let bf6Purple = Color("BF6Purple")
+    static let bf6Red = Color("BF6Red")
+
+    // Semantic Convenience Colors
+    static var adaptiveWhite: Color { textPrimary }
+    static var adaptiveGray: Color { textSecondary }
+
+    // Button/Selection Colors - for pills, toggles etc.
+    // In dark mode, selected items show white text. In light mode, also white text on colored bg.
+    static let selectedText = Color.white
+
+    // Subtle overlay for hover states and backgrounds (adapts to mode)
+    // Use this for Color.white.opacity(0.05) replacements
+    static var subtleOverlay: Color { overlayColor }
 }
 
 // MARK: - View Extensions
@@ -27,11 +52,11 @@ extension View {
     func cardStyle() -> some View {
         self
             .padding()
-            .background(Color.cardBackground)
+            .background(Theme.cardBackground)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(Theme.borderColor, lineWidth: 1)
             )
     }
     
@@ -126,31 +151,39 @@ extension String {
 
 struct GradientPresets {
     static let fire = LinearGradient(
-        colors: [.orange, .red],
+        colors: [Theme.bf6Orange, Theme.bf6Red],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-    
+
     static let ocean = LinearGradient(
-        colors: [.blue, .purple],
+        colors: [Theme.bf6Blue, Theme.bf6Purple],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-    
+
     static let forest = LinearGradient(
-        colors: [.green, .teal],
+        colors: [Theme.bf6Green, .teal],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-    
+
     static let sunset = LinearGradient(
-        colors: [.yellow, .orange, .red],
+        colors: [.yellow, Theme.bf6Orange, Theme.bf6Red],
         startPoint: .leading,
         endPoint: .trailing
     )
-    
+
+    // Adaptive background gradient that works in both light and dark mode
+    static let background = LinearGradient(
+        colors: [Theme.backgroundPrimary, Theme.backgroundSecondary],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
+    // For legacy support - maps to adaptive background
     static let night = LinearGradient(
-        colors: [Color(red: 0.1, green: 0.1, blue: 0.2), Color(red: 0.05, green: 0.05, blue: 0.1)],
+        colors: [Theme.backgroundSecondary, Theme.backgroundPrimary],
         startPoint: .top,
         endPoint: .bottom
     )
@@ -196,19 +229,19 @@ extension KeyboardShortcut {
 
 struct LoadingView: View {
     @State private var isAnimating = false
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Circle()
                 .trim(from: 0, to: 0.7)
-                .stroke(Color.orange, lineWidth: 3)
+                .stroke(Theme.bf6Orange, lineWidth: 3)
                 .frame(width: 40, height: 40)
                 .rotationEffect(.degrees(isAnimating ? 360 : 0))
                 .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
-            
+
             Text("Loading...")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .onAppear {
             isAnimating = true
@@ -224,28 +257,30 @@ struct EmptyStateView: View {
     let message: String
     var action: (() -> Void)?
     var actionTitle: String?
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 50))
-                .foregroundColor(.secondary)
-            
+                .foregroundColor(Theme.textSecondary)
+
             Text(title)
                 .font(.title2)
                 .fontWeight(.semibold)
-            
+                .foregroundColor(Theme.textPrimary)
+
             Text(message)
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
-            
+
             if let action = action, let actionTitle = actionTitle {
                 Button(action: action) {
                     Text(actionTitle)
+                        .foregroundColor(Theme.textPrimary)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
-                        .background(Color.blue)
+                        .background(Theme.bf6Blue)
                         .cornerRadius(8)
                 }
                 .buttonStyle(.plain)
@@ -262,20 +297,20 @@ struct StatBarView: View {
     let maxValue: Double
     let color: Color
     let height: CGFloat
-    
-    init(value: Double, maxValue: Double = 100, color: Color = .blue, height: CGFloat = 6) {
+
+    init(value: Double, maxValue: Double = 100, color: Color = Theme.bf6Blue, height: CGFloat = 6) {
         self.value = value
         self.maxValue = maxValue
         self.color = color
         self.height = height
     }
-    
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: height / 2)
-                    .fill(Color.white.opacity(0.1))
-                
+                    .fill(Theme.overlayColor)
+
                 RoundedRectangle(cornerRadius: height / 2)
                     .fill(color)
                     .frame(width: geometry.size.width * CGFloat(min(value / maxValue, 1.0)))

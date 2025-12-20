@@ -144,7 +144,7 @@ struct GridPatternView: View {
                     path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                 }
             }
-            .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+            .stroke(Theme.borderColor, lineWidth: 0.5)
         }
     }
 }
@@ -177,5 +177,5 @@ struct ResetLayoutButton: View {
     DraggableTileContainer()
         .environmentObject(StatsViewModel())
         .frame(width: 800, height: 600)
-        .background(Color(red: 0.05, green: 0.05, blue: 0.1))
+        .background(Theme.backgroundPrimary)
 }

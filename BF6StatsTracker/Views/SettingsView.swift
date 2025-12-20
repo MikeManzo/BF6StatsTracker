@@ -28,20 +28,21 @@ struct SettingsView: View {
                 Text("Settings")
                     .font(.title2)
                     .fontWeight(.bold)
-                
+                    .foregroundColor(Theme.textPrimary)
+
                 Spacer()
-                
+
                 Button {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(Color.black.opacity(0.2))
+            .background(Theme.overlayColor)
             
             ScrollView {
                 VStack(spacing: 24) {
@@ -55,7 +56,7 @@ struct SettingsView: View {
                                         Circle()
                                             .fill(
                                                 LinearGradient(
-                                                    colors: [.orange, .red],
+                                                    colors: [Theme.bf6Orange, Theme.bf6Red],
                                                     startPoint: .topLeading,
                                                     endPoint: .bottomTrailing
                                                 )
@@ -71,15 +72,16 @@ struct SettingsView: View {
                                         HStack {
                                             Text(viewModel.settings.eaId ?? "EA User")
                                                 .font(.headline)
+                                                .foregroundColor(Theme.textPrimary)
 
                                             Image(systemName: "checkmark.seal.fill")
-                                                .foregroundColor(.green)
+                                                .foregroundColor(Theme.bf6Green)
                                                 .font(.caption)
                                         }
 
                                         Text("EA Account Connected")
                                             .font(.caption)
-                                            .foregroundColor(.green)
+                                            .foregroundColor(Theme.bf6Green)
                                     }
 
                                     Spacer()
@@ -105,7 +107,7 @@ struct SettingsView: View {
                                         Text("Disconnect EA Account")
                                     }
                                     .font(.subheadline)
-                                    .foregroundColor(.red)
+                                    .foregroundColor(Theme.bf6Red)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -114,11 +116,11 @@ struct SettingsView: View {
                             VStack(spacing: 12) {
                                 HStack {
                                     Image(systemName: "exclamationmark.circle")
-                                        .foregroundColor(.orange)
+                                        .foregroundColor(Theme.bf6Orange)
 
                                     Text("No EA Account Connected")
                                         .font(.subheadline)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(Theme.textSecondary)
 
                                     Spacer()
                                 }
@@ -137,7 +139,7 @@ struct SettingsView: View {
                                     .padding(.vertical, 10)
                                     .background(
                                         LinearGradient(
-                                            colors: [.orange, .red],
+                                            colors: [Theme.bf6Orange, Theme.bf6Red],
                                             startPoint: .leading,
                                             endPoint: .trailing
                                         )
@@ -148,7 +150,7 @@ struct SettingsView: View {
 
                                 Text("Connect your EA account to automatically detect your player name and get verified stats.")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                             }
                         }
                     }
@@ -160,21 +162,22 @@ struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Player Name")
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                
+                                    .foregroundColor(Theme.textSecondary)
+
                                 TextField("Enter player name", text: $playerName)
                                     .textFieldStyle(.plain)
+                                    .foregroundColor(Theme.textPrimary)
                                     .padding(10)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Theme.overlayColor)
                                     .cornerRadius(8)
                             }
-                            
+
                             // Platform
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Platform")
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                
+                                    .foregroundColor(Theme.textSecondary)
+
                                 Picker("Platform", selection: $selectedPlatform) {
                                     ForEach(Platform.allCases) { platform in
                                         HStack {
@@ -194,34 +197,35 @@ struct SettingsView: View {
                     SettingsSection(title: "Auto Refresh", icon: "arrow.clockwise") {
                         VStack(spacing: 16) {
                             Toggle("Enable Auto Refresh", isOn: $autoRefresh)
-                            
+                                .foregroundColor(Theme.textPrimary)
+
                             if autoRefresh {
                                 VStack(alignment: .leading, spacing: 6) {
                                     HStack {
                                         Text("Refresh Interval")
                                             .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                        
+                                            .foregroundColor(Theme.textSecondary)
+
                                         Spacer()
-                                        
+
                                         Text("\(Int(refreshInterval / 60)) minutes")
                                             .font(.subheadline)
-                                            .foregroundColor(.orange)
+                                            .foregroundColor(Theme.bf6Orange)
                                     }
-                                    
+
                                     Slider(value: $refreshInterval, in: 60...1800, step: 60)
-                                        .tint(.orange)
-                                    
+                                        .tint(Theme.bf6Orange)
+
                                     HStack {
                                         Text("1 min")
                                             .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                        
+                                            .foregroundColor(Theme.textSecondary)
+
                                         Spacer()
-                                        
+
                                         Text("30 min")
                                             .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(Theme.textSecondary)
                                     }
                                 }
                             }
@@ -232,8 +236,10 @@ struct SettingsView: View {
                     SettingsSection(title: "Display", icon: "paintbrush.fill") {
                         VStack(spacing: 12) {
                             Toggle("Compact Mode", isOn: $compactMode)
-                            
+                                .foregroundColor(Theme.textPrimary)
+
                             Toggle("Show Notifications", isOn: $showNotifications)
+                                .foregroundColor(Theme.textPrimary)
                         }
                     }
                     
@@ -245,10 +251,11 @@ struct SettingsView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Cache Status")
                                         .font(.subheadline)
+                                        .foregroundColor(Theme.textPrimary)
 
                                     Text(viewModel.formatCacheAge())
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(Theme.textSecondary)
                                 }
 
                                 Spacer()
@@ -261,7 +268,7 @@ struct SettingsView: View {
 
                             Text("Cache expires after 5 minutes. Data is stored locally for faster loading.")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
 
                             Divider()
 
@@ -270,10 +277,11 @@ struct SettingsView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Historical Data")
                                         .font(.subheadline)
+                                        .foregroundColor(Theme.textPrimary)
 
                                     Text(getHistoricalDataSummary())
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(Theme.textSecondary)
                                 }
 
                                 Spacer()
@@ -282,12 +290,12 @@ struct SettingsView: View {
                                     showClearHistoryConfirmation = true
                                 }
                                 .buttonStyle(.bordered)
-                                .tint(.red)
+                                .tint(Theme.bf6Red)
                             }
 
                             Text("Permanently deletes all saved snapshots, sessions, and map statistics. This cannot be undone.")
                                 .font(.caption)
-                                .foregroundColor(.red.opacity(0.8))
+                                .foregroundColor(Theme.bf6Red.opacity(0.8))
                         }
                     }
                     
@@ -296,31 +304,33 @@ struct SettingsView: View {
                         VStack(spacing: 12) {
                             HStack {
                                 Text("Version")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                                 Spacer()
                                 Text("1.0.0")
+                                    .foregroundColor(Theme.textPrimary)
                             }
-                            
+
                             HStack {
                                 Text("API Provider")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                                 Spacer()
                                 Link("GameTools.Network", destination: URL(string: "https://api.gametools.network")!)
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(Theme.bf6Blue)
                             }
-                            
+
                             HStack {
                                 Text("Game Data")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                                 Spacer()
                                 Text("Battlefield 6")
+                                    .foregroundColor(Theme.textPrimary)
                             }
-                            
+
                             Divider()
-                            
+
                             Text("This app uses the free GameTools.Network API to fetch player statistics. Images and assets are sourced from official EA/DICE CDNs.")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
                     }
                     
@@ -335,7 +345,7 @@ struct SettingsView: View {
                             .padding()
                             .background(
                                 LinearGradient(
-                                    colors: [.blue, .purple],
+                                    colors: [Theme.bf6Blue, Theme.bf6Purple],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -348,7 +358,7 @@ struct SettingsView: View {
             }
         }
         .frame(width: 500, height: 800)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+        .background(Theme.backgroundPrimary)
         .onAppear {
             loadCurrentSettings()
         }
@@ -460,12 +470,12 @@ struct EAIdentityRow: View {
         HStack {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .frame(width: 80, alignment: .leading)
 
             Text(value)
                 .font(.caption)
-                .foregroundColor(.primary)
+                .foregroundColor(Theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -477,7 +487,7 @@ struct EAIdentityRow: View {
             } label: {
                 Image(systemName: "doc.on.doc")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
             .buttonStyle(.plain)
             .help("Copy to clipboard")
@@ -491,21 +501,22 @@ struct SettingsSection<Content: View>: View {
     let title: String
     let icon: String
     @ViewBuilder let content: Content
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(.orange)
-                
+                    .foregroundColor(Theme.bf6Orange)
+
                 Text(title)
                     .font(.headline)
                     .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
             }
-            
+
             content
                 .padding()
-                .background(Color.white.opacity(0.05))
+                .background(Theme.cardBackground)
                 .cornerRadius(12)
         }
     }

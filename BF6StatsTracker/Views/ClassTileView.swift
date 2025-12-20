@@ -51,19 +51,19 @@ struct ClassTileView: View {
                     Text(classStats.className)
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
+                        .foregroundColor(Theme.textPrimary)
+
                     Text(bf6Class.description)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                         .lineLimit(2)
                 }
-                
+
                 Spacer()
             }
-            
+
             Divider()
-                .background(Color.white.opacity(0.2))
+                .background(Theme.borderColor)
             
             // Stats Grid
             if isExpanded {
@@ -76,10 +76,10 @@ struct ClassTileView: View {
             HStack {
                 Label("\(classStats.timePlayed / 3600)h \((classStats.timePlayed % 3600) / 60)m", systemImage: "clock.fill")
                     .font(.caption)
-                    .foregroundColor(.secondary)
-                
+                    .foregroundColor(Theme.textSecondary)
+
                 Spacer()
-                
+
                 if isExpanded {
                     Button {
                         withAnimation(.spring()) {
@@ -90,7 +90,7 @@ struct ClassTileView: View {
                             .font(.caption)
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 }
             }
         }
@@ -98,7 +98,7 @@ struct ClassTileView: View {
     }
     
     // MARK: - Compact Stats
-    
+
     private var compactStats: some View {
         LazyVGrid(columns: [
             GridItem(.flexible()),
@@ -108,23 +108,23 @@ struct ClassTileView: View {
                 label: "Kills",
                 value: "\(classStats.kills)",
                 icon: "target",
-                color: .red
+                color: Theme.bf6Red
             )
-            
+
             CompactStatItem(
                 label: "Deaths",
                 value: "\(classStats.deaths)",
                 icon: "xmark.circle",
-                color: Color(nsColor: .systemGray)
+                color: Theme.textSecondary
             )
-            
+
             CompactStatItem(
                 label: "K/D",
                 value: String(format: "%.2f", classStats.kdRatio),
                 icon: "chart.line.uptrend.xyaxis",
-                color: classStats.kdRatio >= 1.0 ? .green : .orange
+                color: classStats.kdRatio >= 1.0 ? Theme.bf6Green : Theme.bf6Orange
             )
-            
+
             CompactStatItem(
                 label: "Score",
                 value: classStats.score.formatted(.number.notation(.compactName)),
@@ -135,7 +135,7 @@ struct ClassTileView: View {
     }
     
     // MARK: - Expanded Stats
-    
+
     private var expandedStats: some View {
         VStack(spacing: 16) {
             // Primary Stats
@@ -143,28 +143,28 @@ struct ClassTileView: View {
                 ExpandedStatCircle(
                     value: classStats.kills,
                     label: "Kills",
-                    color: .red
+                    color: Theme.bf6Red
                 )
-                
+
                 ExpandedStatCircle(
                     value: classStats.deaths,
                     label: "Deaths",
-                    color: Color(nsColor: .systemGray)
+                    color: Theme.textSecondary
                 )
-                
+
                 VStack(spacing: 4) {
                     Text(String(format: "%.2f", classStats.kdRatio))
                         .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(classStats.kdRatio >= 1.0 ? .green : .orange)
-                    
+                        .foregroundColor(classStats.kdRatio >= 1.0 ? Theme.bf6Green : Theme.bf6Orange)
+
                     Text("K/D Ratio")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
-            
+
             Divider()
-                .background(Color.white.opacity(0.2))
+                .background(Theme.borderColor)
             
             // Secondary Stats
             VStack(spacing: 10) {
@@ -196,28 +196,28 @@ struct ClassTileView: View {
     }
     
     // MARK: - Background
-    
+
     private var tileBackground: some View {
         ZStack {
-            // Base gradient
+            // Base gradient - uses adaptive background color
             LinearGradient(
                 colors: [
                     bf6Class.color.opacity(0.3),
-                    Color.black.opacity(0.8)
+                    Theme.backgroundPrimary.opacity(0.8)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            
+
             // Glass effect
-            Color.white.opacity(0.05)
-            
+            Theme.overlayColor
+
             // Noise texture overlay
             GeometryReader { geo in
                 Image(systemName: "circle.grid.3x3.fill")
                     .resizable()
                     .frame(width: geo.size.width * 2, height: geo.size.height * 2)
-                    .foregroundColor(.white.opacity(0.02))
+                    .foregroundColor(Theme.overlayColor)
                     .offset(x: -geo.size.width / 2, y: -geo.size.height / 2)
             }
         }
@@ -248,21 +248,21 @@ struct CompactStatItem: View {
     let value: String
     let icon: String
     let color: Color
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.caption)
                 .foregroundColor(color)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                
+                    .foregroundColor(Theme.textPrimary)
+
                 Text(label)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -275,22 +275,22 @@ struct ExpandedStatCircle: View {
     let value: Int
     let label: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 4) {
             ZStack {
                 Circle()
                     .stroke(color.opacity(0.3), lineWidth: 3)
                     .frame(width: 60, height: 60)
-                
+
                 Text("\(value)")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.textPrimary)
             }
-            
+
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
     }
 }
@@ -301,24 +301,24 @@ struct DetailStatRow: View {
     let label: String
     let value: String
     let icon: String
-    
+
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .font(.caption)
-                .foregroundColor(.orange)
+                .foregroundColor(Theme.bf6Orange)
                 .frame(width: 20)
-            
+
             Text(label)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
-            
+                .foregroundColor(Theme.textSecondary)
+
             Spacer()
-            
+
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .foregroundColor(Theme.textPrimary)
         }
     }
 }
@@ -327,8 +327,8 @@ struct DetailStatRow: View {
 
 #Preview {
     ZStack {
-        Color.black.ignoresSafeArea()
-        
+        Theme.backgroundPrimary.ignoresSafeArea()
+
         ClassTileView(
             classStats: ClassStats(
                 className: "Assault",

@@ -19,8 +19,8 @@ struct ContentView: View {
             // Background gradient
             LinearGradient(
                 colors: [
-                    Color(red: 0.05, green: 0.05, blue: 0.1),
-                    Color(red: 0.1, green: 0.1, blue: 0.15)
+                    Theme.backgroundPrimary,
+                    Theme.backgroundSecondary
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -109,7 +109,7 @@ struct ContentView: View {
 
                         Image(systemName: "person.fill")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(.black) // Intentionally black on orange gradient
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -117,7 +117,7 @@ struct ContentView: View {
                             Text(stats.userName)
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                .foregroundColor(Theme.textPrimary)
 
                             PlatformIconView(platform: viewModel.settings.platform, size: 16)
 
@@ -140,7 +140,7 @@ struct ContentView: View {
                                     Text("\(formatXP(xp.total)) XP")
                                         .font(.caption)
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(Theme.textPrimary)
                                 }
 
                                 Text("•")
@@ -205,7 +205,7 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.title3)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
                         .rotationEffect(.degrees(viewModel.isLoading ? 360 : 0))
                         .animation(viewModel.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: viewModel.isLoading)
                 }
@@ -218,17 +218,17 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: "magnifyingglass")
                         .font(.title3)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
                 }
                 .buttonStyle(.plain)
-                
+
                 // Settings button
                 Button {
                     showingSettings = true
                 } label: {
                     Image(systemName: "gearshape.fill")
                         .font(.title3)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
                 }
                 .buttonStyle(.plain)
                 
@@ -244,7 +244,7 @@ struct ContentView: View {
             }
         }
         .padding()
-        .background(Color.black.opacity(0.3))
+        .background(Theme.overlayColor)
     }
     
     // MARK: - Tab Bar View
@@ -264,19 +264,19 @@ struct ContentView: View {
                         Text(tab.rawValue)
                             .font(.caption)
                     }
-                    .foregroundColor(viewModel.selectedTab == tab ? .white : .secondary)
+                    .foregroundColor(viewModel.selectedTab == tab ? Theme.textPrimary : .secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(
                         viewModel.selectedTab == tab ?
-                        Color.blue.opacity(0.3) :
+                        Theme.bf6Blue.opacity(0.3) :
                         Color.clear
                     )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .background(Color.black.opacity(0.2))
+        .background(Theme.overlayColor)
     }
     
     // MARK: - Welcome View
@@ -298,7 +298,7 @@ struct ContentView: View {
                 Text("BF6 Stats Tracker")
                     .font(.largeTitle)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.textPrimary)
 
                 Text("Track your Battlefield 6 statistics in real-time")
                     .font(.title3)
@@ -315,7 +315,7 @@ struct ContentView: View {
                 FeatureRow(icon: "clock.arrow.circlepath", text: "Auto-refresh every 5 minutes")
             }
             .padding(30)
-            .background(Color.white.opacity(0.05))
+            .background(Theme.overlayColor)
             .cornerRadius(16)
 
             // Action buttons
@@ -330,13 +330,13 @@ struct ContentView: View {
                     }
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.selectedText)
                     .padding(.horizontal, 40)
                     .padding(.vertical, 16)
                     .frame(minWidth: 280)
                     .background(
                         LinearGradient(
-                            colors: [.orange, .red],
+                            colors: [Theme.bf6Orange, Theme.bf6Red],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -359,13 +359,13 @@ struct ContentView: View {
                     }
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.selectedText)
                     .padding(.horizontal, 40)
                     .padding(.vertical, 16)
                     .frame(minWidth: 280)
                     .background(
                         LinearGradient(
-                            colors: [.blue, .purple],
+                            colors: [Theme.bf6Blue, Theme.bf6Purple],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -430,17 +430,17 @@ struct QuickStatView: View {
 struct FeatureRow: View {
     let icon: String
     let text: String
-    
+
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.orange)
+                .foregroundColor(Theme.bf6Orange)
                 .frame(width: 30)
-            
+
             Text(text)
                 .font(.body)
-                .foregroundColor(.white)
+                .foregroundColor(Theme.textPrimary)
         }
     }
 }
