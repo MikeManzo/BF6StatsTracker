@@ -178,9 +178,9 @@ struct ContentView: View {
             // Quick Stats
             if let stats = viewModel.playerStats {
                 HStack(spacing: 20) {
-                    QuickStatView(title: "K/D", value: String(format: "%.2f", stats.kdRatio), color: .green)
-                    QuickStatView(title: "Kills", value: stats.kills.formatted(), color: .red)
-                    QuickStatView(title: "W/L", value: String(format: "%.1f%%", stats.wlRatio), color: .blue)
+                    QuickStatView(title: "K/D", value: String(format: "%.2f", stats.kdRatio), color: .green, trend: viewModel.kdTrend)
+                    QuickStatView(title: "Kills", value: stats.kills.formatted(), color: .red, trend: viewModel.killsTrend)
+                    QuickStatView(title: "W/L", value: String(format: "%.1f%%", stats.wlRatio), color: .blue, trend: viewModel.wlTrend)
                 }
             }
             
@@ -407,13 +407,22 @@ struct QuickStatView: View {
     let title: String
     let value: String
     let color: Color
-    
+    var trend: TrendDirection? = nil
+
     var body: some View {
         VStack(spacing: 2) {
-            Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundColor(color)
-            
+            HStack(spacing: 4) {
+                Text(value)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(color)
+
+                if let trend = trend {
+                    Image(systemName: trend.icon)
+                        .font(.caption)
+                        .foregroundColor(trend.color)
+                }
+            }
+
             Text(title)
                 .font(.caption2)
                 .foregroundColor(.secondary)
