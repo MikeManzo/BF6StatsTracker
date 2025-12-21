@@ -370,6 +370,20 @@ class StatsViewModel: ObservableObject {
         return !classStats.isEmpty && !weaponStats.isEmpty
     }
 
+    // MARK: - Trend Indicators
+
+    var killsTrend: TrendDirection {
+        HistoryManager.shared.calculateKillsTrend(days: 7)
+    }
+
+    var kdTrend: TrendDirection {
+        HistoryManager.shared.calculateKDTrend(days: 7)
+    }
+
+    var wlTrend: TrendDirection {
+        HistoryManager.shared.calculateWLTrend(days: 7)
+    }
+
     var dataCompletenessPercentage: Double {
         guard playerStats != nil else { return 0.0 }
 

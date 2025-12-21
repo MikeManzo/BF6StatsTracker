@@ -85,7 +85,8 @@ struct OverviewStatsView: View {
                         value: stats.kills.formatted(),
                         icon: "target",
                         color: Theme.bf6Red,
-                        subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min"
+                        subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
+                        trend: viewModel.killsTrend
                     )
 
                     StatCard(
@@ -93,7 +94,8 @@ struct OverviewStatsView: View {
                         value: stats.deaths.formatted(),
                         icon: "xmark.circle.fill",
                         color: Theme.textSecondary,
-                        subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))"
+                        subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))",
+                        trend: viewModel.kdTrend
                     )
 
                     StatCard(
@@ -109,7 +111,8 @@ struct OverviewStatsView: View {
                         value: stats.wins.formatted(),
                         icon: "trophy.fill",
                         color: Theme.bf6Green,
-                        subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))"
+                        subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
+                        trend: viewModel.wlTrend
                     )
                 }
             }
@@ -327,6 +330,20 @@ struct OverviewStatsView: View {
     }
 }
 
+// MARK: - Trend Arrow
+
+struct TrendArrow: View {
+    let trend: TrendDirection
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: trend.icon)
+                .font(.caption)
+                .foregroundColor(trend.color)
+        }
+    }
+}
+
 // MARK: - Stat Card
 
 struct StatCard: View {
@@ -335,6 +352,7 @@ struct StatCard: View {
     let icon: String
     let color: Color
     let subtitle: String
+    var trend: TrendDirection? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -344,6 +362,10 @@ struct StatCard: View {
                     .foregroundColor(color)
 
                 Spacer()
+
+                if let trend = trend {
+                    TrendArrow(trend: trend)
+                }
             }
 
             Text(value)

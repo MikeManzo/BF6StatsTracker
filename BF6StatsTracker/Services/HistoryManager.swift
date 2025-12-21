@@ -145,6 +145,25 @@ class HistoryManager: ObservableObject {
         return snapshots.map { ($0.timestamp, $0.killsPerMinute) }
     }
 
+    /// Calculate kills trend
+    func getKillsTrend(days: Int = 7) -> [(Date, Int)] {
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let snapshots = getSnapshots(from: startDate, to: Date())
+
+        return snapshots.map { ($0.timestamp, $0.kills) }
+    }
+
+    /// Calculate W/L ratio trend
+    func getWLTrend(days: Int = 7) -> [(Date, Double)] {
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let snapshots = getSnapshots(from: startDate, to: Date())
+
+        return snapshots.map { snapshot -> (Date, Double) in
+            let wlRatio = snapshot.losses > 0 ? Double(snapshot.wins) / Double(snapshot.losses) : Double(snapshot.wins)
+            return (snapshot.timestamp, wlRatio)
+        }
+    }
+
     /// Get performance summary for period
     func getPerformanceSummary(days: Int = 7) -> PerformanceSummary? {
         let snapshots = getKDTrend(days: days)
@@ -183,6 +202,33 @@ class HistoryManager: ObservableObject {
         } else {
             return .stable
         }
+    }
+
+    /// Calculate trend for kills (using Int values)
+    func calculateKillsTrend(days: Int = 7) -> TrendDirection {
+        let killsData = getKillsTrend(days: days)
+        guard !killsData.isEmpty else { return .stable }
+
+        let values = killsData.map { Double($0.1) }
+        return calculateTrend(values: values)
+    }
+
+    /// Calculate trend for K/D ratio
+    func calculateKDTrend(days: Int = 7) -> TrendDirection {
+        let kdData = getKDTrend(days: days)
+        guard !kdData.isEmpty else { return .stable }
+
+        let values = kdData.map { $0.1 }
+        return calculateTrend(values: values)
+    }
+
+    /// Calculate trend for W/L ratio
+    func calculateWLTrend(days: Int = 7) -> TrendDirection {
+        let wlData = getWLTrend(days: days)
+        guard !wlData.isEmpty else { return .stable }
+
+        let values = wlData.map { $0.1 }
+        return calculateTrend(values: values)
     }
 
     func loadRecentData() {  // Made public for refresh after clearing
