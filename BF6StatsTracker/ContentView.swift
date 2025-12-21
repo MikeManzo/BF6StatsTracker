@@ -260,7 +260,7 @@ struct ContentView: View {
                     VStack(spacing: 4) {
                         Image(systemName: tab.icon)
                             .font(.title3)
-                        
+
                         Text(tab.rawValue)
                             .font(.caption)
                     }
@@ -272,6 +272,7 @@ struct ContentView: View {
                         Theme.bf6Blue.opacity(0.3) :
                         Color.clear
                     )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
