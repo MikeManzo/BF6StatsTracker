@@ -17,11 +17,8 @@ struct MapStatsView: View {
     @State private var viewMode: ViewMode = .grid
 
     var filteredMaps: [MapPerformance] {
-        // Note: GameTools.Network API doesn't provide map stats for BF6
-        // Generate sample data based on overall stats
-        guard let stats = viewModel.playerStats else { return [] }
-
-        let maps = stats.maps ?? MapPerformance.generateSampleData(from: stats)
+        guard let stats = viewModel.playerStats,
+              let maps = stats.maps else { return [] }
 
         let filtered = searchText.isEmpty
             ? maps
@@ -30,12 +27,10 @@ struct MapStatsView: View {
         switch sortBy {
         case .matches:
             return filtered.sorted { $0.matchesPlayed > $1.matchesPlayed }
-        case .kd:
-            return filtered.sorted { $0.kdRatio > $1.kdRatio }
         case .winRate:
             return filtered.sorted { $0.winRate > $1.winRate }
-        case .kills:
-            return filtered.sorted { $0.kills > $1.kills }
+        case .timePlayed:
+            return filtered.sorted { $0.secondsPlayed > $1.secondsPlayed }
         case .name:
             return filtered.sorted { $0.mapName < $1.mapName }
         }
@@ -45,11 +40,6 @@ struct MapStatsView: View {
         VStack(spacing: 0) {
             // Header with stats summary
             headerWithSummary
-
-            // Info banner about generated data
-            if !filteredMaps.isEmpty {
-                infoBanner
-            }
 
             if filteredMaps.isEmpty {
                 emptyState
@@ -75,35 +65,6 @@ struct MapStatsView: View {
             }
         }
         .background(Theme.backgroundPrimary)
-    }
-
-    // MARK: - Info Banner
-
-    private var infoBanner: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "info.circle.fill")
-                .foregroundColor(.blue)
-                .font(.title3)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Estimated Map Statistics")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Theme.textPrimary)
-
-                Text("BF6 API doesn't provide map-specific data. Stats shown are estimated based on your overall performance.")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-            }
-
-            Spacer()
-        }
-        .padding()
-        .background(Color.blue.opacity(0.15))
-        .cornerRadius(12)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
     }
 
     // MARK: - Header
@@ -155,24 +116,24 @@ struct MapStatsView: View {
             if !filteredMaps.isEmpty {
                 HStack(spacing: 16) {
                     QuickMapStat(
-                        title: "Best K/D",
-                        value: String(format: "%.2f", filteredMaps.max(by: { $0.kdRatio < $1.kdRatio })?.kdRatio ?? 0),
-                        subtitle: filteredMaps.max(by: { $0.kdRatio < $1.kdRatio })?.mapName ?? "",
+                        title: "Best Win Rate",
+                        value: String(format: "%.0f%%", filteredMaps.max(by: { $0.winRate < $1.winRate })?.winRate ?? 0),
+                        subtitle: filteredMaps.max(by: { $0.winRate < $1.winRate })?.mapName ?? "",
                         color: .green
                     )
 
                     QuickMapStat(
-                        title: "Best Win Rate",
-                        value: String(format: "%.0f%%", filteredMaps.max(by: { $0.winRate < $1.winRate })?.winRate ?? 0),
-                        subtitle: filteredMaps.max(by: { $0.winRate < $1.winRate })?.mapName ?? "",
-                        color: .purple
+                        title: "Most Played",
+                        value: "\(filteredMaps.max(by: { $0.matchesPlayed < $1.matchesPlayed })?.matchesPlayed ?? 0) matches",
+                        subtitle: filteredMaps.max(by: { $0.matchesPlayed < $1.matchesPlayed })?.mapName ?? "",
+                        color: .orange
                     )
 
                     QuickMapStat(
-                        title: "Most Played",
-                        value: "\(filteredMaps.max(by: { $0.matchesPlayed < $1.matchesPlayed })?.matchesPlayed ?? 0)",
-                        subtitle: filteredMaps.max(by: { $0.matchesPlayed < $1.matchesPlayed })?.mapName ?? "",
-                        color: .orange
+                        title: "Most Time",
+                        value: filteredMaps.max(by: { $0.secondsPlayed < $1.secondsPlayed })?.timePlayed ?? "0m",
+                        subtitle: filteredMaps.max(by: { $0.secondsPlayed < $1.secondsPlayed })?.mapName ?? "",
+                        color: .purple
                     )
 
                     // Comparison toggle
@@ -221,18 +182,18 @@ struct MapStatsView: View {
 
     private var mapComparisonChart: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("K/D Comparison")
+            Text("Win Rate Comparison")
                 .font(.headline)
                 .padding(.horizontal)
 
             Chart(filteredMaps.prefix(8)) { map in
                 BarMark(
                     x: .value("Map", map.mapName),
-                    y: .value("K/D", map.kdRatio)
+                    y: .value("Win %", map.winRate)
                 )
-                .foregroundStyle(by: .value("Performance", performanceLevel(map.kdRatio)))
+                .foregroundStyle(by: .value("Performance", winPerformanceLevel(map.winRate)))
                 .annotation(position: .top) {
-                    Text(String(format: "%.1f", map.kdRatio))
+                    Text(String(format: "%.0f%%", map.winRate))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -271,10 +232,10 @@ struct MapStatsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func performanceLevel(_ kd: Double) -> String {
-        if kd >= 2.0 { return "Excellent" }
-        if kd >= 1.5 { return "Good" }
-        if kd >= 1.0 { return "Average" }
+    private func winPerformanceLevel(_ winRate: Double) -> String {
+        if winRate >= 60 { return "Excellent" }
+        if winRate >= 50 { return "Good" }
+        if winRate >= 40 { return "Average" }
         return "Below Average"
     }
 }
@@ -286,8 +247,37 @@ struct MapPerformanceCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header with map name and match count
-            HStack {
+            // Header with map image and name
+            HStack(spacing: 12) {
+                // Map thumbnail
+                AsyncImage(url: URL(string: map.image)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 80, height: 50)
+                            .cornerRadius(8)
+                    case .failure:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Theme.backgroundSecondary)
+                            .frame(width: 80, height: 50)
+                            .overlay(
+                                Image(systemName: "map")
+                                    .foregroundColor(.secondary)
+                            )
+                    case .empty:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Theme.backgroundSecondary)
+                            .frame(width: 80, height: 50)
+                            .overlay(ProgressView())
+                    @unknown default:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Theme.backgroundSecondary)
+                            .frame(width: 80, height: 50)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(map.mapName)
                         .font(.headline)
@@ -299,32 +289,32 @@ struct MapPerformanceCard: View {
                             .foregroundColor(.secondary)
 
                         if map.matchesPlayed > 0 {
-                            PerformanceBadge(kd: map.kdRatio)
+                            WinRateBadge(winRate: map.winRate)
                         }
                     }
                 }
 
                 Spacer()
 
-                // K/D Circle
+                // Win Rate Circle
                 ZStack {
                     Circle()
-                        .stroke(kdColor(map.kdRatio).opacity(0.3), lineWidth: 4)
+                        .stroke(winColor(map.winRate).opacity(0.3), lineWidth: 4)
                         .frame(width: 70, height: 70)
 
                     Circle()
-                        .trim(from: 0, to: min(map.kdRatio / 4.0, 1.0))
-                        .stroke(kdColor(map.kdRatio), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .trim(from: 0, to: min(map.winRate / 100.0, 1.0))
+                        .stroke(winColor(map.winRate), style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 70, height: 70)
                         .rotationEffect(.degrees(-90))
 
                     VStack(spacing: 2) {
-                        Text(String(format: "%.2f", map.kdRatio))
+                        Text(String(format: "%.0f%%", map.winRate))
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(kdColor(map.kdRatio))
+                            .foregroundColor(winColor(map.winRate))
 
-                        Text("K/D")
+                        Text("Win")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
@@ -341,25 +331,25 @@ struct MapPerformanceCard: View {
                 GridItem(.flexible())
             ], spacing: 16) {
                 DetailedStatItem(
-                    label: "Kills",
-                    value: "\(map.kills)",
-                    icon: "target",
+                    label: "Wins",
+                    value: "\(map.wins)",
+                    icon: "trophy.fill",
+                    color: .green,
+                    comparison: nil
+                )
+                DetailedStatItem(
+                    label: "Losses",
+                    value: "\(map.losses)",
+                    icon: "xmark.circle",
                     color: .red,
                     comparison: nil
                 )
                 DetailedStatItem(
-                    label: "Deaths",
-                    value: "\(map.deaths)",
-                    icon: "xmark.circle",
-                    color: Theme.textSecondary,
+                    label: "Time Played",
+                    value: map.timePlayed,
+                    icon: "clock.fill",
+                    color: .purple,
                     comparison: nil
-                )
-                DetailedStatItem(
-                    label: "Win Rate",
-                    value: String(format: "%.1f%%", map.winRate),
-                    icon: "trophy",
-                    color: .green,
-                    comparison: map.winRate >= 50 ? "above" : "below"
                 )
             }
 
@@ -397,14 +387,14 @@ struct MapPerformanceCard: View {
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(kdColor(map.kdRatio).opacity(0.3), lineWidth: 2)
+                .stroke(winColor(map.winRate).opacity(0.3), lineWidth: 2)
         )
     }
 
-    private func kdColor(_ kd: Double) -> Color {
-        if kd >= 2.0 { return .green }
-        if kd >= 1.5 { return .cyan }
-        if kd >= 1.0 { return .yellow }
+    private func winColor(_ winRate: Double) -> Color {
+        if winRate >= 60 { return .green }
+        if winRate >= 50 { return .cyan }
+        if winRate >= 40 { return .yellow }
         return .red
     }
 }
@@ -416,21 +406,30 @@ struct CompactMapRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // K/D Badge
-            VStack(spacing: 2) {
-                Text(String(format: "%.2f", map.kdRatio))
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(kdColor(map.kdRatio))
-
-                Text("K/D")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+            // Map thumbnail
+            AsyncImage(url: URL(string: map.image)) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 60, height: 40)
+                        .cornerRadius(6)
+                case .failure, .empty:
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Theme.backgroundSecondary)
+                        .frame(width: 60, height: 40)
+                        .overlay(
+                            Image(systemName: "map")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        )
+                @unknown default:
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Theme.backgroundSecondary)
+                        .frame(width: 60, height: 40)
+                }
             }
-            .frame(width: 60)
-            .padding(.vertical, 8)
-            .background(kdColor(map.kdRatio).opacity(0.1))
-            .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(map.mapName)
@@ -438,9 +437,9 @@ struct CompactMapRow: View {
                     .fontWeight(.semibold)
 
                 HStack(spacing: 12) {
-                    Label("\(map.kills)K", systemImage: "target")
-                    Label("\(map.deaths)D", systemImage: "xmark.circle")
-                    Label("\(map.matchesPlayed)M", systemImage: "flag.checkered")
+                    Label("\(map.wins)W", systemImage: "trophy.fill")
+                    Label("\(map.losses)L", systemImage: "xmark.circle")
+                    Label(map.timePlayed, systemImage: "clock.fill")
                 }
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -452,7 +451,7 @@ struct CompactMapRow: View {
             VStack(spacing: 2) {
                 Text(String(format: "%.0f%%", map.winRate))
                     .font(.headline)
-                    .foregroundColor(.green)
+                    .foregroundColor(winColor(map.winRate))
 
                 Text("Win Rate")
                     .font(.caption2)
@@ -464,10 +463,10 @@ struct CompactMapRow: View {
         .cornerRadius(12)
     }
 
-    private func kdColor(_ kd: Double) -> Color {
-        if kd >= 2.0 { return .green }
-        if kd >= 1.5 { return .cyan }
-        if kd >= 1.0 { return .yellow }
+    private func winColor(_ winRate: Double) -> Color {
+        if winRate >= 60 { return .green }
+        if winRate >= 50 { return .cyan }
+        if winRate >= 40 { return .yellow }
         return .red
     }
 }
@@ -535,8 +534,8 @@ struct DetailedStatItem: View {
     }
 }
 
-struct PerformanceBadge: View {
-    let kd: Double
+struct WinRateBadge: View {
+    let winRate: Double
 
     var body: some View {
         Text(performanceText)
@@ -550,16 +549,16 @@ struct PerformanceBadge: View {
     }
 
     private var performanceText: String {
-        if kd >= 2.0 { return "Elite" }
-        if kd >= 1.5 { return "Great" }
-        if kd >= 1.0 { return "Good" }
-        return "Practice"
+        if winRate >= 60 { return "Dominant" }
+        if winRate >= 50 { return "Winning" }
+        if winRate >= 40 { return "Competitive" }
+        return "Improving"
     }
 
     private var performanceColor: Color {
-        if kd >= 2.0 { return .green }
-        if kd >= 1.5 { return .cyan }
-        if kd >= 1.0 { return .yellow }
+        if winRate >= 60 { return .green }
+        if winRate >= 50 { return .cyan }
+        if winRate >= 40 { return .yellow }
         return .red
     }
 }
@@ -568,9 +567,8 @@ struct PerformanceBadge: View {
 
 enum MapSortOption: String, CaseIterable, Identifiable {
     case matches = "Matches"
-    case kd = "K/D Ratio"
     case winRate = "Win Rate"
-    case kills = "Kills"
+    case timePlayed = "Time Played"
     case name = "Name"
 
     var id: String { rawValue }

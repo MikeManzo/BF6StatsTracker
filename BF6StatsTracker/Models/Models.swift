@@ -988,94 +988,71 @@ enum VehicleCategory: String, CaseIterable, Identifiable {
 
 // MARK: - Map Performance Stats
 struct MapPerformance: Codable, Identifiable {
-    var id: String { mapName }
+    var id: String { mapId }
 
+    let mapId: String
     let mapName: String
-    let kills: Int
-    let deaths: Int
+    let image: String
     let wins: Int
     let losses: Int
-    let matchesPlayed: Int
+    let matches: Int
+    let winPercentString: String
+    let secondsPlayed: Int
 
-    var kdRatio: Double {
-        deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
+    // Computed properties
+    var winRate: Double {
+        parsePercentage(winPercentString)
     }
 
-    var winRate: Double {
-        matchesPlayed > 0 ? Double(wins) / Double(matchesPlayed) * 100.0 : 0.0
+    var matchesPlayed: Int { matches }
+
+    var timePlayed: String {
+        let hours = secondsPlayed / 3600
+        let minutes = (secondsPlayed % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+
+    private func parsePercentage(_ percent: String) -> Double {
+        let cleaned = percent.replacingOccurrences(of: "%", with: "").trimmingCharacters(in: .whitespaces)
+        return Double(cleaned) ?? 0.0
     }
 
     enum CodingKeys: String, CodingKey {
+        case mapId = "id"
         case mapName
-        case kills
-        case deaths
+        case image
         case wins
         case losses
-        case matchesPlayed
+        case matches
+        case winPercentString = "winPercent"
+        case secondsPlayed
     }
 
-    init(mapName: String, kills: Int, deaths: Int, wins: Int, losses: Int, matchesPlayed: Int) {
+    init(mapId: String, mapName: String, image: String, wins: Int, losses: Int, matches: Int, winPercentString: String, secondsPlayed: Int) {
+        self.mapId = mapId
         self.mapName = mapName
-        self.kills = kills
-        self.deaths = deaths
+        self.image = image
         self.wins = wins
         self.losses = losses
-        self.matchesPlayed = matchesPlayed
+        self.matches = matches
+        self.winPercentString = winPercentString
+        self.secondsPlayed = secondsPlayed
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        mapId = try container.decodeIfPresent(String.self, forKey: .mapId) ?? UUID().uuidString
         mapName = try container.decode(String.self, forKey: .mapName)
-        kills = try container.decodeIfPresent(Int.self, forKey: .kills) ?? 0
-        deaths = try container.decodeIfPresent(Int.self, forKey: .deaths) ?? 0
+        image = try container.decodeIfPresent(String.self, forKey: .image) ?? ""
         wins = try container.decodeIfPresent(Int.self, forKey: .wins) ?? 0
         losses = try container.decodeIfPresent(Int.self, forKey: .losses) ?? 0
-        matchesPlayed = try container.decodeIfPresent(Int.self, forKey: .matchesPlayed) ?? 0
-    }
-
-    // MARK: - Sample Data Generator
-    // Note: The GameTools.Network API doesn't provide map statistics for BF6
-    // This generates sample data based on overall player stats for demonstration
-    static func generateSampleData(from stats: PlayerStats) -> [MapPerformance] {
-        let bf6Maps = [
-            "Stranded", "Renewal", "Hourglass", "Kaleidoscope",
-            "Manifest", "Breakaway", "Discarded", "Orbital",
-            "Exposure", "Ridge", "Spearhead"
-        ]
-
-        // Distribute stats across maps with some randomization
-        let mapsToShow = min(bf6Maps.count, 8) // Show 8 maps
-        var mapStats: [MapPerformance] = []
-
-        for i in 0..<mapsToShow {
-            let mapName = bf6Maps[i]
-
-            // Distribute total stats across maps with variation
-            let variation = Double.random(in: 0.7...1.3)
-            let baseMatches = stats.matchesPlayed / mapsToShow
-            let matches = max(1, Int(Double(baseMatches) * variation))
-
-            let avgKillsPerMatch = Double(stats.kills) / Double(max(stats.matchesPlayed, 1))
-            let avgDeathsPerMatch = Double(stats.deaths) / Double(max(stats.matchesPlayed, 1))
-
-            let kills = Int(avgKillsPerMatch * Double(matches) * Double.random(in: 0.8...1.2))
-            let deaths = Int(avgDeathsPerMatch * Double(matches) * Double.random(in: 0.8...1.2))
-
-            let winRate = stats.wlRatio / 100.0
-            let wins = Int(Double(matches) * winRate * Double.random(in: 0.7...1.3))
-            let losses = matches - wins
-
-            mapStats.append(MapPerformance(
-                mapName: mapName,
-                kills: max(0, kills),
-                deaths: max(1, deaths),
-                wins: max(0, wins),
-                losses: max(0, losses),
-                matchesPlayed: matches
-            ))
-        }
-
-        return mapStats
+        matches = try container.decodeIfPresent(Int.self, forKey: .matches) ?? 0
+        winPercentString = try container.decodeIfPresent(String.self, forKey: .winPercentString) ?? "0%"
+        secondsPlayed = try container.decodeIfPresent(Int.self, forKey: .secondsPlayed) ?? 0
     }
 }
 

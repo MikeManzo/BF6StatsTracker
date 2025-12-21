@@ -12,7 +12,9 @@
       "Bash(do echo:*)",
       "Bash(done)",
       "Bash(ls:*)",
-      "Bash({} ;)"
+      "Bash({} ;)",
+      "Bash(for endpoint in maps gamemodes history matches)",
+      "Bash(swift build:*)"
     ],
     "deny": [],
     "ask": []
