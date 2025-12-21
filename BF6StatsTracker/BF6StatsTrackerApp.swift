@@ -83,7 +83,8 @@ struct BF6StatsTrackerApp: App {
             MenuBarView()
                 .environmentObject(viewModel)
         } label: {
-            Image(systemName: "gamecontroller.fill")
+            Image("MenuBarIcon")
+                .renderingMode(.template)
         }
         .menuBarExtraStyle(.window)
     }
