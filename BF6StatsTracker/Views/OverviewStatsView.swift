@@ -9,14 +9,22 @@ import SwiftUI
 
 struct OverviewStatsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
+    @EnvironmentObject var historyManager: HistoryManager
 
     var body: some View {
         VStack(spacing: 20) {
-            // Last Match Stats (if available)
-            if let lastMatch = viewModel.playerStats?.lastMatch, lastMatch.hasData {
+            // Daily Performance (Today's stats)
+            if let todayPerformance = historyManager.todayPerformance {
+                DailyPerformanceView(
+                    dailyPerformance: todayPerformance,
+                    yesterdayPerformance: historyManager.yesterdayPerformance,
+                    showComparison: true
+                )
+            } else if let lastMatch = viewModel.playerStats?.lastMatch, lastMatch.hasData {
+                // Fallback to last match if no daily performance yet
                 LastMatchStatsView(lastMatch: lastMatch, lastUpdated: viewModel.lastUpdated)
             } else {
-                Text("Last match data unavailable")
+                Text("No performance data available yet")
                     .font(.footnote)
                     .foregroundColor(Theme.textSecondary)
             }

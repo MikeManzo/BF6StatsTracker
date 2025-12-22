@@ -13,6 +13,7 @@ import SwiftData
 struct BF6StatsTrackerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var viewModel = StatsViewModel()
+    @StateObject private var historyManager = HistoryManager.shared
     @State private var isWindowVisible = true
 
     // SwiftData model container
@@ -24,7 +25,8 @@ struct BF6StatsTrackerApp: App {
             let schema = Schema([
                 StatsSnapshot.self,
                 PlaySession.self,
-                MapStats.self
+                MapStats.self,
+                DailyPerformance.self
             ])
 
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -41,6 +43,7 @@ struct BF6StatsTrackerApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(viewModel)
+                .environmentObject(historyManager)
                 .frame(minWidth: 1200, minHeight: 800)
                 .onAppear {
                     isWindowVisible = true

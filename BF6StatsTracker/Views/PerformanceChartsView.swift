@@ -24,6 +24,11 @@ struct PerformanceChartsView: View {
                 // Period selector
                 periodSelector
 
+                // Daily Performance Charts
+                dailyKDChart
+
+                dailyKillsChart
+
                 // K/D Trend Chart
                 kdTrendChart
 
@@ -76,6 +81,138 @@ struct PerformanceChartsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Daily Performance Charts
+
+    private var dailyKDChart: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundColor(Theme.bf6Green)
+
+                Text("Daily K/D Ratio")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+
+                Spacer()
+            }
+
+            let dailyData = historyManager.getDailyKDTrend(days: selectedPeriod.days)
+
+            if dailyData.isEmpty {
+                Text("No daily performance data available yet")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                Chart {
+                    ForEach(Array(dailyData.enumerated()), id: \.offset) { _, data in
+                        LineMark(
+                            x: .value("Date", data.0),
+                            y: .value("K/D", data.1)
+                        )
+                        .foregroundStyle(Theme.bf6Green.gradient)
+                        .lineStyle(StrokeStyle(lineWidth: 3))
+
+                        AreaMark(
+                            x: .value("Date", data.0),
+                            y: .value("K/D", data.1)
+                        )
+                        .foregroundStyle(Theme.bf6Green.opacity(0.2).gradient)
+                    }
+
+                    // Average line
+                    let avgKD = historyManager.getAverageDailyKD(days: selectedPeriod.days)
+                    if avgKD > 0 {
+                        RuleMark(y: .value("Average", avgKD))
+                            .foregroundStyle(Theme.bf6Orange)
+                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                            .annotation(position: .top, alignment: .trailing) {
+                                Text("Avg: \(String(format: "%.2f", avgKD))")
+                                    .font(.caption2)
+                                    .foregroundColor(Theme.bf6Orange)
+                                    .padding(4)
+                                    .background(Theme.cardBackground)
+                                    .cornerRadius(4)
+                            }
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+                .chartXAxis {
+                    AxisMarks(values: .automatic) { value in
+                        if let date = value.as(Date.self) {
+                            AxisValueLabel {
+                                Text(formatDateForChart(date))
+                                    .font(.caption2)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                        }
+                    }
+                }
+                .frame(height: 200)
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+
+    private var dailyKillsChart: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "target")
+                    .foregroundColor(Theme.bf6Red)
+
+                Text("Daily Kills")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+
+                Spacer()
+            }
+
+            let dailyData = historyManager.getDailyKillsTrend(days: selectedPeriod.days)
+
+            if dailyData.isEmpty {
+                Text("No daily performance data available yet")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                Chart {
+                    ForEach(Array(dailyData.enumerated()), id: \.offset) { _, data in
+                        BarMark(
+                            x: .value("Date", data.0),
+                            y: .value("Kills", data.1)
+                        )
+                        .foregroundStyle(Theme.bf6Red.gradient)
+                        .cornerRadius(4)
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+                .chartXAxis {
+                    AxisMarks(values: .automatic) { value in
+                        if let date = value.as(Date.self) {
+                            AxisValueLabel {
+                                Text(formatDateForChart(date))
+                                    .font(.caption2)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                        }
+                    }
+                }
+                .frame(height: 200)
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
     }
 
     // MARK: - K/D Trend Chart
@@ -223,6 +360,18 @@ struct PerformanceChartsView: View {
         if kd >= 1.5 { return "Good" }
         if kd >= 1.0 { return "Average" }
         return "Below Average"
+    }
+
+    private func formatDateForChart(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        if selectedPeriod == .day {
+            formatter.timeStyle = .short
+        } else if selectedPeriod == .week {
+            formatter.dateFormat = "E"  // Mon, Tue, etc.
+        } else {
+            formatter.dateFormat = "M/d"  // 12/21
+        }
+        return formatter.string(from: date)
     }
 }
 
