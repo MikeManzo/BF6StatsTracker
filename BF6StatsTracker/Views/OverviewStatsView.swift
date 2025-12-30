@@ -10,16 +10,27 @@ import SwiftUI
 struct OverviewStatsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
     @EnvironmentObject var historyManager: HistoryManager
+    @State private var showEnhancedView = true
 
     var body: some View {
         VStack(spacing: 20) {
+            // View toggle
+            if historyManager.todayPerformance != nil {
+                viewToggle
+            }
+
             // Daily Performance (Today's stats)
             if let todayPerformance = historyManager.todayPerformance {
-                DailyPerformanceView(
-                    dailyPerformance: todayPerformance,
-                    yesterdayPerformance: historyManager.yesterdayPerformance,
-                    showComparison: true
-                )
+                if showEnhancedView {
+                    TodayVsYesterdayView()
+                        .environmentObject(historyManager)
+                } else {
+                    DailyPerformanceView(
+                        dailyPerformance: todayPerformance,
+                        yesterdayPerformance: historyManager.yesterdayPerformance,
+                        showComparison: true
+                    )
+                }
             } else if let lastMatch = viewModel.playerStats?.lastMatch, lastMatch.hasData {
                 // Fallback to last match if no daily performance yet
                 LastMatchStatsView(lastMatch: lastMatch, lastUpdated: viewModel.lastUpdated)
@@ -335,6 +346,22 @@ struct OverviewStatsView: View {
             .background(Theme.cardBackground)
             .cornerRadius(16)
         }
+    }
+
+    // MARK: - View Toggle
+
+    private var viewToggle: some View {
+        HStack {
+            Spacer()
+
+            Picker("View Style", selection: $showEnhancedView) {
+                Text("Enhanced").tag(true)
+                Text("Classic").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 200)
+        }
+        .padding(.horizontal)
     }
 }
 
