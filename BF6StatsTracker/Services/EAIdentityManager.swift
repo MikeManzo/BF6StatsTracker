@@ -132,6 +132,22 @@ actor EAIdentityManager {
         return identity.eaId
     }
 
+    /// Load identity from a stored account (no token required)
+    /// This allows quick account switching without re-authentication
+    /// - Parameter identity: The stored player identity
+    /// - Returns: The loaded identity
+    func loadFromStoredAccount(_ identity: EAPlayerIdentity) -> EAPlayerIdentity {
+        // Cache the identity without a token
+        self.cachedIdentity = identity
+        self.currentToken = nil
+        saveIdentity(identity)
+        clearToken() // Don't persist old tokens when using stored accounts
+
+        print("✅ Loaded stored account - EA ID: \(identity.eaId), Nucleus ID: \(identity.nucleusId)")
+
+        return identity
+    }
+
     /// Log out and clear all stored credentials
     func logout() {
         cachedIdentity = nil

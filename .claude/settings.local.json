@@ -16,7 +16,10 @@
       "Bash(for endpoint in maps gamemodes history matches)",
       "Bash(swift build:*)",
       "Bash(pip3 install:*)",
-      "Bash(killall:*)"
+      "Bash(killall:*)",
+      "Bash(defaults read:*)",
+      "Bash(echo \"defaults read ~/Library/Preferences/*.BF6StatsTracker*.plist 2>/dev/null | grep -A 20 ''StoredEAAccounts'' || echo ''No accounts saved yet''\")",
+      "Bash(defaults domains:*)"
     ],
     "deny": [],
     "ask": []

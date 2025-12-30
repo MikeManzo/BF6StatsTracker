@@ -10,9 +10,11 @@ import EAIdentityKit
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: StatsViewModel
+    @StateObject private var accountStore = EAAccountStore.shared
     @State private var showingSearch = false
     @State private var showingSettings = false
     @State private var showingEALogin = false
+    @State private var showingAccountSelection = false
 
     var body: some View {
         ZStack {
@@ -26,7 +28,7 @@ struct ContentView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-            
+
             if viewModel.hasPlayerData {
                 mainContentView
             } else {
@@ -43,6 +45,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingEALogin) {
             EALoginView()
+                .environmentObject(viewModel)
+        }
+        .sheet(isPresented: $showingAccountSelection) {
+            AccountSelectionView()
                 .environmentObject(viewModel)
         }
     }
@@ -231,7 +237,20 @@ struct ContentView: View {
                         .foregroundColor(Theme.textPrimary)
                 }
                 .buttonStyle(.plain)
-                
+
+                // Account switcher button (if multiple accounts exist)
+                if accountStore.accounts.count > 1 {
+                    Button {
+                        showingAccountSelection = true
+                    } label: {
+                        Image(systemName: "person.2.fill")
+                            .font(.title3)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Switch Account")
+                }
+
                 // Logout button
                 Button(role: .destructive) {
                     viewModel.logout()
@@ -321,59 +340,116 @@ struct ContentView: View {
 
             // Action buttons
             VStack(spacing: 16) {
-                // EA Login Button (Primary)
-                Button {
-                    showingEALogin = true
-                } label: {
-                    HStack {
-                        Image(systemName: "person.badge.key.fill")
-                        Text("Sign in with EA")
-                    }
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Theme.selectedText)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 16)
-                    .frame(minWidth: 280)
-                    .background(
-                        LinearGradient(
-                            colors: [Theme.bf6Orange, Theme.bf6Red],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                // Show account selection if accounts exist, otherwise EA Login
+                if !accountStore.accounts.isEmpty {
+                    // Account Selection Button (Primary)
+                    Button {
+                        showingAccountSelection = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "person.2.fill")
+                            Text("Choose Saved Account")
+                        }
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.selectedText)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 16)
+                        .frame(minWidth: 280)
+                        .background(
+                            LinearGradient(
+                                colors: [Theme.bf6Orange, Theme.bf6Red],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
-                    .cornerRadius(12)
-                }
-                .buttonStyle(.plain)
-
-                Text("or")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                // Manual Search Button (Secondary)
-                Button {
-                    showingSearch = true
-                } label: {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                        Text("Search Player Manually")
+                        .cornerRadius(12)
                     }
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Theme.selectedText)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 16)
-                    .frame(minWidth: 280)
-                    .background(
-                        LinearGradient(
-                            colors: [Theme.bf6Blue, Theme.bf6Purple],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                    .buttonStyle(.plain)
+
+                    Text("or")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    // EA Login Button (Secondary)
+                    Button {
+                        showingEALogin = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "person.badge.key.fill")
+                            Text("Sign in with different account")
+                        }
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundColor(Theme.selectedText)
+                        .padding(.horizontal, 30)
+                        .padding(.vertical, 12)
+                        .frame(minWidth: 280)
+                        .background(
+                            LinearGradient(
+                                colors: [Theme.bf6Blue, Theme.bf6Purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
-                    .cornerRadius(12)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    // EA Login Button (Primary)
+                    Button {
+                        showingEALogin = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "person.badge.key.fill")
+                            Text("Sign in with EA")
+                        }
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.selectedText)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 16)
+                        .frame(minWidth: 280)
+                        .background(
+                            LinearGradient(
+                                colors: [Theme.bf6Orange, Theme.bf6Red],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+
+                    Text("or")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    // Manual Search Button (Secondary)
+                    Button {
+                        showingSearch = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                            Text("Search Player Manually")
+                        }
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.selectedText)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 16)
+                        .frame(minWidth: 280)
+                        .background(
+                            LinearGradient(
+                                colors: [Theme.bf6Blue, Theme.bf6Purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
             // Info text

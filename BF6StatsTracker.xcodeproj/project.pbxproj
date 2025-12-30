@@ -29,6 +29,9 @@
 		2719F33C2EF8819400C42191 /* DailyPerformanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */; };
 		2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33D2EF881AA00C42191 /* DailyPerformance.swift */; };
 		274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */; };
+		2747A79C2F037B7C001CF709 /* StoredEAAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */; };
+		2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2747A79D2F037BA5001CF709 /* EAAccountStore.swift */; };
+		2747A7A02F037BB8001CF709 /* AccountSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2747A79F2F037BB8001CF709 /* AccountSelectionView.swift */; };
 		27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C267BB2EEF35AF006168AA /* MapTracker.swift */; };
 		27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543792EE98DF300B01618 /* StatsSnapshot.swift */; };
 		27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543782EE98DF300B01618 /* ServerModels.swift */; };
@@ -69,6 +72,9 @@
 		2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformanceView.swift; sourceTree = "<group>"; };
 		2719F33D2EF881AA00C42191 /* DailyPerformance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformance.swift; sourceTree = "<group>"; };
 		274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatsViewModel+Logout.swift"; sourceTree = "<group>"; };
+		2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredEAAccount.swift; sourceTree = "<group>"; };
+		2747A79D2F037BA5001CF709 /* EAAccountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAAccountStore.swift; sourceTree = "<group>"; };
+		2747A79F2F037BB8001CF709 /* AccountSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSelectionView.swift; sourceTree = "<group>"; };
 		27C267BB2EEF35AF006168AA /* MapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTracker.swift; sourceTree = "<group>"; };
 		27E543782EE98DF300B01618 /* ServerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerModels.swift; sourceTree = "<group>"; };
 		27E543792EE98DF300B01618 /* StatsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsSnapshot.swift; sourceTree = "<group>"; };
@@ -131,6 +137,7 @@
 			isa = PBXGroup;
 			children = (
 				2719F33D2EF881AA00C42191 /* DailyPerformance.swift */,
+				2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */,
 				1000000000000004 /* Models.swift */,
 				274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */,
 				27E543782EE98DF300B01618 /* ServerModels.swift */,
@@ -143,6 +150,7 @@
 			isa = PBXGroup;
 			children = (
 				1000000000000005 /* APIService.swift */,
+				2747A79D2F037BA5001CF709 /* EAAccountStore.swift */,
 				1000000000000006 /* CacheManager.swift */,
 				1000000000000016 /* ImageLoader.swift */,
 				27E798062EE645F80002311A /* EAIdentityManager.swift */,
@@ -155,6 +163,7 @@
 		3000000000000006 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				2747A79F2F037BB8001CF709 /* AccountSelectionView.swift */,
 				2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */,
 				1000000000000007 /* ClassTileView.swift */,
 				1000000000000008 /* WeaponStatsView.swift */,
@@ -265,6 +274,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */,
+				2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */,
 				0000000000000001 /* BF6StatsTrackerApp.swift in Sources */,
 				0000000000000002 /* ContentView.swift in Sources */,
 				27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */,
@@ -272,6 +282,7 @@
 				0000000000000004 /* Models.swift in Sources */,
 				0000000000000005 /* APIService.swift in Sources */,
 				0000000000000006 /* CacheManager.swift in Sources */,
+				2747A7A02F037BB8001CF709 /* AccountSelectionView.swift in Sources */,
 				0000000000000007 /* ClassTileView.swift in Sources */,
 				0000000000000008 /* WeaponStatsView.swift in Sources */,
 				0000000000000009 /* GadgetStatsView.swift in Sources */,
@@ -292,6 +303,7 @@
 				0000000000000016 /* ImageLoader.swift in Sources */,
 				0000000000000017 /* PlayerSearchView.swift in Sources */,
 				27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */,
+				2747A79C2F037B7C001CF709 /* StoredEAAccount.swift in Sources */,
 				0000000000000018 /* OverviewStatsView.swift in Sources */,
 				27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */,
 				0000000000000019 /* LastMatchStatsView.swift in Sources */,

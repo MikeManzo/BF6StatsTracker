@@ -81,6 +81,10 @@ class StatsViewModel: ObservableObject {
         do {
             let identity = try await EAIdentityManager.shared.authenticate(with: token)
 
+            // Save to account store for future quick access
+            EAAccountStore.shared.saveCurrentAccount(from: identity)
+            print("📝 Saved account to store. Total accounts: \(EAAccountStore.shared.accounts.count)")
+
             // Update settings with EA identity
             settings.updateWithEAIdentity(
                 nucleusId: identity.nucleusId,
@@ -107,6 +111,35 @@ class StatsViewModel: ObservableObject {
             self.isEAAuthenticated = false
             print("❌ EA Authentication failed: \(error.localizedDescription)")
         }
+
+        isAuthenticating = false
+    }
+
+    /// Load identity from a stored account without re-authentication
+    /// - Parameter identity: The stored player identity
+    func loadWithStoredIdentity(_ identity: EAPlayerIdentity) async {
+        isAuthenticating = true
+        eaAuthError = nil
+
+        // Load the identity into the manager (no token needed)
+        let loadedIdentity = await EAIdentityManager.shared.loadFromStoredAccount(identity)
+
+        // Update settings with EA identity
+        settings.updateWithEAIdentity(
+            nucleusId: loadedIdentity.nucleusId,
+            personaId: loadedIdentity.personaId,
+            eaId: loadedIdentity.eaId
+        )
+
+        await saveSettings()
+
+        self.isEAAuthenticated = true
+        self.eaAuthError = nil
+
+        print("✅ Loaded stored account - EA ID: \(loadedIdentity.eaId)")
+
+        // Automatically fetch stats for the selected account
+        await fetchStats(forceRefresh: true)
 
         isAuthenticating = false
     }
