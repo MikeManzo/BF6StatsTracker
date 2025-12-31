@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var refreshInterval: Double = 300
     @State private var showNotifications: Bool = true
     @State private var compactMode: Bool = false
+    @State private var showEnhancedOverview: Bool = true
     @State private var showEALogin = false
     @State private var showClearHistoryConfirmation = false
     
@@ -240,6 +241,24 @@ struct SettingsView: View {
 
                             Toggle("Show Notifications", isOn: $showNotifications)
                                 .foregroundColor(Theme.textPrimary)
+
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Overview Style")
+                                    .font(.subheadline)
+                                    .foregroundColor(Theme.textSecondary)
+
+                                Picker("Overview Style", selection: $showEnhancedOverview) {
+                                    Text("Enhanced").tag(true)
+                                    Text("Classic").tag(false)
+                                }
+                                .pickerStyle(.segmented)
+
+                                Text("Choose between the modern enhanced view or classic overview layout")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
                         }
                     }
                     
@@ -385,8 +404,9 @@ struct SettingsView: View {
         refreshInterval = viewModel.settings.refreshInterval
         showNotifications = viewModel.settings.showNotifications
         compactMode = viewModel.settings.compactMode
+        showEnhancedOverview = viewModel.settings.showEnhancedOverview
     }
-    
+
     private func saveSettings() {
         viewModel.settings.playerName = playerName
         viewModel.settings.platform = selectedPlatform
@@ -394,6 +414,7 @@ struct SettingsView: View {
         viewModel.settings.refreshInterval = refreshInterval
         viewModel.settings.showNotifications = showNotifications
         viewModel.settings.compactMode = compactMode
+        viewModel.settings.showEnhancedOverview = showEnhancedOverview
         
         Task {
             await viewModel.saveSettings()

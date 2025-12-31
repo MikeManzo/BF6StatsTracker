@@ -10,18 +10,12 @@ import SwiftUI
 struct OverviewStatsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
     @EnvironmentObject var historyManager: HistoryManager
-    @State private var showEnhancedView = true
 
     var body: some View {
         VStack(spacing: 20) {
-            // View toggle
-            if historyManager.todayPerformance != nil {
-                viewToggle
-            }
-
             // Daily Performance (Today's stats)
             if let todayPerformance = historyManager.todayPerformance {
-                if showEnhancedView {
+                if viewModel.settings.showEnhancedOverview {
                     TodayVsYesterdayView()
                         .environmentObject(historyManager)
                 } else {
@@ -336,22 +330,6 @@ struct OverviewStatsView: View {
             }
             .cardStyle()
         }
-    }
-
-    // MARK: - View Toggle
-
-    private var viewToggle: some View {
-        HStack {
-            Spacer()
-
-            Picker("View Style", selection: $showEnhancedView) {
-                Text("Enhanced").tag(true)
-                Text("Classic").tag(false)
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 200)
-        }
-        .padding(.horizontal)
     }
 
     // MARK: - Helper Methods

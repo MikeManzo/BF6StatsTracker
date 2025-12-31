@@ -1082,6 +1082,7 @@ struct AppSettings: Codable {
     var tilePositions: [String: TilePosition]
     var showNotifications: Bool
     var compactMode: Bool
+    var showEnhancedOverview: Bool
 
     // EA Identity fields - populated from EAIdentityKit
     var nucleusId: String?        // pidId - Master account identifier
@@ -1097,6 +1098,7 @@ struct AppSettings: Codable {
         self.tilePositions = [:]
         self.showNotifications = true
         self.compactMode = false
+        self.showEnhancedOverview = true
         self.nucleusId = nil
         self.personaId = nil
         self.eaId = nil
