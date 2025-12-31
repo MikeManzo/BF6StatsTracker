@@ -317,7 +317,7 @@ struct AnimatedComparisonProgressBar: View {
                 Spacer()
 
                 HStack(spacing: 4) {
-                    Text("TODAY:")
+                    Text("Today:")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Text(String(format: "%.1f", todayValue))
@@ -329,7 +329,7 @@ struct AnimatedComparisonProgressBar: View {
                         .font(.caption2)
                         .foregroundStyle(isImprovement ? .green : .red)
 
-                    Text("YEST:")
+                    Text("Last Played:")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Text(String(format: "%.1f", yesterdayValue))

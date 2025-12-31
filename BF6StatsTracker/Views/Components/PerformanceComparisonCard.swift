@@ -93,6 +93,9 @@ struct PerformanceComparisonCard: View {
 
             // Comparison with yesterday
             HStack(spacing: 4) {
+                Text("Last Played:")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "minus")
                     .font(.caption2)
                     .foregroundStyle(changeColor)
@@ -217,6 +220,9 @@ struct PerformanceComparisonCardDouble: View {
 
             // Comparison with yesterday
             HStack(spacing: 4) {
+                Text("Last Played:")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 Image(systemName: delta > 0.01 ? "arrow.up" : delta < -0.01 ? "arrow.down" : "minus")
                     .font(.caption2)
                     .foregroundStyle(changeColor)
