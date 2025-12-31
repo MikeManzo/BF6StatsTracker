@@ -15,6 +15,46 @@
 
 ---
 
+## 🎉 What's New (2025)
+
+### Major UI/UX Improvements
+
+✨ **Unified Component System**
+- New `UnifiedStatCard` with consistent 12px corner radius across all views
+- Configurable sizes (small, medium, large) with hover effects
+- Built-in accessibility support and tooltips
+
+🔍 **Universal Search & Filter**
+- Reusable `SearchableListView` component for consistent search/filter experience
+- Applied to Weapons, Vehicles, and Gadgets views
+- Sort options and results count display
+
+📱 **Responsive Breakpoints**
+- Compact (< 900px): 2 columns
+- Regular (900-1200px): 3 columns
+- Large (> 1200px): 4 columns
+- Smooth adaptation to window resizing
+
+♿ **Accessibility First**
+- Full VoiceOver support for screen readers
+- Keyboard navigation with shortcuts (⌘1-9, ⌘R, ⌘F, ⌘,)
+- Help tooltips on all interactive elements
+- Proper accessibility labels and traits
+
+⚡ **Performance Optimizations**
+- Image caching with 50MB limit and automatic resizing
+- Cost-based cache management for optimal memory usage
+- Lazy loading for large datasets
+
+🎨 **UI Polish**
+- Standardized empty states across all views
+- Consistent animations using `.smoothSpring` and `.quickSpring`
+- View style preference moved to Settings (Enhanced/Classic)
+
+See [UI_IMPROVEMENTS_SUMMARY.md](UI_IMPROVEMENTS_SUMMARY.md) for complete details.
+
+---
+
 ## ✨ Features
 
 ### 📊 Comprehensive Statistics
@@ -41,12 +81,16 @@
 
 ### 🎨 Modern UI Design
 
+> **NEW**: Major UI/UX improvements with unified components and enhanced accessibility!
+
 - **Dark Theme**: Sleek dark interface optimized for the Battlefield aesthetic
 - **10 Comprehensive Tabs**: Overview, History, Maps, Charts, Classes, Weapons, Gadgets, Vehicles, Loadout, Servers
-- **Draggable Class Tiles**: Interactive, rearrangeable class performance cards
+- **Unified Card System**: Consistent stat cards with hover effects and smooth animations
+- **Enhanced/Classic Views**: Choose between modern enhanced overview or classic layout
+- **Responsive Layout**: Adaptive design with breakpoints (900px, 1200px) for optimal viewing
 - **Advanced Charts**: Swift Charts integration with line graphs, bar charts, and pie charts
-- **Responsive Layout**: Adaptive design for different window sizes
-- **Smooth Animations**: Spring animations, transitions, and hover effects
+- **Smooth Animations**: Standardized spring animations with `.smoothSpring` and `.quickSpring`
+- **Accessibility First**: Full VoiceOver support, keyboard navigation, and help tooltips
 
 ### 🔐 EA Account Integration
 
@@ -85,6 +129,8 @@
 - **SwiftData Persistence**: Local database for historical tracking
 - **Rate Limiting**: Built-in API rate limiting protection
 - **Background Refresh**: Fresh data on app startup
+- **Optimized Images**: Automatic resizing and 50MB cache limit with cost-based management
+- **Lazy Loading**: Efficient rendering with LazyVGrid for large datasets
 
 ### 🔧 Menu Bar Integration
 
@@ -156,6 +202,22 @@
 5. Click **Save Settings**
 6. Stats will load automatically
 
+### Settings & Preferences
+
+Access **Settings** (⌘,) to configure:
+
+- **EA Account**: Sign in with EA or disconnect
+- **Player**: Manual player name and platform selection
+- **Auto Refresh**: Enable/disable and set interval (1-30 minutes)
+- **Display Settings**:
+  - Compact Mode toggle
+  - Show Notifications toggle
+  - **Overview Style**: Choose Enhanced (modern) or Classic view
+- **Data Management**:
+  - View cache status and clear cache
+  - View historical data summary
+  - Clear all historical data with confirmation
+
 ### Navigation
 
 The app features **10 comprehensive tabs**:
@@ -201,12 +263,17 @@ The app features **10 comprehensive tabs**:
 
 ### Keyboard Shortcuts
 
+> **NEW**: Comprehensive keyboard navigation for power users!
+
 | Shortcut | Action |
 |----------|--------|
 | `⌘R` | Refresh stats |
+| `⌘F` | Search player |
 | `⌘,` | Open settings |
-| `⌘K` `⇧⌘K` | Clear cache |
+| `⌘1` - `⌘9` | Switch to tab 1-9 (Overview, History, Maps, etc.) |
 | `⌘Q` | Quit application |
+
+**Accessibility**: All interactive elements include VoiceOver labels and help tooltips for screen reader support.
 
 ---
 
@@ -279,23 +346,29 @@ BF6StatsTracker/
 │
 ├── Views/
 │   ├── PlayerSearchView.swift     # Player search
-│   ├── OverviewStatsView.swift    # Overview tab
+│   ├── OverviewStatsView.swift    # Overview tab with responsive grid
+│   ├── TodayVsYesterdayView.swift # Enhanced daily performance view
 │   ├── SessionHistoryView.swift   # History tab with sessions
 │   ├── MapStatsView.swift         # Maps tab with charts
 │   ├── PerformanceChartsView.swift # Charts tab with trends
 │   ├── ClassTileView.swift        # Draggable class tiles
 │   ├── DraggableTileContainer.swift
-│   ├── WeaponStatsView.swift      # Weapons tab
-│   ├── GadgetStatsView.swift      # Gadgets tab
-│   ├── VehicleStatsView.swift     # Vehicles tab
+│   ├── WeaponStatsView.swift      # Weapons tab with search/filter
+│   ├── GadgetStatsView.swift      # Gadgets tab with unified empty state
+│   ├── VehicleStatsView.swift     # Vehicles tab with unified empty state
 │   ├── LoadoutAnalyzerView.swift  # Loadout tab with analysis
 │   ├── ServerBrowserView.swift    # Server browser tab
 │   ├── EALoginView.swift          # EA authentication
 │   ├── MenuBarView.swift          # Menu bar extra
-│   └── SettingsView.swift         # Settings with data management
+│   ├── SettingsView.swift         # Settings with overview style preference
+│   └── Components/
+│       ├── UnifiedStatCard.swift   # Unified card component system
+│       ├── SearchableListView.swift # Reusable search/filter wrapper
+│       ├── ProgressBarView.swift   # Animated progress bars
+│       └── AnimatedNumber.swift    # Number animations
 │
 └── Utilities/
-    └── Extensions.swift           # Helper extensions
+    └── Extensions.swift           # Helper extensions + responsive breakpoints
 ```
 
 ---
@@ -380,6 +453,7 @@ Additional documentation available:
 - **[API_FIXES.md](API_FIXES.md)** - API endpoint fixes and workarounds
 - **[ENHANCEMENTS_SUMMARY.md](ENHANCEMENTS_SUMMARY.md)** - UI enhancements breakdown
 - **[CLEAR_HISTORY_FEATURE.md](CLEAR_HISTORY_FEATURE.md)** - Data management feature guide
+- **[UI_IMPROVEMENTS_SUMMARY.md](UI_IMPROVEMENTS_SUMMARY.md)** - Latest UI/UX improvements (2025)
 
 ---
 
