@@ -38,6 +38,9 @@ class StatsViewModel: ObservableObject {
     @Published var eaAuthError: String?
     @Published var isAuthenticating = false
 
+    // App initialization state
+    @Published var isInitializing = true
+
     // MARK: - Private Properties
 
     private var refreshTimer: Timer?
@@ -49,10 +52,21 @@ class StatsViewModel: ObservableObject {
         Task {
             await loadSettings()
             await checkEAAuthenticationStatus()
-            if !settings.playerName.isEmpty {
+
+            // Auto-login: If we have stored accounts but no current player data, use the most recent account
+            if settings.playerName.isEmpty && !EAAccountStore.shared.accounts.isEmpty {
+                if let mostRecent = EAAccountStore.shared.mostRecentAccount {
+                    print("🔐 Auto-login: Loading most recent account - \(mostRecent.displayText)")
+                    let identity = EAAccountStore.shared.selectAccount(mostRecent)
+                    await loadWithStoredIdentity(identity)
+                }
+            } else if !settings.playerName.isEmpty {
                 // Force fresh data fetch on app startup
                 await forceRefreshStats()
             }
+
+            // Mark initialization as complete
+            self.isInitializing = false
             setupAutoRefresh()
         }
     }

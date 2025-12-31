@@ -7,6 +7,7 @@ extension StatsViewModel {
     func logout() {
         // Stop any ongoing loading
         isLoading = false
+        isInitializing = false
 
         // Clear cached data and player stats
         playerStats = nil

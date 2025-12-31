@@ -29,7 +29,9 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
-            if viewModel.hasPlayerData {
+            if viewModel.isInitializing {
+                loadingView
+            } else if viewModel.hasPlayerData {
                 mainContentView
             } else {
                 welcomeView
@@ -307,6 +309,20 @@ struct ContentView: View {
         .background(Theme.overlayColor)
     }
     
+    // MARK: - Loading View
+
+    private var loadingView: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .scaleEffect(1.5)
+                .progressViewStyle(CircularProgressViewStyle(tint: Theme.bf6Orange))
+
+            Text("Loading...")
+                .font(.title3)
+                .foregroundColor(Theme.textPrimary)
+        }
+    }
+
     // MARK: - Welcome View
 
     private var welcomeView: some View {
