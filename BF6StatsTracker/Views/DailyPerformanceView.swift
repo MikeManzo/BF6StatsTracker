@@ -270,6 +270,8 @@ struct QuickStatCard: View {
     let icon: String
     let color: Color
 
+    @State private var animatedValue: String = ""
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 4) {
@@ -281,10 +283,11 @@ struct QuickStatCard: View {
                     .foregroundColor(Theme.textSecondary)
             }
 
-            Text(value)
+            Text(animatedValue.isEmpty ? value : animatedValue)
                 .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(Theme.textPrimary)
+                .contentTransition(.numericText(value: extractNumericValue(from: value)))
 
             if let (compText, compColor) = comparison, !compText.isEmpty {
                 Text(compText)
@@ -300,6 +303,20 @@ struct QuickStatCard: View {
         .padding(12)
         .background(Theme.cardBackground)
         .cornerRadius(10)
+        .onAppear {
+            animatedValue = value
+        }
+        .onChange(of: value) { oldValue, newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                animatedValue = newValue
+            }
+        }
+    }
+
+    private func extractNumericValue(from string: String) -> Double {
+        let cleaned = string.replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: "%", with: "")
+        return Double(cleaned) ?? 0
     }
 }
 
@@ -308,6 +325,8 @@ struct DailyStatCard: View {
     let value: String
     let percentage: String?
     let icon: String
+
+    @State private var animatedValue: String = ""
 
     var body: some View {
         VStack(spacing: 8) {
@@ -319,10 +338,11 @@ struct DailyStatCard: View {
                 .font(.caption)
                 .foregroundColor(Theme.textSecondary)
 
-            Text(value)
+            Text(animatedValue.isEmpty ? value : animatedValue)
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(Theme.textPrimary)
+                .contentTransition(.numericText(value: extractNumericValue(from: value)))
 
             if let percentage = percentage {
                 Text(percentage)
@@ -334,6 +354,20 @@ struct DailyStatCard: View {
         .padding(.vertical, 12)
         .background(Theme.cardBackground)
         .cornerRadius(10)
+        .onAppear {
+            animatedValue = value
+        }
+        .onChange(of: value) { oldValue, newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                animatedValue = newValue
+            }
+        }
+    }
+
+    private func extractNumericValue(from string: String) -> Double {
+        let cleaned = string.replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: "%", with: "")
+        return Double(cleaned) ?? 0
     }
 }
 

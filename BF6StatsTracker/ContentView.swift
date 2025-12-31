@@ -66,30 +66,38 @@ struct ContentView: View {
             // Content
             ScrollView {
                 VStack(spacing: 20) {
-                    switch viewModel.selectedTab {
-                    case .overview:
-                        OverviewStatsView()
-                    case .history:
-                        SessionHistoryView()
-                    case .maps:
-                        MapStatsView()
-                    case .charts:
-                        PerformanceChartsView()
-                    case .classes:
-                        DraggableTileContainer()
-                    case .weapons:
-                        WeaponStatsView()
-                    case .gadgets:
-                        GadgetStatsView()
-                    case .vehicles:
-                        VehicleStatsView()
-                    case .loadout:
-                        LoadoutAnalyzerView()
-                    case .servers:
-                        ServerBrowserView()
+                    Group {
+                        switch viewModel.selectedTab {
+                        case .overview:
+                            OverviewStatsView()
+                        case .history:
+                            SessionHistoryView()
+                        case .maps:
+                            MapStatsView()
+                        case .charts:
+                            PerformanceChartsView()
+                        case .classes:
+                            DraggableTileContainer()
+                        case .weapons:
+                            WeaponStatsView()
+                        case .gadgets:
+                            GadgetStatsView()
+                        case .vehicles:
+                            VehicleStatsView()
+                        case .loadout:
+                            LoadoutAnalyzerView()
+                        case .servers:
+                            ServerBrowserView()
+                        }
                     }
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .trailing)),
+                        removal: .opacity.combined(with: .move(edge: .leading))
+                    ))
+                    .id(viewModel.selectedTab)
                 }
                 .padding()
+                .animation(.easeInOut(duration: 0.25), value: viewModel.selectedTab)
             }
         }
     }

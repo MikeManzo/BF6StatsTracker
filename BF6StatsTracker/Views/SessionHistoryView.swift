@@ -90,6 +90,7 @@ struct SessionHistoryView: View {
         .padding()
         .background(Color.green.opacity(0.1))
         .cornerRadius(16)
+        .transition(.scale.combined(with: .opacity))
     }
 
     private var sessionSummary: some View {
@@ -129,7 +130,12 @@ struct SessionHistoryView: View {
             } else {
                 ForEach(historyManager.sessions.prefix(10), id: \.id) { session in
                     SessionRow(session: session)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal: .opacity
+                        ))
                 }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: historyManager.sessions.count)
             }
         }
     }

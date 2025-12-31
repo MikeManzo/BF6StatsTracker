@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TodayVsYesterdayView: View {
     @EnvironmentObject var historyManager: HistoryManager
+    @State private var hasAnimated = false
 
     private var today: DailyPerformance? {
         historyManager.todayPerformance
@@ -67,6 +68,10 @@ struct TodayVsYesterdayView: View {
                 }
             }
             .padding()
+        }
+        .onDisappear {
+            // Reset animation state when view disappears so it animates again on next view
+            hasAnimated = false
         }
     }
 
@@ -176,51 +181,63 @@ struct TodayVsYesterdayView: View {
 
             VStack(spacing: 12) {
                 // Headshots
-                ComparisonProgressBarView(
+                AnimatedComparisonProgressBar(
                     todayValue: Double(today.deltaHeadshots),
                     yesterdayValue: Double(yesterday?.deltaHeadshots ?? 1),
                     label: "🎯 Headshots (\(String(format: "%.1f%%", today.dailyHeadshotPercent)))",
-                    accentColor: .purple
+                    accentColor: .purple,
+                    delay: 0.0,
+                    shouldAnimate: !hasAnimated
                 )
 
                 // Accuracy
-                ComparisonProgressBarView(
+                AnimatedComparisonProgressBar(
                     todayValue: today.dailyAccuracy,
                     yesterdayValue: yesterday?.dailyAccuracy ?? 1,
                     label: "🎪 Accuracy",
-                    accentColor: .orange
+                    accentColor: .orange,
+                    delay: 0.1,
+                    shouldAnimate: !hasAnimated
                 )
 
                 // KPM
-                ComparisonProgressBarView(
+                AnimatedComparisonProgressBar(
                     todayValue: today.dailyKPM,
                     yesterdayValue: yesterday?.dailyKPM ?? 1,
                     label: "⚡ Kills Per Minute",
-                    accentColor: .yellow
+                    accentColor: .yellow,
+                    delay: 0.2,
+                    shouldAnimate: !hasAnimated
                 )
 
                 // Assists
-                ComparisonProgressBarView(
+                AnimatedComparisonProgressBar(
                     todayValue: Double(today.deltaAssists),
                     yesterdayValue: Double(yesterday?.deltaAssists ?? 1),
                     label: "🤝 Assists",
-                    accentColor: .cyan
+                    accentColor: .cyan,
+                    delay: 0.3,
+                    shouldAnimate: !hasAnimated
                 )
 
                 // Win Rate
-                ComparisonProgressBarView(
+                AnimatedComparisonProgressBar(
                     todayValue: today.dailyWinRate,
                     yesterdayValue: yesterday?.dailyWinRate ?? 1,
                     label: "🏆 Win Rate",
-                    accentColor: .green
+                    accentColor: .green,
+                    delay: 0.4,
+                    shouldAnimate: !hasAnimated
                 )
 
                 // Score
-                ComparisonProgressBarView(
+                AnimatedComparisonProgressBar(
                     todayValue: Double(today.deltaScore) / 1000,
                     yesterdayValue: Double(yesterday?.deltaScore ?? 1) / 1000,
                     label: "🎖️ Score (thousands)",
-                    accentColor: .blue
+                    accentColor: .blue,
+                    delay: 0.5,
+                    shouldAnimate: !hasAnimated
                 )
             }
             .padding()
@@ -229,6 +246,14 @@ struct TodayVsYesterdayView: View {
                     .fill(Color(NSColor.controlBackgroundColor))
             )
             .padding(.horizontal)
+            .onAppear {
+                if !hasAnimated {
+                    // Mark as animated after a delay to ensure all bars have started
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                        hasAnimated = true
+                    }
+                }
+            }
         }
     }
 
@@ -251,6 +276,96 @@ struct TodayVsYesterdayView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(60)
+    }
+}
+
+// MARK: - Animated Comparison Progress Bar Wrapper
+
+struct AnimatedComparisonProgressBar: View {
+    let todayValue: Double
+    let yesterdayValue: Double
+    let label: String
+    let accentColor: Color
+    let delay: Double
+    let shouldAnimate: Bool
+
+    @State private var displayProgress: Double = 0
+
+    private var progress: Double {
+        guard yesterdayValue > 0 else { return 0 }
+        return min(todayValue / yesterdayValue, 1.5) / 1.5 // Cap at 150%
+    }
+
+    private var percentChange: Double {
+        guard yesterdayValue > 0 else { return 0 }
+        return ((todayValue - yesterdayValue) / yesterdayValue) * 100
+    }
+
+    private var isImprovement: Bool {
+        todayValue > yesterdayValue
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Label and values
+            HStack {
+                Text(label)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Text("TODAY:")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(String(format: "%.1f", todayValue))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+
+                    Image(systemName: isImprovement ? "arrow.up" : "arrow.down")
+                        .font(.caption2)
+                        .foregroundStyle(isImprovement ? .green : .red)
+
+                    Text("YEST:")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(String(format: "%.1f", yesterdayValue))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Progress bar
+            ProgressBarView(
+                value: shouldAnimate ? displayProgress : progress,
+                color: accentColor,
+                height: 6,
+                showShimmer: false
+            )
+            .onAppear {
+                if shouldAnimate {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
+                            displayProgress = progress
+                        }
+                    }
+                } else {
+                    displayProgress = progress
+                }
+            }
+
+            // Percentage change
+            HStack {
+                Text(String(format: "%.0f%% %@", abs(percentChange), isImprovement ? "improvement" : "decrease"))
+                    .font(.caption2)
+                    .foregroundStyle(isImprovement ? .green : .red)
+
+                Spacer()
+            }
+        }
     }
 }
 

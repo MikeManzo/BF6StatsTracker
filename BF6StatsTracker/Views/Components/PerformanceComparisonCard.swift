@@ -14,6 +14,8 @@ struct PerformanceComparisonCard: View {
     let icon: String
     let accentColor: Color
 
+    @State private var displayValue: Double = 0
+
     private var delta: Int {
         todayValue - yesterdayValue
     }
@@ -55,9 +57,10 @@ struct PerformanceComparisonCard: View {
 
             // Today's value (large)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(todayValue)")
+                Text("\(Int(displayValue))")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
+                    .contentTransition(.numericText(value: displayValue))
 
                 Spacer()
             }
@@ -121,6 +124,14 @@ struct PerformanceComparisonCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(accentColor.opacity(0.3), lineWidth: 1)
         )
+        .onAppear {
+            displayValue = Double(todayValue)
+        }
+        .onChange(of: todayValue) { oldValue, newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                displayValue = Double(newValue)
+            }
+        }
     }
 }
 
@@ -131,6 +142,8 @@ struct PerformanceComparisonCardDouble: View {
     let icon: String
     let accentColor: Color
     let format: String
+
+    @State private var displayValue: Double = 0
 
     private var delta: Double {
         todayValue - yesterdayValue
@@ -168,9 +181,10 @@ struct PerformanceComparisonCardDouble: View {
 
             // Today's value (large)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(String(format: format, todayValue))
+                Text(String(format: format, displayValue))
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
+                    .contentTransition(.numericText(value: displayValue))
 
                 Spacer()
             }
@@ -234,6 +248,14 @@ struct PerformanceComparisonCardDouble: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(accentColor.opacity(0.3), lineWidth: 1)
         )
+        .onAppear {
+            displayValue = todayValue
+        }
+        .onChange(of: todayValue) { oldValue, newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                displayValue = newValue
+            }
+        }
     }
 }
 

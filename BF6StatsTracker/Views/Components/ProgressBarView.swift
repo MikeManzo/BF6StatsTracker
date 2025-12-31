@@ -12,12 +12,16 @@ struct ProgressBarView: View {
     let color: Color
     let height: CGFloat
     let animated: Bool
+    let showShimmer: Bool
 
-    init(value: Double, color: Color = .blue, height: CGFloat = 8, animated: Bool = true) {
+    @State private var shimmerOffset: CGFloat = -1.0
+
+    init(value: Double, color: Color = .blue, height: CGFloat = 8, animated: Bool = true, showShimmer: Bool = true) {
         self.value = min(max(value, 0), 1)
         self.color = color
         self.height = height
         self.animated = animated
+        self.showShimmer = showShimmer
     }
 
     var body: some View {
@@ -28,7 +32,7 @@ struct ProgressBarView: View {
                     .fill(Color.secondary.opacity(0.2))
                     .frame(height: height)
 
-                // Progress fill
+                // Progress fill with shimmer
                 RoundedRectangle(cornerRadius: height / 2)
                     .fill(
                         LinearGradient(
@@ -38,7 +42,40 @@ struct ProgressBarView: View {
                         )
                     )
                     .frame(width: geometry.size.width * CGFloat(value), height: height)
+                    .overlay(
+                        // Shimmer effect
+                        RoundedRectangle(cornerRadius: height / 2)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0),
+                                        Color.white.opacity(0.3),
+                                        Color.white.opacity(0)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geometry.size.width * 0.3)
+                            .offset(x: shimmerOffset * geometry.size.width * 1.3)
+                            .opacity(showShimmer && value > 0 ? 1 : 0)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: height / 2))
                     .animation(animated ? .spring(response: 0.6, dampingFraction: 0.8) : .none, value: value)
+                    .onAppear {
+                        if showShimmer && value > 0 {
+                            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                                shimmerOffset = 1.0
+                            }
+                        }
+                    }
+                    .onChange(of: value) { oldValue, newValue in
+                        if showShimmer && newValue > 0 && oldValue == 0 {
+                            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                                shimmerOffset = 1.0
+                            }
+                        }
+                    }
             }
         }
         .frame(height: height)
@@ -50,6 +87,17 @@ struct ComparisonProgressBarView: View {
     let yesterdayValue: Double
     let label: String
     let accentColor: Color
+    let animateOnce: Bool
+
+    @State private var displayProgress: Double = 0
+
+    init(todayValue: Double, yesterdayValue: Double, label: String, accentColor: Color, animateOnce: Bool = false) {
+        self.todayValue = todayValue
+        self.yesterdayValue = yesterdayValue
+        self.label = label
+        self.accentColor = accentColor
+        self.animateOnce = animateOnce
+    }
 
     private var progress: Double {
         guard yesterdayValue > 0 else { return 0 }
@@ -99,7 +147,19 @@ struct ComparisonProgressBarView: View {
             }
 
             // Progress bar
-            ProgressBarView(value: progress, color: accentColor, height: 6)
+            ProgressBarView(
+                value: animateOnce ? displayProgress : progress,
+                color: accentColor,
+                height: 6,
+                showShimmer: false
+            )
+            .onAppear {
+                if animateOnce {
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
+                        displayProgress = progress
+                    }
+                }
+            }
 
             // Percentage change
             HStack {

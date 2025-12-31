@@ -336,8 +336,11 @@ struct OverviewStatsView: View {
                         GridItem(.flexible()),
                         GridItem(.flexible())
                     ], spacing: 16) {
-                        ForEach(viewModel.classStats) { classStats in
-                            ClassPreviewCard(classStats: classStats)
+                        ForEach(Array(viewModel.classStats.enumerated()), id: \.element.id) { index, classStats in
+                            AnimatedClassPreviewCard(
+                                classStats: classStats,
+                                delay: Double(index) * 0.1
+                            )
                         }
                     }
                 }
@@ -389,6 +392,8 @@ struct StatCard: View {
     let subtitle: String
     var trend: TrendDirection? = nil
 
+    @State private var animatedValue: String = ""
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -403,9 +408,10 @@ struct StatCard: View {
                 }
             }
 
-            Text(value)
+            Text(animatedValue.isEmpty ? value : animatedValue)
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundColor(Theme.textPrimary)
+                .contentTransition(.numericText(value: extractNumericValue(from: value)))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -430,6 +436,20 @@ struct StatCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(color.opacity(0.3), lineWidth: 1)
         )
+        .onAppear {
+            animatedValue = value
+        }
+        .onChange(of: value) { oldValue, newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                animatedValue = newValue
+            }
+        }
+    }
+
+    private func extractNumericValue(from string: String) -> Double {
+        // Extract numeric value from formatted string (e.g., "1,234" -> 1234.0)
+        let cleaned = string.replacingOccurrences(of: ",", with: "")
+        return Double(cleaned) ?? 0
     }
 }
 
@@ -472,6 +492,26 @@ struct StatRow: View {
                 .foregroundColor(Theme.textPrimary)
         }
         .font(.subheadline)
+    }
+}
+
+// MARK: - Animated Class Preview Card Wrapper
+
+struct AnimatedClassPreviewCard: View {
+    let classStats: ClassStats
+    let delay: Double
+
+    @State private var isVisible = false
+
+    var body: some View {
+        ClassPreviewCard(classStats: classStats)
+            .opacity(isVisible ? 1 : 0)
+            .offset(y: isVisible ? 0 : 20)
+            .onAppear {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(delay)) {
+                    isVisible = true
+                }
+            }
     }
 }
 
