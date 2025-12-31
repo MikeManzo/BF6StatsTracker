@@ -15,49 +15,111 @@ class ImageLoader: ObservableObject {
     @Published var image: NSImage?
     @Published var isLoading = false
     @Published var error: Error?
-    
-    private static var imageCache = NSCache<NSURL, NSImage>()
+
+    private static var imageCache: NSCache<NSURL, NSImage> = {
+        let cache = NSCache<NSURL, NSImage>()
+        cache.countLimit = 100 // Limit number of cached images
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB cache limit
+        return cache
+    }()
+
     private var cancellable: AnyCancellable?
     private let url: URL?
-    
-    init(url: URL?) {
+    private let maxSize: CGSize?
+
+    init(url: URL?, maxSize: CGSize? = nil) {
         self.url = url
+        self.maxSize = maxSize
     }
-    
+
     func load() {
         guard let url = url else {
             self.image = nil
             return
         }
-        
+
         // Check cache first
         if let cached = Self.imageCache.object(forKey: url as NSURL) {
             self.image = cached
             return
         }
-        
+
         isLoading = true
-        
+
         cancellable = URLSession.shared.dataTaskPublisher(for: url)
-            .map { NSImage(data: $0.data) }
+            .tryMap { [maxSize] data, _ -> NSImage? in
+                guard let image = NSImage(data: data) else { return nil }
+
+                // Resize image if maxSize is specified to reduce memory usage
+                if let targetSize = maxSize {
+                    return image.resized(to: targetSize)
+                }
+
+                return image
+            }
             .replaceError(with: nil)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loadedImage in
                 self?.isLoading = false
                 self?.image = loadedImage
-                
+
                 if let image = loadedImage {
-                    Self.imageCache.setObject(image, forKey: url as NSURL)
+                    // Calculate cost based on image size
+                    let cost = Int(image.size.width * image.size.height * 4) // Approximate bytes
+                    Self.imageCache.setObject(image, forKey: url as NSURL, cost: cost)
                 }
             }
     }
-    
+
     func cancel() {
         cancellable?.cancel()
+        isLoading = false
     }
-    
+
     static func clearCache() {
         imageCache.removeAllObjects()
+    }
+
+    static func preloadImages(urls: [URL]) {
+        for url in urls {
+            guard imageCache.object(forKey: url as NSURL) == nil else { continue }
+
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                guard let data = data, let image = NSImage(data: data) else { return }
+                DispatchQueue.main.async {
+                    let cost = Int(image.size.width * image.size.height * 4)
+                    imageCache.setObject(image, forKey: url as NSURL, cost: cost)
+                }
+            }.resume()
+        }
+    }
+}
+
+// MARK: - NSImage Extension
+
+private extension NSImage {
+    func resized(to targetSize: CGSize) -> NSImage {
+        let size = self.size
+        let widthRatio = targetSize.width / size.width
+        let heightRatio = targetSize.height / size.height
+        let scaleFactor = min(widthRatio, heightRatio)
+
+        let newSize = CGSize(
+            width: size.width * scaleFactor,
+            height: size.height * scaleFactor
+        )
+
+        let newImage = NSImage(size: newSize)
+        newImage.lockFocus()
+        self.draw(
+            in: NSRect(origin: .zero, size: newSize),
+            from: NSRect(origin: .zero, size: size),
+            operation: .copy,
+            fraction: 1.0
+        )
+        newImage.unlockFocus()
+
+        return newImage
     }
 }
 
@@ -67,19 +129,24 @@ struct AsyncGameImage: View {
     @StateObject private var loader: ImageLoader
     let placeholder: Image
     let contentMode: ContentMode
-    
-    init(url: URL?, placeholder: Image = Image(systemName: "photo"), contentMode: ContentMode = .fit) {
-        _loader = StateObject(wrappedValue: ImageLoader(url: url))
+
+    init(
+        url: URL?,
+        placeholder: Image = Image(systemName: "photo"),
+        contentMode: ContentMode = .fit,
+        maxSize: CGSize? = CGSize(width: 200, height: 200) // Default max size for optimization
+    ) {
+        _loader = StateObject(wrappedValue: ImageLoader(url: url, maxSize: maxSize))
         self.placeholder = placeholder
         self.contentMode = contentMode
     }
-    
+
     var body: some View {
         content
             .onAppear { loader.load() }
             .onDisappear { loader.cancel() }
     }
-    
+
     @ViewBuilder
     private var content: some View {
         if loader.isLoading {

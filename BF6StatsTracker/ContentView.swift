@@ -227,7 +227,10 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(viewModel.isLoading)
-                
+                .keyboardShortcut("r", modifiers: .command)
+                .help("Refresh stats (⌘R)")
+                .accessibilityLabel("Refresh statistics")
+
                 // Search button
                 Button {
                     showingSearch = true
@@ -237,6 +240,9 @@ struct ContentView: View {
                         .foregroundColor(Theme.textPrimary)
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut("f", modifiers: .command)
+                .help("Search player (⌘F)")
+                .accessibilityLabel("Search for player")
 
                 // Settings button
                 Button {
@@ -247,6 +253,9 @@ struct ContentView: View {
                         .foregroundColor(Theme.textPrimary)
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut(",", modifiers: .command)
+                .help("Settings (⌘,)")
+                .accessibilityLabel("Open settings")
 
                 // Account switcher button (if multiple accounts exist)
                 if accountStore.accounts.count > 1 {
@@ -277,10 +286,10 @@ struct ContentView: View {
     }
     
     // MARK: - Tab Bar View
-    
+
     private var tabBarView: some View {
         HStack(spacing: 0) {
-            ForEach(StatTab.allCases) { tab in
+            ForEach(Array(StatTab.allCases.enumerated()), id: \.element) { index, tab in
                 Button {
                     withAnimation(.spring(response: 0.3)) {
                         viewModel.selectedTab = tab
@@ -304,9 +313,21 @@ struct ContentView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .if(index < 9) { view in
+                    view
+                        .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
+                        .help("\(tab.rawValue) (⌘\(index + 1))")
+                }
+                .if(index >= 9) { view in
+                    view.help(tab.rawValue)
+                }
+                .accessibilityLabel("\(tab.rawValue) tab")
+                .accessibilityAddTraits(viewModel.selectedTab == tab ? [.isSelected] : [])
             }
         }
         .background(Theme.overlayColor)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Navigation tabs")
     }
     
     // MARK: - Loading View

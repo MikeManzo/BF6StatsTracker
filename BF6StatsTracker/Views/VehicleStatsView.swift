@@ -169,27 +169,15 @@ struct VehicleStatsView: View {
     }
     
     // MARK: - Empty State
-    
+
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "car.fill")
-                .font(.system(size: 50))
-                .foregroundColor(Theme.textSecondary)
-            
-            Text("No Vehicles Found")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            if !searchText.isEmpty || selectedCategory != nil {
-                Text("Try adjusting your search or filters")
-                    .foregroundColor(Theme.textSecondary)
-            } else {
-                Text("Vehicle data will appear after using vehicles in matches")
-                    .foregroundColor(Theme.textSecondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(50)
+        EmptyStateView(
+            icon: "car.fill",
+            title: "No Vehicles Found",
+            message: (!searchText.isEmpty || selectedCategory != nil)
+                ? "Try adjusting your search or filters"
+                : "Vehicle data will appear after using vehicles in matches"
+        )
     }
     
     // MARK: - Helpers

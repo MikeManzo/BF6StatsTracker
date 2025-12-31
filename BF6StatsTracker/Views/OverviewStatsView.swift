@@ -91,50 +91,49 @@ struct OverviewStatsView: View {
                         .stroke(Theme.bf6Orange.opacity(0.3), lineWidth: 1)
                 )
             }
-            // Top Stats Cards
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
-                if let stats = viewModel.playerStats {
-                    StatCard(
-                        title: "Kills",
-                        value: stats.kills.formatted(),
-                        icon: "target",
-                        color: Theme.bf6Red,
-                        subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
-                        trend: viewModel.killsTrend
-                    )
+            // Top Stats Cards - Responsive Grid
+            GeometryReader { geometry in
+                let breakpoint = ResponsiveBreakpoint(width: geometry.size.width)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: breakpoint.columns), spacing: breakpoint.spacing) {
+                    if let stats = viewModel.playerStats {
+                        StatCard(
+                            title: "Kills",
+                            value: stats.kills.formatted(),
+                            icon: "target",
+                            color: Theme.bf6Red,
+                            subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
+                            trend: convertTrend(viewModel.killsTrend)
+                        )
 
-                    StatCard(
-                        title: "Deaths",
-                        value: stats.deaths.formatted(),
-                        icon: "xmark.circle.fill",
-                        color: Theme.textSecondary,
-                        subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))",
-                        trend: viewModel.kdTrend
-                    )
+                        StatCard(
+                            title: "Deaths",
+                            value: stats.deaths.formatted(),
+                            icon: "xmark.circle.fill",
+                            color: Theme.textSecondary,
+                            subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))",
+                            trend: convertTrend(viewModel.kdTrend)
+                        )
 
-                    StatCard(
-                        title: "Score",
-                        value: stats.totalScore.formatted(),
-                        icon: "star.fill",
-                        color: .yellow,
-                        subtitle: "\(String(format: "%.0f", stats.scorePerMinute)) per min"
-                    )
+                        StatCard(
+                            title: "Score",
+                            value: stats.totalScore.formatted(),
+                            icon: "star.fill",
+                            color: .yellow,
+                            subtitle: "\(String(format: "%.0f", stats.scorePerMinute)) per min"
+                        )
 
-                    StatCard(
-                        title: "Wins",
-                        value: stats.wins.formatted(),
-                        icon: "trophy.fill",
-                        color: Theme.bf6Green,
-                        subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
-                        trend: viewModel.wlTrend
-                    )
+                        StatCard(
+                            title: "Wins",
+                            value: stats.wins.formatted(),
+                            icon: "trophy.fill",
+                            color: Theme.bf6Green,
+                            subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
+                            trend: convertTrend(viewModel.wlTrend)
+                        )
+                    }
                 }
             }
+            .frame(height: 160)
             
             HStack(spacing: 16) {
                 // Combat Stats
@@ -152,9 +151,7 @@ struct OverviewStatsView: View {
                         }
                     }
                 }
-                .padding()
-                .background(Theme.cardBackground)
-                .cornerRadius(16)
+                .cardStyle()
 
                 // Team Stats
                 VStack(alignment: .leading, spacing: 16) {
@@ -171,9 +168,7 @@ struct OverviewStatsView: View {
                         }
                     }
                 }
-                .padding()
-                .background(Theme.cardBackground)
-                .cornerRadius(16)
+                .cardStyle()
             }
 
             // Match Performance Section
@@ -217,9 +212,7 @@ struct OverviewStatsView: View {
                         )
                     }
                 }
-                .padding()
-                .background(Theme.cardBackground)
-                .cornerRadius(16)
+                .cardStyle()
             }
 
             HStack(spacing: 16) {
@@ -268,9 +261,7 @@ struct OverviewStatsView: View {
                             .foregroundColor(Theme.textSecondary)
                     }
                 }
-                .padding()
-                .background(Theme.cardBackground)
-                .cornerRadius(16)
+                .cardStyle()
                 .frame(maxWidth: .infinity)
 
                 // Top Weapons
@@ -316,12 +307,10 @@ struct OverviewStatsView: View {
                         }
                     }
                 }
-                .padding()
-                .background(Theme.cardBackground)
-                .cornerRadius(16)
+                .cardStyle()
                 .frame(maxWidth: .infinity)
             }
-            
+
             // All Classes Preview
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader(title: "Class Performance", icon: "person.3.sequence.fill")
@@ -345,9 +334,7 @@ struct OverviewStatsView: View {
                     }
                 }
             }
-            .padding()
-            .background(Theme.cardBackground)
-            .cornerRadius(16)
+            .cardStyle()
         }
     }
 
@@ -366,6 +353,19 @@ struct OverviewStatsView: View {
         }
         .padding(.horizontal)
     }
+
+    // MARK: - Helper Methods
+
+    private func convertTrend(_ trendDirection: TrendDirection) -> TrendInfo? {
+        switch trendDirection {
+        case .improving:
+            return TrendInfo(value: 1.0, text: "Improving", secondaryText: nil)
+        case .declining:
+            return TrendInfo(value: -1.0, text: "Declining", secondaryText: nil)
+        case .stable:
+            return nil // Don't show trend for stable
+        }
+    }
 }
 
 // MARK: - Trend Arrow
@@ -382,76 +382,7 @@ struct TrendArrow: View {
     }
 }
 
-// MARK: - Stat Card
-
-struct StatCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    let subtitle: String
-    var trend: TrendDirection? = nil
-
-    @State private var animatedValue: String = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(color)
-
-                Spacer()
-
-                if let trend = trend {
-                    TrendArrow(trend: trend)
-                }
-            }
-
-            Text(animatedValue.isEmpty ? value : animatedValue)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundColor(Theme.textPrimary)
-                .contentTransition(.numericText(value: extractNumericValue(from: value)))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(Theme.textSecondary)
-
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(Theme.textSecondary.opacity(0.7))
-            }
-        }
-        .padding()
-        .background(
-            LinearGradient(
-                colors: [color.opacity(0.2), color.opacity(0.1)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(color.opacity(0.3), lineWidth: 1)
-        )
-        .onAppear {
-            animatedValue = value
-        }
-        .onChange(of: value) { oldValue, newValue in
-            withAnimation(.easeOut(duration: 0.8)) {
-                animatedValue = newValue
-            }
-        }
-    }
-
-    private func extractNumericValue(from string: String) -> Double {
-        // Extract numeric value from formatted string (e.g., "1,234" -> 1234.0)
-        let cleaned = string.replacingOccurrences(of: ",", with: "")
-        return Double(cleaned) ?? 0
-    }
-}
+// Note: StatCard is now defined in UnifiedStatCard.swift as a legacy wrapper
 
 // MARK: - Section Header
 

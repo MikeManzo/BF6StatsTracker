@@ -260,22 +260,11 @@ struct TodayVsYesterdayView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-
-            Text("No Performance Data Yet")
-                .font(.title3)
-                .fontWeight(.semibold)
-
-            Text("Play some matches to start tracking your daily performance!")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(60)
+        EmptyStateView(
+            icon: "chart.bar.xaxis",
+            title: "No Performance Data Yet",
+            message: "Play some matches to start tracking your daily performance!"
+        )
     }
 }
 

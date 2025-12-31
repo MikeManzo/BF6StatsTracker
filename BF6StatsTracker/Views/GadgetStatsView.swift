@@ -151,22 +151,13 @@ struct GadgetStatsView: View {
     }
     
     // MARK: - Empty State
-    
+
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "wrench.and.screwdriver.fill")
-                .font(.system(size: 50))
-                .foregroundColor(Theme.textSecondary)
-            
-            Text("No Gadgets Found")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Gadget data will appear after using gadgets in matches")
-                .foregroundColor(Theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(50)
+        EmptyStateView(
+            icon: "wrench.and.screwdriver.fill",
+            title: "No Gadgets Found",
+            message: "Gadget data will appear after using gadgets in matches"
+        )
     }
 }
 

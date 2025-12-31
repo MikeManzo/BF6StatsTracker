@@ -53,25 +53,74 @@ extension View {
         self
             .padding()
             .background(Theme.cardBackground)
-            .cornerRadius(16)
+            .cornerRadius(12)
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(Theme.borderColor, lineWidth: 1)
             )
     }
-    
+
     func glassStyle() -> some View {
         self
             .background(.ultraThinMaterial)
-            .cornerRadius(16)
+            .cornerRadius(12)
     }
-    
+
     @ViewBuilder
     func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
         if condition {
             transform(self)
         } else {
             self
+        }
+    }
+
+    func responsiveColumns(for width: CGFloat, minColumnWidth: CGFloat = 350) -> [GridItem] {
+        let columnCount = max(1, Int(width / minColumnWidth))
+        return Array(repeating: GridItem(.flexible(), spacing: 16), count: columnCount)
+    }
+}
+
+// MARK: - Responsive Helpers
+
+enum ResponsiveBreakpoint {
+    case compact    // < 900
+    case regular    // 900 - 1200
+    case large      // > 1200
+
+    init(width: CGFloat) {
+        if width < 900 {
+            self = .compact
+        } else if width < 1200 {
+            self = .regular
+        } else {
+            self = .large
+        }
+    }
+
+    var columns: Int {
+        switch self {
+        case .compact: return 2
+        case .regular: return 3
+        case .large: return 4
+        }
+    }
+
+    var spacing: CGFloat {
+        switch self {
+        case .compact: return 12
+        case .regular: return 16
+        case .large: return 16
+        }
+    }
+}
+
+struct ResponsiveGeometry<Content: View>: View {
+    let content: (CGSize, ResponsiveBreakpoint) -> Content
+
+    var body: some View {
+        GeometryReader { geometry in
+            content(geometry.size, ResponsiveBreakpoint(width: geometry.size.width))
         }
     }
 }
@@ -257,11 +306,12 @@ struct EmptyStateView: View {
     let message: String
     var action: (() -> Void)?
     var actionTitle: String?
+    var iconSize: CGFloat = 60 // Standardized icon size
 
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: 50))
+                .font(.system(size: iconSize))
                 .foregroundColor(Theme.textSecondary)
 
             Text(title)
@@ -273,20 +323,25 @@ struct EmptyStateView: View {
                 .font(.body)
                 .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             if let action = action, let actionTitle = actionTitle {
                 Button(action: action) {
                     Text(actionTitle)
-                        .foregroundColor(Theme.textPrimary)
+                        .foregroundColor(Theme.selectedText)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
                         .background(Theme.bf6Blue)
                         .cornerRadius(8)
                 }
                 .buttonStyle(.plain)
+                .help(actionTitle)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(40)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(message)")
     }
 }
 
