@@ -393,6 +393,7 @@ class StatsViewModel: ObservableObject {
     func loadSettings() async {
         settings = await SettingsManager.shared.loadSettings()
         tilePositions = await SettingsManager.shared.loadTilePositions()
+        Theme.setAccentScheme(settings.selectedColorScheme)
     }
     
     func saveSettings() async {

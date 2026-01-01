@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var showNotifications: Bool = true
     @State private var compactMode: Bool = false
     @State private var showEnhancedOverview: Bool = true
+    @State private var selectedColorScheme: AppColorScheme = .orange
     @State private var showEALogin = false
     @State private var showClearHistoryConfirmation = false
     
@@ -57,7 +58,7 @@ struct SettingsView: View {
                                         Circle()
                                             .fill(
                                                 LinearGradient(
-                                                    colors: [Theme.bf6Orange, Theme.bf6Red],
+                                                    colors: [Theme.accent, Theme.bf6Red],
                                                     startPoint: .topLeading,
                                                     endPoint: .bottomTrailing
                                                 )
@@ -117,7 +118,7 @@ struct SettingsView: View {
                             VStack(spacing: 12) {
                                 HStack {
                                     Image(systemName: "exclamationmark.circle")
-                                        .foregroundColor(Theme.bf6Orange)
+                                        .foregroundColor(Theme.accent)
 
                                     Text("No EA Account Connected")
                                         .font(.subheadline)
@@ -140,7 +141,7 @@ struct SettingsView: View {
                                     .padding(.vertical, 10)
                                     .background(
                                         LinearGradient(
-                                            colors: [Theme.bf6Orange, Theme.bf6Red],
+                                            colors: [Theme.accent, Theme.bf6Red],
                                             startPoint: .leading,
                                             endPoint: .trailing
                                         )
@@ -211,11 +212,11 @@ struct SettingsView: View {
 
                                         Text("\(Int(refreshInterval / 60)) minutes")
                                             .font(.subheadline)
-                                            .foregroundColor(Theme.bf6Orange)
+                                            .foregroundColor(Theme.accent)
                                     }
 
                                     Slider(value: $refreshInterval, in: 60...1800, step: 60)
-                                        .tint(Theme.bf6Orange)
+                                        .tint(Theme.accent)
 
                                     HStack {
                                         Text("1 min")
@@ -236,6 +237,35 @@ struct SettingsView: View {
                     // Display Settings
                     SettingsSection(title: "Display", icon: "paintbrush.fill") {
                         VStack(spacing: 12) {
+                            // Color Scheme Picker
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Color Scheme")
+                                    .font(.subheadline)
+                                    .foregroundColor(Theme.textSecondary)
+
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible()),
+                                    GridItem(.flexible()),
+                                    GridItem(.flexible())
+                                ], spacing: 12) {
+                                    ForEach(AppColorScheme.allCases) { scheme in
+                                        ColorSchemeButton(
+                                            scheme: scheme,
+                                            isSelected: selectedColorScheme == scheme
+                                        ) {
+                                            selectedColorScheme = scheme
+                                            Theme.setAccentScheme(scheme)
+                                        }
+                                    }
+                                }
+
+                                Text("Choose your preferred accent color for the app")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+
+                            Divider()
+
                             Toggle("Compact Mode", isOn: $compactMode)
                                 .foregroundColor(Theme.textPrimary)
 
@@ -405,6 +435,8 @@ struct SettingsView: View {
         showNotifications = viewModel.settings.showNotifications
         compactMode = viewModel.settings.compactMode
         showEnhancedOverview = viewModel.settings.showEnhancedOverview
+        selectedColorScheme = viewModel.settings.selectedColorScheme
+        Theme.setAccentScheme(selectedColorScheme)
     }
 
     private func saveSettings() {
@@ -415,16 +447,18 @@ struct SettingsView: View {
         viewModel.settings.showNotifications = showNotifications
         viewModel.settings.compactMode = compactMode
         viewModel.settings.showEnhancedOverview = showEnhancedOverview
-        
+        viewModel.settings.selectedColorScheme = selectedColorScheme
+        Theme.setAccentScheme(selectedColorScheme)
+
         Task {
             await viewModel.saveSettings()
-            
+
             // Refresh if player changed
             if playerName != viewModel.playerStats?.userName {
                 await viewModel.searchPlayer(name: playerName, platform: selectedPlatform)
             }
         }
-        
+
         dismiss()
     }
 
@@ -527,7 +561,7 @@ struct SettingsSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(Theme.bf6Orange)
+                    .foregroundColor(Theme.accent)
 
                 Text(title)
                     .font(.headline)
@@ -540,6 +574,57 @@ struct SettingsSection<Content: View>: View {
                 .background(Theme.cardBackground)
                 .cornerRadius(12)
         }
+    }
+}
+
+// MARK: - Color Scheme Button
+
+struct ColorSchemeButton: View {
+    let scheme: AppColorScheme
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(scheme.displayColor)
+                        .frame(width: 50, height: 50)
+                        .overlay(
+                            Circle()
+                                .stroke(isSelected ? Theme.textPrimary : Color.clear, lineWidth: 3)
+                                .padding(-4)
+                        )
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.white)
+                            .font(.title3)
+                            .background(
+                                Circle()
+                                    .fill(scheme.displayColor)
+                                    .padding(6)
+                            )
+                    } else {
+                        Image(systemName: scheme.iconName)
+                            .foregroundColor(.white)
+                            .font(.title3)
+                    }
+                }
+
+                Text(scheme.rawValue)
+                    .font(.caption)
+                    .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
+                    .fontWeight(isSelected ? .semibold : .regular)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -1083,6 +1083,7 @@ struct AppSettings: Codable {
     var showNotifications: Bool
     var compactMode: Bool
     var showEnhancedOverview: Bool
+    var selectedColorScheme: AppColorScheme
 
     // EA Identity fields - populated from EAIdentityKit
     var nucleusId: String?        // pidId - Master account identifier
@@ -1099,6 +1100,7 @@ struct AppSettings: Codable {
         self.showNotifications = true
         self.compactMode = false
         self.showEnhancedOverview = true
+        self.selectedColorScheme = .orange
         self.nucleusId = nil
         self.personaId = nil
         self.eaId = nil

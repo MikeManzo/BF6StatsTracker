@@ -92,7 +92,7 @@ struct DailyPerformanceView: View {
                         previous: yesterdayPerformance?.dailyKD
                     ) : nil,
                     icon: "chart.line.uptrend.xyaxis",
-                    color: Theme.bf6Orange
+                    color: Theme.accent
                 )
 
                 QuickStatCard(
@@ -173,7 +173,7 @@ struct DailyPerformanceView: View {
                         label: "Resupplies",
                         value: "\(dailyPerformance.deltaResupplies)",
                         icon: "shippingbox.fill",
-                        color: Theme.bf6Orange
+                        color: Theme.accent
                     )
                 }
             }
@@ -332,7 +332,7 @@ struct DailyStatCard: View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(Theme.accent)
 
             Text(label)
                 .font(.caption)

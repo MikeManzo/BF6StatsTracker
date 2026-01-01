@@ -7,6 +7,45 @@
 
 import SwiftUI
 
+// MARK: - Color Scheme Definition
+
+enum AppColorScheme: String, Codable, CaseIterable, Identifiable {
+    case orange = "Orange"
+    case blue = "Midnight Blue"
+    case green = "Forest Green"
+    case purple = "Royal Purple"
+    case red = "Crimson Red"
+    case teal = "Cyber Teal"
+
+    var id: String { rawValue }
+
+    var primaryColor: Color {
+        switch self {
+        case .orange: return Color(red: 1.0, green: 0.5, blue: 0.0)
+        case .blue: return Color(red: 0.0, green: 0.48, blue: 1.0)
+        case .green: return Color(red: 0.2, green: 0.75, blue: 0.3)
+        case .purple: return Color(red: 0.55, green: 0.27, blue: 0.88)
+        case .red: return Color(red: 0.9, green: 0.2, blue: 0.2)
+        case .teal: return Color(red: 0.0, green: 0.8, blue: 0.8)
+        }
+    }
+
+    var displayColor: Color {
+        primaryColor
+    }
+
+    var iconName: String {
+        switch self {
+        case .orange: return "flame.fill"
+        case .blue: return "moon.stars.fill"
+        case .green: return "leaf.fill"
+        case .purple: return "crown.fill"
+        case .red: return "bolt.fill"
+        case .teal: return "cpu.fill"
+        }
+    }
+}
+
 // MARK: - Theme Colors (Light/Dark Mode Support)
 
 // Theme provides convenient access to Asset Catalog colors without name collisions.
@@ -32,6 +71,17 @@ enum Theme {
     static let bf6Orange = Color("BF6Orange")
     static let bf6Purple = Color("BF6Purple")
     static let bf6Red = Color("BF6Red")
+
+    // Active accent color - dynamically updated based on selected color scheme
+    private static var _accentColor: AppColorScheme = .orange
+
+    static func setAccentScheme(_ scheme: AppColorScheme) {
+        _accentColor = scheme
+    }
+
+    static var accent: Color {
+        _accentColor.primaryColor
+    }
 
     // Semantic Convenience Colors
     static var adaptiveWhite: Color { textPrimary }
@@ -283,7 +333,7 @@ struct LoadingView: View {
         VStack(spacing: 16) {
             Circle()
                 .trim(from: 0, to: 0.7)
-                .stroke(Theme.bf6Orange, lineWidth: 3)
+                .stroke(Theme.accent, lineWidth: 3)
                 .frame(width: 40, height: 40)
                 .rotationEffect(.degrees(isAnimating ? 360 : 0))
                 .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
