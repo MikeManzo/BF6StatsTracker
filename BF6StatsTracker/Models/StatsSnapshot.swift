@@ -16,6 +16,7 @@ final class StatsSnapshot {
     var timestamp: Date
     var playerName: String
     var platform: String
+    var eaId: String? // EA Account ID
 
     // Core Stats
     var kills: Int
@@ -40,11 +41,12 @@ final class StatsSnapshot {
     // Session metadata
     var sessionId: UUID?
 
-    init(from stats: PlayerStats, sessionId: UUID? = nil) {
+    init(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil) {
         self.id = UUID()
         self.timestamp = Date()
         self.playerName = stats.userName
         self.platform = stats.platform
+        self.eaId = eaId
 
         self.kills = stats.kills
         self.deaths = stats.deaths
@@ -65,6 +67,54 @@ final class StatsSnapshot {
         self.resupplies = stats.resupplies
 
         self.sessionId = sessionId
+    }
+
+    /// Calculate approximate storage size in bytes
+    var approximateStorageSize: Int {
+        var size = 0
+
+        // UUID (128 bits = 16 bytes)
+        size += 16
+
+        // Date (8 bytes - TimeInterval is Double)
+        size += 8
+
+        // Strings (approximate based on UTF-8 encoding)
+        size += playerName.utf8.count
+        size += platform.utf8.count
+        if let eaId = eaId {
+            size += eaId.utf8.count
+        }
+
+        // Int fields (8 bytes each on 64-bit systems)
+        let intFieldCount = 11 // kills, deaths, wins, losses, matchesPlayed, totalScore, timePlayed, headshots, assists, revives, resupplies
+        size += intFieldCount * 8
+
+        // Double fields (8 bytes each)
+        let doubleFieldCount = 5 // kdRatio, scorePerMinute, killsPerMinute, accuracy, headshotPercentage
+        size += doubleFieldCount * 8
+
+        // Optional UUID for sessionId
+        if sessionId != nil {
+            size += 16
+        }
+
+        // Add some overhead for SwiftData metadata (approximate)
+        size += 64
+
+        return size
+    }
+
+    /// Format storage size as human-readable string
+    var formattedStorageSize: String {
+        let bytes = Double(approximateStorageSize)
+        if bytes < 1024 {
+            return String(format: "%.0f B", bytes)
+        } else if bytes < 1024 * 1024 {
+            return String(format: "%.1f KB", bytes / 1024)
+        } else {
+            return String(format: "%.2f MB", bytes / (1024 * 1024))
+        }
     }
 }
 

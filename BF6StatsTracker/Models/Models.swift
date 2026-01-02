@@ -458,7 +458,15 @@ struct PlayerStats: Codable, Identifiable {
 
         // XP and Progression
         xpData = try container.decodeIfPresent([XPEntry].self, forKey: .xpData)
-        bestClass = try container.decodeIfPresent(String.self, forKey: .bestClass) ?? ""
+
+        // Handle bestClass which might be a String or a Number in the API
+        if let bestClassString = try? container.decodeIfPresent(String.self, forKey: .bestClass) {
+            bestClass = bestClassString
+        } else if let bestClassInt = try? container.decodeIfPresent(Int.self, forKey: .bestClass) {
+            bestClass = String(bestClassInt)
+        } else {
+            bestClass = ""
+        }
 
         // Nested Collections
         classes = try container.decodeIfPresent([ClassStats].self, forKey: .classes)
@@ -848,27 +856,58 @@ struct GadgetStats: Codable, Identifiable, Hashable {
 // MARK: - Platform Enum
 enum Platform: String, CaseIterable, Identifiable {
     case pc = "pc"
-    case playstation = "ps5"
-    case xbox = "xboxseries"
     case steam = "steam"
-    
+    case ps3 = "ps3"
+    case ps4 = "ps4"
+    case ps5 = "ps5"
+    case playstation = "playstation"
+    case xbox = "xbox"
+    case xboxOne = "xboxone"
+    case xboxSeries = "xboxseries"
+
     var id: String { rawValue }
-    
+
     var displayName: String {
         switch self {
         case .pc: return "PC (Origin/EA)"
-        case .playstation: return "PlayStation 5"
-        case .xbox: return "Xbox Series X|S"
         case .steam: return "Steam"
+        case .ps3: return "PlayStation 3"
+        case .ps4: return "PlayStation 4"
+        case .ps5: return "PlayStation 5"
+        case .playstation: return "PlayStation"
+        case .xbox: return "Xbox"
+        case .xboxOne: return "Xbox One"
+        case .xboxSeries: return "Xbox Series X|S"
         }
     }
-    
+
     var icon: String {
         switch self {
         case .pc: return "desktopcomputer"
-        case .playstation: return "playstation.logo"
-        case .xbox: return "xbox.logo"
         case .steam: return "cloud.fill"
+        case .ps3, .ps4, .ps5, .playstation: return "playstation.logo"
+        case .xbox, .xboxOne, .xboxSeries: return "xbox.logo"
+        }
+    }
+
+    /// Initialize from API platform string
+    init?(apiString: String?) {
+        guard let str = apiString?.lowercased() else { return nil }
+
+        // Map common platform strings
+        switch str {
+        case "pc", "origin": self = .pc
+        case "steam": self = .steam
+        case "ps3", "playstation3": self = .ps3
+        case "ps4", "playstation4": self = .ps4
+        case "ps5", "playstation5": self = .ps5
+        case "playstation", "psn": self = .playstation
+        case "xbox": self = .xbox
+        case "xboxone", "xbox one": self = .xboxOne
+        case "xboxseries", "xbox series", "xboxseriesx", "xboxseriess": self = .xboxSeries
+        default:
+            // Try to init with raw value
+            self.init(rawValue: str)
         }
     }
 }

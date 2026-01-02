@@ -17,6 +17,16 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
     let lastUsed: Date
     let addedAt: Date
 
+    // Additional fields from rip-bf.com API
+    let userId: String?
+    let avatarUrl: String?
+    let subscriptionLevel: String?
+    let nickname: String?
+    let platform: String?
+    let status: String?
+    let createdAt: String?
+    let platformIcon: String?
+
     /// The text to display in the UI (custom name or EA ID)
     var displayText: String {
         displayName ?? eaId
@@ -31,10 +41,41 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
         self.displayName = displayName
         self.addedAt = Date()
         self.lastUsed = Date()
+        self.userId = nil
+        self.avatarUrl = nil
+        self.subscriptionLevel = nil
+        self.nickname = nil
+        self.platform = nil
+        self.status = nil
+        self.createdAt = nil
+        self.platformIcon = nil
+    }
+
+    /// Initialize from rip-bf.com API response
+    /// Maps API fields to StoredEAAccount structure:
+    /// - userId = nucleusId
+    /// - id = personaId
+    /// - EAID = eaId
+    init(from apiUser: RipBFAPIUser, displayName: String? = nil) {
+        self.id = UUID()
+        self.nucleusId = apiUser.userId
+        self.personaId = apiUser.id
+        self.eaId = apiUser.EAID
+        self.displayName = displayName
+        self.addedAt = Date()
+        self.lastUsed = Date()
+        self.userId = apiUser.userId
+        self.avatarUrl = apiUser.avatarUrl
+        self.subscriptionLevel = apiUser.subscriptionLevel
+        self.nickname = apiUser.nickname
+        self.platform = apiUser.platform
+        self.status = apiUser.status
+        self.createdAt = apiUser.createdAt
+        self.platformIcon = apiUser.platformIcon
     }
 
     /// Initialize with all fields (for decoding or testing)
-    init(id: UUID = UUID(), nucleusId: String, personaId: String, eaId: String, displayName: String? = nil, lastUsed: Date = Date(), addedAt: Date = Date()) {
+    init(id: UUID = UUID(), nucleusId: String, personaId: String, eaId: String, displayName: String? = nil, lastUsed: Date = Date(), addedAt: Date = Date(), userId: String? = nil, avatarUrl: String? = nil, subscriptionLevel: String? = nil, nickname: String? = nil, platform: String? = nil, status: String? = nil, createdAt: String? = nil, platformIcon: String? = nil) {
         self.id = id
         self.nucleusId = nucleusId
         self.personaId = personaId
@@ -42,6 +83,14 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
         self.displayName = displayName
         self.lastUsed = lastUsed
         self.addedAt = addedAt
+        self.userId = userId
+        self.avatarUrl = avatarUrl
+        self.subscriptionLevel = subscriptionLevel
+        self.nickname = nickname
+        self.platform = platform
+        self.status = status
+        self.createdAt = createdAt
+        self.platformIcon = platformIcon
     }
 
     /// Convert to EAPlayerIdentity for use with existing authentication system
@@ -63,7 +112,15 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
             eaId: eaId,
             displayName: displayName,
             lastUsed: Date(),
-            addedAt: addedAt
+            addedAt: addedAt,
+            userId: userId,
+            avatarUrl: avatarUrl,
+            subscriptionLevel: subscriptionLevel,
+            nickname: nickname,
+            platform: platform,
+            status: status,
+            createdAt: createdAt,
+            platformIcon: platformIcon
         )
     }
 
@@ -76,7 +133,15 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
             eaId: eaId,
             displayName: name,
             lastUsed: lastUsed,
-            addedAt: addedAt
+            addedAt: addedAt,
+            userId: userId,
+            avatarUrl: avatarUrl,
+            subscriptionLevel: subscriptionLevel,
+            nickname: nickname,
+            platform: platform,
+            status: status,
+            createdAt: createdAt,
+            platformIcon: platformIcon
         )
     }
 
@@ -98,4 +163,27 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
             return "Just now"
         }
     }
+}
+
+// MARK: - RipBF API Models
+
+/// Response from rip-bf.com API endpoint
+struct RipBFAPIResponse: Codable {
+    let error: Bool
+    let message: String
+    let users: [RipBFAPIUser]?
+}
+
+/// User data from rip-bf.com API
+struct RipBFAPIUser: Codable {
+    let EAID: String
+    let userId: String
+    let id: String
+    let avatarUrl: String?
+    let subscriptionLevel: String?
+    let nickname: String?
+    let platform: String?
+    let status: String?
+    let createdAt: String?
+    let platformIcon: String?
 }

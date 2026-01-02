@@ -16,6 +16,16 @@ extension StatsViewModel {
         gadgetStats = []
         classStats = []
 
+        // Clear cache metadata
+        lastUpdated = nil
+        cacheAge = nil
+        error = nil
+
+        // Reset selection states
+        selectedClass = nil
+        selectedWeaponCategory = nil
+        selectedVehicleCategory = nil
+
         // Reset UI state
         selectedTab = .overview
 

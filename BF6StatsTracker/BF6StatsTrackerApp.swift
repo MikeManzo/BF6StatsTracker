@@ -15,6 +15,7 @@ struct BF6StatsTrackerApp: App {
     @StateObject private var viewModel = StatsViewModel()
     @StateObject private var historyManager = HistoryManager.shared
     @State private var isWindowVisible = true
+    @Environment(\.openWindow) private var openWindow
 
     // SwiftData model container
     let modelContainer: ModelContainer
@@ -57,6 +58,11 @@ struct BF6StatsTrackerApp: App {
         .windowStyle(.hiddenTitleBar)
         .modelContainer(modelContainer)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About BF6 Stats Tracker") {
+                    openWindow(id: "about")
+                }
+            }
             CommandGroup(replacing: .newItem) {}
             CommandMenu("Stats") {
                 Button("Refresh Stats") {
@@ -65,9 +71,9 @@ struct BF6StatsTrackerApp: App {
                     }
                 }
                 .keyboardShortcut("r", modifiers: .command)
-                
+
                 Divider()
-                
+
                 Button("Clear Cache") {
                     viewModel.clearCache()
                 }
@@ -80,7 +86,14 @@ struct BF6StatsTrackerApp: App {
             SettingsView()
                 .environmentObject(viewModel)
         }
-        
+
+        // About Window
+        Window("About BF6 Stats Tracker", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+
         // Menu Bar Extra
         MenuBarExtra {
             MenuBarView()

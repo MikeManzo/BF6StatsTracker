@@ -71,7 +71,7 @@ struct MenuBarView: View {
                         .fontWeight(.bold)
                         .foregroundColor(Theme.textPrimary)
 
-                    PlatformIconView(platform: viewModel.settings.platform, size: 12)
+                    PlatformIconView(size: 12)
                 }
 
                 // XP Info

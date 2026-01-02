@@ -11,17 +11,18 @@ import SwiftData
 struct SettingsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
     @Environment(\.dismiss) var dismiss
-    
-    @State private var playerName: String = ""
-    @State private var selectedPlatform: Platform = .pc
+    @StateObject private var accountStore = EAAccountStore.shared
+
     @State private var autoRefresh: Bool = true
     @State private var refreshInterval: Double = 300
     @State private var showNotifications: Bool = true
     @State private var compactMode: Bool = false
     @State private var showEnhancedOverview: Bool = true
     @State private var selectedColorScheme: AppColorScheme = .orange
-    @State private var showEALogin = false
     @State private var showClearHistoryConfirmation = false
+    @State private var showAbout = false
+    @State private var accountToDelete: StoredEAAccount?
+    @State private var showDeleteAccountAlert = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -49,152 +50,63 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // EA Account Section
-                    SettingsSection(title: "EA Account", icon: "person.badge.key.fill") {
-                        if viewModel.isEAAuthenticated {
-                            // Logged in state
+                    SettingsSection(title: "EA Accounts", icon: "person.badge.key.fill") {
+                        if accountStore.accounts.isEmpty {
+                            // No accounts state
                             VStack(spacing: 12) {
                                 HStack {
-                                    ZStack {
-                                        Circle()
-                                            .fill(
-                                                LinearGradient(
-                                                    colors: [Theme.accent, Theme.bf6Red],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing
-                                                )
-                                            )
-                                            .frame(width: 40, height: 40)
+                                    Image(systemName: "info.circle")
+                                        .foregroundColor(Theme.textSecondary)
 
-                                        Image(systemName: "person.badge.key.fill")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 16))
-                                    }
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        HStack {
-                                            Text(viewModel.settings.eaId ?? "EA User")
-                                                .font(.headline)
-                                                .foregroundColor(Theme.textPrimary)
-
-                                            Image(systemName: "checkmark.seal.fill")
-                                                .foregroundColor(Theme.bf6Green)
-                                                .font(.caption)
-                                        }
-
-                                        Text("EA Account Connected")
-                                            .font(.caption)
-                                            .foregroundColor(Theme.bf6Green)
-                                    }
-
-                                    Spacer()
-                                }
-
-                                Divider()
-
-                                // Identity details
-                                VStack(spacing: 8) {
-                                    EAIdentityRow(label: "EA ID", value: viewModel.settings.eaId ?? "N/A")
-                                    EAIdentityRow(label: "Nucleus ID", value: viewModel.settings.nucleusId ?? "N/A")
-                                    EAIdentityRow(label: "Persona ID", value: viewModel.settings.personaId ?? "N/A")
-                                }
-
-                                Divider()
-
-                                // Disconnect button
-                                Button(role: .destructive) {
-                                    viewModel.logout()
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "person.badge.minus")
-                                        Text("Disconnect EA Account")
-                                    }
-                                    .font(.subheadline)
-                                    .foregroundColor(Theme.bf6Red)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        } else {
-                            // Not logged in state
-                            VStack(spacing: 12) {
-                                HStack {
-                                    Image(systemName: "exclamationmark.circle")
-                                        .foregroundColor(Theme.accent)
-
-                                    Text("No EA Account Connected")
+                                    Text("No EA accounts stored")
                                         .font(.subheadline)
                                         .foregroundColor(Theme.textSecondary)
 
                                     Spacer()
                                 }
 
-                                Button {
-                                    showEALogin = true
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "person.badge.key.fill")
-                                        Text("Sign in with EA")
-                                    }
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [Theme.accent, Theme.bf6Red],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .cornerRadius(8)
-                                }
-                                .buttonStyle(.plain)
-
-                                Text("Connect your EA account to automatically detect your player name and get verified stats.")
+                                Text("EA accounts are automatically saved when you authenticate through the app.")
                                     .font(.caption)
                                     .foregroundColor(Theme.textSecondary)
                             }
-                        }
-                    }
-
-                    // Player Settings
-                    SettingsSection(title: "Player", icon: "person.fill") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            // Player Name
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Player Name")
-                                    .font(.subheadline)
-                                    .foregroundColor(Theme.textSecondary)
-
-                                TextField("Enter player name", text: $playerName)
-                                    .textFieldStyle(.plain)
-                                    .foregroundColor(Theme.textPrimary)
-                                    .padding(10)
-                                    .background(Theme.overlayColor)
-                                    .cornerRadius(8)
-                            }
-
-                            // Platform
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Platform")
-                                    .font(.subheadline)
-                                    .foregroundColor(Theme.textSecondary)
-
-                                Picker("Platform", selection: $selectedPlatform) {
-                                    ForEach(Platform.allCases) { platform in
-                                        HStack {
-                                            PlatformIconView(platform: platform, size: 14)
-                                            Text(platform.displayName)
+                        } else {
+                            // Display all stored accounts
+                            VStack(spacing: 12) {
+                                ForEach(accountStore.accounts) { account in
+                                    EAAccountCard(
+                                        account: account,
+                                        onDelete: {
+                                            accountToDelete = account
+                                            showDeleteAccountAlert = true
                                         }
-                                        .tag(platform)
+                                    )
+                                }
+
+                                Divider()
+
+                                // Summary
+                                HStack {
+                                    Text("\(accountStore.accounts.count) stored account\(accountStore.accounts.count == 1 ? "" : "s")")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.textSecondary)
+
+                                    Spacer()
+
+                                    if accountStore.accounts.count > 1 {
+                                        Button(role: .destructive) {
+                                            accountStore.clearAllAccounts()
+                                        } label: {
+                                            Text("Clear All")
+                                                .font(.caption)
+                                                .foregroundColor(Theme.bf6Red)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
-                                .pickerStyle(.menu)
-                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
-                    
+
                     // Refresh Settings
                     SettingsSection(title: "Auto Refresh", icon: "arrow.clockwise") {
                         VStack(spacing: 16) {
@@ -352,34 +264,40 @@ struct SettingsView: View {
                     SettingsSection(title: "About", icon: "info.circle.fill") {
                         VStack(spacing: 12) {
                             HStack {
-                                Text("Version")
-                                    .foregroundColor(Theme.textSecondary)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("BF6 Stats Tracker")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Theme.textPrimary)
+
+                                    Text("Version 1.0.0")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.textSecondary)
+                                }
+
                                 Spacer()
-                                Text("1.0.0")
-                                    .foregroundColor(Theme.textPrimary)
+
+                                Button {
+                                    showAbout = true
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "info.circle")
+                                        Text("About")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(Theme.bf6Orange)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Theme.bf6Orange.opacity(0.1))
+                                    .cornerRadius(8)
+                                }
+                                .buttonStyle(.plain)
                             }
 
-                            HStack {
-                                Text("API Provider")
-                                    .foregroundColor(Theme.textSecondary)
-                                Spacer()
-                                Link("GameTools.Network", destination: URL(string: "https://api.gametools.network")!)
-                                    .foregroundColor(Theme.bf6Blue)
-                            }
-
-                            HStack {
-                                Text("Game Data")
-                                    .foregroundColor(Theme.textSecondary)
-                                Spacer()
-                                Text("Battlefield 6")
-                                    .foregroundColor(Theme.textPrimary)
-                            }
-
-                            Divider()
-
-                            Text("This app uses the free GameTools.Network API to fetch player statistics. Images and assets are sourced from official EA/DICE CDNs.")
+                            Text("Designed & Built by CitizenCoder • Powered by GameTools.Network API")
                                 .font(.caption)
                                 .foregroundColor(Theme.textSecondary)
+                                .multilineTextAlignment(.center)
                         }
                     }
                     
@@ -411,9 +329,8 @@ struct SettingsView: View {
         .onAppear {
             loadCurrentSettings()
         }
-        .sheet(isPresented: $showEALogin) {
-            EALoginView()
-                .environmentObject(viewModel)
+        .sheet(isPresented: $showAbout) {
+            AboutView()
         }
         .alert("Clear Historical Data?", isPresented: $showClearHistoryConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -423,13 +340,19 @@ struct SettingsView: View {
         } message: {
             Text("This will permanently delete all saved snapshots, play sessions, and map statistics. This action cannot be undone.\n\nAre you sure you want to continue?")
         }
+        .alert("Delete EA Account", isPresented: $showDeleteAccountAlert, presenting: accountToDelete) { account in
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                accountStore.deleteAccount(account)
+            }
+        } message: { account in
+            Text("Are you sure you want to delete the EA account for \(account.nickname ?? account.eaId)?\n\nThis will remove the account from your stored accounts list.")
+        }
     }
     
     // MARK: - Actions
     
     private func loadCurrentSettings() {
-        playerName = viewModel.settings.playerName
-        selectedPlatform = viewModel.settings.platform
         autoRefresh = viewModel.settings.autoRefresh
         refreshInterval = viewModel.settings.refreshInterval
         showNotifications = viewModel.settings.showNotifications
@@ -440,8 +363,6 @@ struct SettingsView: View {
     }
 
     private func saveSettings() {
-        viewModel.settings.playerName = playerName
-        viewModel.settings.platform = selectedPlatform
         viewModel.settings.autoRefresh = autoRefresh
         viewModel.settings.refreshInterval = refreshInterval
         viewModel.settings.showNotifications = showNotifications
@@ -452,11 +373,6 @@ struct SettingsView: View {
 
         Task {
             await viewModel.saveSettings()
-
-            // Refresh if player changed
-            if playerName != viewModel.playerStats?.userName {
-                await viewModel.searchPlayer(name: playerName, platform: selectedPlatform)
-            }
         }
 
         dismiss()
@@ -511,6 +427,30 @@ struct SettingsView: View {
         MapTracker.shared.clearMapStats(playerName: playerName, platform: platform.rawValue)
 
         print("🗑️ Historical data cleared successfully")
+    }
+
+    private func formatDate(_ dateString: String) -> String {
+        // ISO8601 date format: "2014-11-02T13:16:03Z"
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        if let date = formatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .medium
+            displayFormatter.timeStyle = .none
+            return displayFormatter.string(from: date)
+        }
+
+        // Try without fractional seconds
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .medium
+            displayFormatter.timeStyle = .none
+            return displayFormatter.string(from: date)
+        }
+
+        return dateString
     }
 }
 
@@ -625,6 +565,118 @@ struct ColorSchemeButton: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - EA Account Card
+
+struct EAAccountCard: View {
+    let account: StoredEAAccount
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                // Avatar
+                PlayerAvatarView(
+                    avatarUrl: account.avatarUrl,
+                    size: 45
+                )
+
+                // Account Info
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(account.nickname ?? account.eaId)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(Theme.textPrimary)
+
+                        if let platform = Platform(apiString: account.platform) {
+                            PlatformIconView(platform: platform, size: 10)
+                        }
+
+                        if let status = account.status, status.lowercased() == "active" {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(Theme.bf6Green)
+                                .font(.caption2)
+                        }
+                    }
+
+                    HStack(spacing: 4) {
+                        Text("Last used:")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+                        Text(account.lastUsedFormatted)
+                            .font(.caption2)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                }
+
+                Spacer()
+
+                // Delete button
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .frame(width: 24, height: 24)
+                        .background(Color.red.opacity(0.1))
+                        .cornerRadius(6)
+                }
+                .buttonStyle(.plain)
+                .help("Delete this account")
+            }
+
+            Divider()
+
+            // Identity details (collapsible)
+            VStack(spacing: 6) {
+                EAIdentityRow(label: "EA ID", value: account.eaId)
+                EAIdentityRow(label: "Nucleus ID", value: account.nucleusId)
+                EAIdentityRow(label: "Persona ID", value: account.personaId)
+
+                if let platform = account.platform {
+                    EAIdentityRow(label: "Platform", value: platform.capitalized)
+                }
+
+                if let subscription = account.subscriptionLevel, !subscription.isEmpty, subscription.lowercased() != "nenhum" {
+                    EAIdentityRow(label: "Subscription", value: subscription)
+                }
+
+                if let createdAt = account.createdAt {
+                    EAIdentityRow(label: "Created", value: formatAccountDate(createdAt))
+                }
+            }
+        }
+        .padding(12)
+        .background(Theme.overlayColor.opacity(0.5))
+        .cornerRadius(10)
+    }
+
+    private func formatAccountDate(_ dateString: String) -> String {
+        // ISO8601 date format: "2014-11-02T13:16:03Z"
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        if let date = formatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .medium
+            displayFormatter.timeStyle = .none
+            return displayFormatter.string(from: date)
+        }
+
+        // Try without fractional seconds
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .medium
+            displayFormatter.timeStyle = .none
+            return displayFormatter.string(from: date)
+        }
+
+        return dateString
     }
 }
 

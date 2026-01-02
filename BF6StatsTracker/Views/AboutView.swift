@@ -1,0 +1,331 @@
+//
+//  AboutView.swift
+//  BF6StatsTracker
+//
+//  Professional About view with credits and acknowledgements
+//
+
+import SwiftUI
+
+struct AboutView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                // Header Section
+                VStack(spacing: 12) {
+                    // App Icon
+                    Image(systemName: "gamecontroller.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.orange, .red],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+
+                    VStack(spacing: 4) {
+                        Text("BF6 Stats Tracker")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(Theme.textPrimary)
+
+                        Text("Version 1.0.0")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.top, 20)
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                // Designed & Built By
+                VStack(spacing: 8) {
+                    Text("Designed & Built By")
+                        .font(.headline)
+                        .foregroundColor(Theme.textPrimary)
+
+                    VStack(spacing: 2) {
+                        Text("CitizenCoder")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Theme.bf6Orange, Theme.bf6Red],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+
+                        Text("2025")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .background(Theme.overlayColor)
+                .cornerRadius(10)
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                // Copyright Section
+                VStack(spacing: 12) {
+                    Text("Copyright & Licenses")
+                        .font(.headline)
+                        .foregroundColor(Theme.textPrimary)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        CopyrightRow(
+                            title: "BF6 Stats Tracker",
+                            copyright: "© 2025 CitizenCoder",
+                            license: "All Rights Reserved"
+                        )
+
+                        CopyrightRow(
+                            title: "Battlefield™ 6",
+                            copyright: "© 2024 Electronic Arts Inc.",
+                            license: "EA and Battlefield are trademarks of Electronic Arts Inc."
+                        )
+                    }
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .background(Theme.overlayColor)
+                .cornerRadius(10)
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                // API Acknowledgements
+                VStack(spacing: 12) {
+                    Text("API & Services")
+                        .font(.headline)
+                        .foregroundColor(Theme.textPrimary)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        APIAcknowledgement(
+                            name: "GameTools.Network API",
+                            description: "Provides comprehensive Battlefield 6 player statistics, match history, and game data.",
+                            icon: "network",
+                            color: .blue
+                        )
+
+                        Divider()
+
+                        APIAcknowledgement(
+                            name: "rip-bf.com API",
+                            description: "Provides EA account authentication and player identity services.",
+                            icon: "person.badge.key.fill",
+                            color: .green
+                        )
+                    }
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .background(Theme.overlayColor)
+                .cornerRadius(10)
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                // Technology Stack
+                VStack(spacing: 12) {
+                    Text("Built With")
+                        .font(.headline)
+                        .foregroundColor(Theme.textPrimary)
+
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 10) {
+                        TechBadge(name: "SwiftUI", icon: "swift")
+                        TechBadge(name: "SwiftData", icon: "internaldrive")
+                        TechBadge(name: "macOS", icon: "apple.logo")
+                        TechBadge(name: "Combine", icon: "arrow.triangle.merge")
+                    }
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .background(Theme.overlayColor)
+                .cornerRadius(10)
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                // Special Thanks
+                VStack(spacing: 12) {
+                    Text("Special Thanks")
+                        .font(.headline)
+                        .foregroundColor(Theme.textPrimary)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        ThanksRow(
+                            icon: "globe",
+                            text: "GameTools.Network team for maintaining public API access"
+                        )
+
+                        ThanksRow(
+                            icon: "person.2.fill",
+                            text: "Battlefield community for continued support and feedback"
+                        )
+
+                        ThanksRow(
+                            icon: "hammer.fill",
+                            text: "All open-source contributors and developers"
+                        )
+                    }
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .background(Theme.overlayColor)
+                .cornerRadius(10)
+
+                // Disclaimer
+                VStack(spacing: 8) {
+                    Text("Disclaimer")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.textPrimary)
+
+                    Text("BF6 Stats Tracker is an unofficial, fan-made application and is not affiliated with, endorsed by, or connected to Electronic Arts Inc. or DICE. All game content, trademarks, and copyrights are property of their respective owners.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(10)
+
+                // Footer
+                VStack(spacing: 4) {
+                    Text("Made with ❤️ for the Battlefield community")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Text("2025")
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.7))
+                }
+                .padding(.bottom, 20)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+        }
+        .background(Theme.backgroundPrimary)
+        .frame(width: 600, height: 700)
+    }
+}
+
+// MARK: - Supporting Views
+
+struct CopyrightRow: View {
+    let title: String
+    let copyright: String
+    let license: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(Theme.textPrimary)
+
+            Text(copyright)
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Text(license)
+                .font(.caption2)
+                .foregroundColor(.secondary.opacity(0.8))
+                .italic()
+        }
+    }
+}
+
+struct APIAcknowledgement: View {
+    let name: String
+    let description: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+                .frame(width: 40)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+struct TechBadge: View {
+    let name: String
+    let icon: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundColor(Theme.bf6Orange)
+
+            Text(name)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(Theme.textPrimary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(Theme.bf6Orange.opacity(0.1))
+        .cornerRadius(6)
+    }
+}
+
+struct ThanksRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundColor(Theme.bf6Orange)
+                .frame(width: 24)
+
+            Text(text)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    AboutView()
+}

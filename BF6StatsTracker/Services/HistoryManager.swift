@@ -37,10 +37,10 @@ class HistoryManager: ObservableObject {
     // MARK: - Snapshots
 
     /// Save a stats snapshot
-    func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil) {
+    func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil) {
         guard let context = modelContext else { return }
 
-        let snapshot = StatsSnapshot(from: stats, sessionId: sessionId)
+        let snapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId)
         context.insert(snapshot)
 
         if let session = currentSession {
@@ -52,7 +52,7 @@ class HistoryManager: ObservableObject {
 
         try? context.save()
         loadRecentData()
-        loadDailyPerformances()
+        loadDailyPerformances(playerName: stats.userName)
     }
 
     /// Get snapshots for a date range
@@ -79,6 +79,17 @@ class HistoryManager: ObservableObject {
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         descriptor.fetchLimit = limit
+
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    /// Get all snapshots (no limit)
+    func getAllSnapshots() -> [StatsSnapshot] {
+        guard let context = modelContext else { return [] }
+
+        let descriptor = FetchDescriptor<StatsSnapshot>(
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
 
         return (try? context.fetch(descriptor)) ?? []
     }
@@ -242,7 +253,7 @@ class HistoryManager: ObservableObject {
     }
 
     func loadRecentData() {  // Made public for refresh after clearing
-        recentSnapshots = getRecentSnapshots(limit: 20)
+        recentSnapshots = getAllSnapshots()
         sessions = getRecentSessions(limit: 10)
     }
 
@@ -305,45 +316,76 @@ class HistoryManager: ObservableObject {
     }
 
     /// Load daily performances
-    func loadDailyPerformances() {
+    /// - Parameter playerName: Optional player name to filter by. If nil, loads for any player.
+    func loadDailyPerformances(playerName: String? = nil) {
         guard let context = modelContext else { return }
 
         let today = Calendar.current.startOfDay(for: Date())
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) ?? today
 
         // Load today's performance
-        let todayPredicate = #Predicate<DailyPerformance> { performance in
-            performance.date == today
+        if let playerName = playerName {
+            let todayPredicate = #Predicate<DailyPerformance> { performance in
+                performance.date == today && performance.playerName == playerName
+            }
+            let todayDescriptor = FetchDescriptor<DailyPerformance>(predicate: todayPredicate)
+            todayPerformance = (try? context.fetch(todayDescriptor))?.first
+        } else {
+            let todayPredicate = #Predicate<DailyPerformance> { performance in
+                performance.date == today
+            }
+            let todayDescriptor = FetchDescriptor<DailyPerformance>(predicate: todayPredicate)
+            todayPerformance = (try? context.fetch(todayDescriptor))?.first
         }
-        let todayDescriptor = FetchDescriptor<DailyPerformance>(predicate: todayPredicate)
-        todayPerformance = (try? context.fetch(todayDescriptor))?.first
 
         // Load yesterday's performance
-        let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
-            performance.date == yesterday
+        if let playerName = playerName {
+            let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
+                performance.date == yesterday && performance.playerName == playerName
+            }
+            let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
+            yesterdayPerformance = (try? context.fetch(yesterdayDescriptor))?.first
+        } else {
+            let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
+                performance.date == yesterday
+            }
+            let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
+            yesterdayPerformance = (try? context.fetch(yesterdayDescriptor))?.first
         }
-        let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
-        yesterdayPerformance = (try? context.fetch(yesterdayDescriptor))?.first
 
         // Load recent daily performances (last 30 days)
-        recentDailyPerformances = getRecentDailyPerformances(days: 30)
+        recentDailyPerformances = getRecentDailyPerformances(days: 30, playerName: playerName)
     }
 
     /// Get daily performances for the last N days
-    func getRecentDailyPerformances(days: Int = 30) -> [DailyPerformance] {
+    /// - Parameters:
+    ///   - days: Number of days to retrieve (default: 30)
+    ///   - playerName: Optional player name to filter by. If nil, returns all players.
+    func getRecentDailyPerformances(days: Int = 30, playerName: String? = nil) -> [DailyPerformance] {
         guard let context = modelContext else { return [] }
 
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         let startOfDay = Calendar.current.startOfDay(for: startDate)
 
-        let predicate = #Predicate<DailyPerformance> { performance in
-            performance.date >= startOfDay
-        }
+        let descriptor: FetchDescriptor<DailyPerformance>
 
-        let descriptor = FetchDescriptor<DailyPerformance>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
+        if let playerName = playerName {
+            let predicate = #Predicate<DailyPerformance> { performance in
+                performance.date >= startOfDay && performance.playerName == playerName
+            }
+            descriptor = FetchDescriptor<DailyPerformance>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        } else {
+            let predicate = #Predicate<DailyPerformance> { performance in
+                performance.date >= startOfDay
+            }
+            descriptor = FetchDescriptor<DailyPerformance>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        }
 
         return (try? context.fetch(descriptor)) ?? []
     }

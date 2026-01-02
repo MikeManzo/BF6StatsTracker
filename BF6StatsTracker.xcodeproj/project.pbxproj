@@ -39,6 +39,7 @@
 		2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */; };
 		2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA192F05DD55004D2E1D /* SearchableListView.swift */; };
 		2749FA1C2F05DD5C004D2E1D /* UnifiedStatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */; };
+		2749FA1E2F080A96004D2E1D /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1D2F080A96004D2E1D /* AboutView.swift */; };
 		27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C267BB2EEF35AF006168AA /* MapTracker.swift */; };
 		27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543792EE98DF300B01618 /* StatsSnapshot.swift */; };
 		27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543782EE98DF300B01618 /* ServerModels.swift */; };
@@ -89,6 +90,7 @@
 		2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayVsYesterdayView.swift; sourceTree = "<group>"; };
 		2749FA192F05DD55004D2E1D /* SearchableListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableListView.swift; sourceTree = "<group>"; };
 		2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedStatCard.swift; sourceTree = "<group>"; };
+		2749FA1D2F080A96004D2E1D /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		27C267BB2EEF35AF006168AA /* MapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTracker.swift; sourceTree = "<group>"; };
 		27E543782EE98DF300B01618 /* ServerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerModels.swift; sourceTree = "<group>"; };
 		27E543792EE98DF300B01618 /* StatsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsSnapshot.swift; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 		3000000000000006 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				2749FA1D2F080A96004D2E1D /* AboutView.swift */,
 				2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */,
 				2749FA122F045D97004D2E1D /* Components */,
 				2747A79F2F037BB8001CF709 /* AccountSelectionView.swift */,
@@ -339,6 +342,7 @@
 				0000000000000016 /* ImageLoader.swift in Sources */,
 				0000000000000017 /* PlayerSearchView.swift in Sources */,
 				27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */,
+				2749FA1E2F080A96004D2E1D /* AboutView.swift in Sources */,
 				2747A79C2F037B7C001CF709 /* StoredEAAccount.swift in Sources */,
 				0000000000000018 /* OverviewStatsView.swift in Sources */,
 				27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */,

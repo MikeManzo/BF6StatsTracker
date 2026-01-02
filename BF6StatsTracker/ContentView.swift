@@ -112,21 +112,10 @@ struct ContentView: View {
             if let stats = viewModel.playerStats {
                 HStack(spacing: 12) {
                     // Player Icon
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [.orange, .yellow],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 50, height: 50)
-
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.black) // Intentionally black on orange gradient
-                    }
+                    PlayerAvatarView(
+                        avatarUrl: EAAccountStore.shared.mostRecentAccount?.avatarUrl,
+                        size: 50
+                    )
 
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
@@ -135,7 +124,7 @@ struct ContentView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(Theme.textPrimary)
 
-                            PlatformIconView(platform: viewModel.settings.platform, size: 16)
+                            PlatformIconView(size: 16)
 
                             // EA Verified badge
                             if viewModel.isEAAuthenticated {
@@ -573,6 +562,68 @@ struct FeatureRow: View {
                 .font(.body)
                 .foregroundColor(Theme.textPrimary)
         }
+    }
+}
+
+// MARK: - Player Avatar View
+
+struct PlayerAvatarView: View {
+    let avatarUrl: String?
+    let size: CGFloat
+
+    @State private var avatarImage: NSImage?
+    @State private var isLoading = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [.orange, .yellow],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: size, height: size)
+
+            if let avatarImage = avatarImage {
+                Image(nsImage: avatarImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "person.fill")
+                    .font(.system(size: size * 0.4, weight: .bold))
+                    .foregroundColor(.black)
+            }
+        }
+        .task {
+            await loadAvatar()
+        }
+    }
+
+    private func loadAvatar() async {
+        guard let avatarUrl = avatarUrl,
+              let url = URL(string: avatarUrl),
+              !isLoading else {
+            return
+        }
+
+        isLoading = true
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let image = NSImage(data: data) {
+                await MainActor.run {
+                    self.avatarImage = image
+                }
+            }
+        } catch {
+            print("Failed to load avatar: \(error.localizedDescription)")
+        }
+
+        isLoading = false
     }
 }
 

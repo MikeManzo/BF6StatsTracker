@@ -129,6 +129,83 @@ class StatsViewModel: ObservableObject {
         isAuthenticating = false
     }
 
+    /// Authenticate with EA using GamerID via rip-bf.com API
+    /// - Parameter gamerID: EA GamerID (username)
+    func authenticateWithGamerID(gamerID: String) async {
+        isAuthenticating = true
+        eaAuthError = nil
+
+        do {
+            // Call the rip-bf.com API
+            guard let url = URL(string: "https://rip-bf.com/api/eaid/?name=\(gamerID.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? gamerID)") else {
+                throw NSError(domain: "Invalid URL", code: -1, userInfo: nil)
+            }
+
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(RipBFAPIResponse.self, from: data)
+
+            // Check if there was an error
+            if response.error {
+                self.eaAuthError = response.message
+                self.isEAAuthenticated = false
+                print("❌ EA Authentication failed: \(response.message)")
+                isAuthenticating = false
+                return
+            }
+
+            // Get the first user from the response
+            guard let apiUser = response.users?.first else {
+                self.eaAuthError = "No user found with that GamerID"
+                self.isEAAuthenticated = false
+                print("❌ EA Authentication failed: No user found")
+                isAuthenticating = false
+                return
+            }
+
+            // Create StoredEAAccount from API response
+            let account = StoredEAAccount(from: apiUser)
+
+            // Convert to EAPlayerIdentity for compatibility with existing system
+            let identity = account.toIdentity()
+
+            // Load the identity into the manager (no token needed)
+            let loadedIdentity = await EAIdentityManager.shared.loadFromStoredAccount(identity)
+
+            // Save to account store for future quick access
+            EAAccountStore.shared.saveAccount(account)
+            print("📝 Saved account to store. Total accounts: \(EAAccountStore.shared.accounts.count)")
+
+            // Update settings with EA identity
+            settings.updateWithEAIdentity(
+                nucleusId: loadedIdentity.nucleusId,
+                personaId: loadedIdentity.personaId,
+                eaId: loadedIdentity.eaId
+            )
+
+            await saveSettings()
+
+            self.isEAAuthenticated = true
+            self.eaAuthError = nil
+
+            print("✅ EA Authentication successful - EA ID: \(identity.eaId), Nucleus ID: \(identity.nucleusId)")
+
+            // Clear old player's daily performance and load new player's data
+            await MainActor.run {
+                HistoryManager.shared.loadDailyPerformances(playerName: loadedIdentity.eaId)
+            }
+
+            // Automatically fetch stats for the authenticated user
+            await fetchStats(forceRefresh: true)
+
+        } catch {
+            self.eaAuthError = error.localizedDescription
+            self.isEAAuthenticated = false
+            print("❌ EA Authentication failed: \(error.localizedDescription)")
+        }
+
+        isAuthenticating = false
+    }
+
     /// Load identity from a stored account without re-authentication
     /// - Parameter identity: The stored player identity
     func loadWithStoredIdentity(_ identity: EAPlayerIdentity) async {
@@ -151,6 +228,11 @@ class StatsViewModel: ObservableObject {
         self.eaAuthError = nil
 
         print("✅ Loaded stored account - EA ID: \(loadedIdentity.eaId)")
+
+        // Clear old player's daily performance and load new player's data
+        await MainActor.run {
+            HistoryManager.shared.loadDailyPerformances(playerName: loadedIdentity.eaId)
+        }
 
         // Automatically fetch stats for the selected account
         await fetchStats(forceRefresh: true)
@@ -265,9 +347,11 @@ class StatsViewModel: ObservableObject {
 
             // Save snapshot to SwiftData for historical tracking
             await MainActor.run {
-                HistoryManager.shared.saveSnapshot(from: stats)
+                // Try to get EA ID from settings first, then fall back to most recent account
+                let eaId = settings.eaId ?? EAAccountStore.shared.mostRecentAccount?.eaId
+                HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId)
                 MapTracker.shared.updateMapStats(from: stats)
-                print("💾 Saved stats snapshot and updated map stats in SwiftData")
+                print("💾 Saved stats snapshot and updated map stats in SwiftData (EA ID: \(eaId ?? "N/A"))")
             }
 
             // Fetch additional detailed stats if main stats are incomplete
@@ -545,7 +629,6 @@ class StatsViewModel: ObservableObject {
 
 enum StatTab: String, CaseIterable, Identifiable {
     case overview = "Overview"
-    case history = "History"
     case maps = "Maps"
     case charts = "Charts"
     case classes = "Classes"
@@ -554,6 +637,7 @@ enum StatTab: String, CaseIterable, Identifiable {
     case vehicles = "Vehicles"
     case loadout = "Loadout"
     case servers = "Servers"
+    case history = "History"
 
     var id: String { rawValue }
 

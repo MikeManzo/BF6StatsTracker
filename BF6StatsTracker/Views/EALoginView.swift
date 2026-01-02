@@ -2,11 +2,10 @@
 //  EALoginView.swift
 //  BF6StatsTracker
 //
-//  EA Login view using EAIdentityKit web authenticator
+//  EA Login view using rip-bf.com API
 //
 
 import SwiftUI
-import EAIdentityKit
 
 struct EALoginView: View {
     @EnvironmentObject var viewModel: StatsViewModel
@@ -14,9 +13,7 @@ struct EALoginView: View {
 
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var showWebAuth = false
-    @State private var manualToken = ""
-    @State private var showManualEntry = false
+    @State private var gamerID = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,11 +53,11 @@ struct EALoginView: View {
 
                     // Title and description
                     VStack(spacing: 8) {
-                        Text("Sign in with EA")
+                        Text("Enter Your GamerID")
                             .font(.title)
                             .fontWeight(.bold)
 
-                        Text("Connect your EA account to automatically fetch your Battlefield 6 stats using your EA ID.")
+                        Text("Enter your EA GamerID to fetch your Battlefield 6 stats.")
                             .font(.body)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -69,9 +66,9 @@ struct EALoginView: View {
 
                     // Benefits
                     VStack(alignment: .leading, spacing: 12) {
-                        BenefitRow(icon: "checkmark.circle.fill", text: "Automatic EA ID detection", color: .green)
-                        BenefitRow(icon: "checkmark.circle.fill", text: "Secure authentication", color: .green)
-                        BenefitRow(icon: "checkmark.circle.fill", text: "No need to remember your exact username", color: .green)
+                        BenefitRow(icon: "checkmark.circle.fill", text: "Quick and simple login", color: .green)
+                        BenefitRow(icon: "checkmark.circle.fill", text: "No password required", color: .green)
+                        BenefitRow(icon: "checkmark.circle.fill", text: "Instant stats access", color: .green)
                     }
                     .padding()
                     .background(Theme.overlayColor)
@@ -90,11 +87,19 @@ struct EALoginView: View {
                         .cornerRadius(8)
                     }
 
-                    // Login buttons
+                    // GamerID Input
                     VStack(spacing: 16) {
-                        // Web login button - opens separate auth window
+                        TextField("Enter your GamerID", text: $gamerID)
+                            .textFieldStyle(.plain)
+                            .font(.title3)
+                            .padding()
+                            .background(Theme.overlayColor)
+                            .cornerRadius(12)
+                            .autocorrectionDisabled()
+
+                        // Login button
                         Button {
-                            showWebAuth = true
+                            loginWithGamerID()
                         } label: {
                             HStack {
                                 if isLoading || viewModel.isAuthenticating {
@@ -102,9 +107,9 @@ struct EALoginView: View {
                                         .scaleEffect(0.8)
                                         .tint(Theme.selectedText)
                                 } else {
-                                    Image(systemName: "globe")
+                                    Image(systemName: "person.fill")
                                 }
-                                Text(isLoading || viewModel.isAuthenticating ? "Signing in..." : "Sign in with EA")
+                                Text(isLoading || viewModel.isAuthenticating ? "Signing in..." : "Sign in")
                             }
                             .font(.title3)
                             .fontWeight(.semibold)
@@ -112,6 +117,8 @@ struct EALoginView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(
+                                gamerID.isEmpty ? 
+                                LinearGradient(colors: [Theme.textSecondary], startPoint: .leading, endPoint: .trailing) :
                                 LinearGradient(
                                     colors: [.orange, .red],
                                     startPoint: .leading,
@@ -121,57 +128,7 @@ struct EALoginView: View {
                             .cornerRadius(12)
                         }
                         .buttonStyle(.plain)
-                        .disabled(isLoading || viewModel.isAuthenticating)
-
-                        // Manual token entry toggle
-                        Button {
-                            withAnimation {
-                                showManualEntry.toggle()
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "key.fill")
-                                Text("Enter token manually")
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    // Manual token entry section
-                    if showManualEntry {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Manual Token Entry")
-                                .font(.headline)
-
-                            Text("If web login doesn't work, you can manually enter your EA access token. Get it from browser dev tools at gateway.ea.com")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-
-                            TextField("Paste EA access token here", text: $manualToken)
-                                .textFieldStyle(.plain)
-                                .padding()
-                                .background(Theme.overlayColor)
-                                .cornerRadius(8)
-
-                            Button {
-                                authenticateWithToken(manualToken)
-                            } label: {
-                                Text("Authenticate")
-                                    .font(.headline)
-                                    .foregroundColor(Theme.selectedText)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(manualToken.isEmpty ? Theme.textSecondary : Color.blue)
-                                    .cornerRadius(8)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(manualToken.isEmpty || isLoading)
-                        }
-                        .padding()
-                        .background(Theme.overlayColor)
-                        .cornerRadius(12)
+                        .disabled(gamerID.isEmpty || isLoading || viewModel.isAuthenticating)
                     }
 
                     // Info section
@@ -179,15 +136,15 @@ struct EALoginView: View {
                         HStack {
                             Image(systemName: "info.circle.fill")
                                 .foregroundColor(.blue)
-                            Text("About EA Authentication")
+                            Text("How It Works")
                                 .font(.headline)
                         }
 
-                        Text("This app uses EA's official authentication to securely identify your account. Your credentials are never stored - only a temporary access token is used.")
+                        Text("Enter your EA GamerID (username) to fetch your account information. No password or authentication required.")
                             .font(.caption)
                             .foregroundColor(.secondary)
 
-                        Text("Tokens typically expire after 1 hour and you'll need to sign in again.")
+                        Text("Your GamerID is your public EA username.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -202,14 +159,6 @@ struct EALoginView: View {
         }
         .frame(width: 500, height: 700)
         .background(Theme.backgroundPrimary)
-        .sheet(isPresented: $showWebAuth) {
-            EAWebAuthView(onTokenReceived: { token in
-                showWebAuth = false
-                authenticateWithToken(token)
-            }, onCancel: {
-                showWebAuth = false
-            })
-        }
         .onChange(of: viewModel.isEAAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 dismiss()
@@ -219,9 +168,9 @@ struct EALoginView: View {
 
     // MARK: - Actions
 
-    private func authenticateWithToken(_ token: String) {
-        guard !token.isEmpty else {
-            errorMessage = "Please enter a valid token"
+    private func loginWithGamerID() {
+        guard !gamerID.isEmpty else {
+            errorMessage = "Please enter a valid GamerID"
             return
         }
 
@@ -229,7 +178,7 @@ struct EALoginView: View {
         errorMessage = nil
 
         Task {
-            await viewModel.authenticateWithEA(token: token)
+            await viewModel.authenticateWithGamerID(gamerID: gamerID)
             isLoading = false
         }
     }
@@ -251,154 +200,6 @@ struct BenefitRow: View {
         }
     }
 }
-
-// MARK: - EA Web Auth View (macOS)
-
-#if os(macOS)
-import AppKit
-
-struct EAWebAuthView: View {
-    let onTokenReceived: (String) -> Void
-    let onCancel: () -> Void
-
-    @State private var isAuthenticating = false
-    @State private var authError: String?
-
-    var body: some View {
-        VStack(spacing: 20) {
-            // Header
-            HStack {
-                Text("Sign in to EA")
-                    .font(.headline)
-
-                Spacer()
-
-                Button("Cancel") {
-                    onCancel()
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(.secondary)
-            }
-            .padding()
-            .background(Theme.overlayColor)
-
-            Spacer()
-
-            if isAuthenticating {
-                VStack(spacing: 16) {
-                    ProgressView()
-                        .scaleEffect(1.5)
-
-                    Text("Opening EA Login...")
-                        .font(.headline)
-
-                    Text("A login window will appear. Sign in with your EA account.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-            } else if let error = authError {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.red)
-
-                    Text("Authentication Failed")
-                        .font(.headline)
-
-                    Text(error)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-
-                    Button("Try Again") {
-                        startAuthentication()
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "person.badge.key.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.orange, .red],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-
-                    Text("Ready to Sign In")
-                        .font(.headline)
-
-                    Text("Click the button below to open the EA login window.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-
-                    Button {
-                        startAuthentication()
-                    } label: {
-                        Text("Open EA Login")
-                            .font(.headline)
-                            .foregroundColor(Theme.selectedText)
-                            .padding(.horizontal, 30)
-                            .padding(.vertical, 12)
-                            .background(
-                                LinearGradient(
-                                    colors: [.orange, .red],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .cornerRadius(10)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            Spacer()
-        }
-        .frame(width: 400, height: 400)
-        .background(Theme.backgroundPrimary)
-    }
-
-    private func startAuthentication() {
-        isAuthenticating = true
-        authError = nil
-
-        // Get window on main thread
-        guard let window = NSApplication.shared.keyWindow else {
-            authError = "No window available for authentication"
-            isAuthenticating = false
-            return
-        }
-
-        // Create authenticator and start authentication
-        // Must happen on main thread for UI presentation
-        let webAuth = EAWebAuthenticator()
-
-        Task {
-            do {
-                // This call will present modal and wait for callback
-                let token = try await webAuth.authenticate(from: window)
-
-                await MainActor.run {
-                    isAuthenticating = false
-                    onTokenReceived(token)
-                }
-
-            } catch {
-                await MainActor.run {
-                    isAuthenticating = false
-                    authError = error.localizedDescription
-                }
-                print("❌ EA Web Auth failed: \(error.localizedDescription)")
-            }
-        }
-    }
-}
-#endif
 
 // MARK: - Preview
 

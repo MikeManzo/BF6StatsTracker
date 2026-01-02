@@ -342,30 +342,34 @@ struct StatIconView: View {
 struct PlatformIconView: View {
     let platform: Platform
     let size: CGFloat
-    
-    var body: some View {
-        Group {
-            switch platform {
-            case .pc:
-                Image(systemName: "desktopcomputer")
-            case .playstation:
-                Image(systemName: "gamecontroller.fill")
-            case .xbox:
-                Image(systemName: "gamecontroller.fill")
-            case .steam:
-                Image(systemName: "cloud.fill")
-            }
+
+    // Optional: Use stored account to get platform if not explicitly provided
+    init(platform: Platform? = nil, size: CGFloat) {
+        // If platform not provided, try to get from stored account
+        if let platform = platform {
+            self.platform = platform
+        } else if let accountPlatformString = EAAccountStore.shared.mostRecentAccount?.platform,
+                  let detectedPlatform = Platform(apiString: accountPlatformString) {
+            self.platform = detectedPlatform
+        } else {
+            // Default fallback
+            self.platform = .pc
         }
-        .font(.system(size: size))
-        .foregroundColor(platformColor)
+        self.size = size
     }
-    
+
+    var body: some View {
+        Image(systemName: platform.icon)
+            .font(.system(size: size))
+            .foregroundColor(platformColor)
+    }
+
     private var platformColor: Color {
         switch platform {
         case .pc: return .blue
-        case .playstation: return .indigo
-        case .xbox: return .green
         case .steam: return Color(nsColor: .systemGray)
+        case .ps3, .ps4, .ps5, .playstation: return .indigo
+        case .xbox, .xboxOne, .xboxSeries: return .green
         }
     }
 }

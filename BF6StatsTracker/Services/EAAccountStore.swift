@@ -54,6 +54,29 @@ class EAAccountStore: ObservableObject {
         print("💾 Persisted \(accounts.count) account(s) to UserDefaults with key: \(storageKey)")
     }
 
+    /// Save an account directly to the store
+    /// - Parameter account: The StoredEAAccount to save
+    func saveAccount(_ account: StoredEAAccount) {
+        print("💾 EAAccountStore: Saving account for \(account.eaId)")
+
+        // Check if account already exists (by nucleusId or personaId)
+        if let existingIndex = accounts.firstIndex(where: { $0.nucleusId == account.nucleusId || $0.personaId == account.personaId }) {
+            // Update existing account's last used time
+            accounts[existingIndex] = account.withUpdatedLastUsed()
+            print("💾 Updated existing account at index \(existingIndex)")
+        } else {
+            // Add new account
+            accounts.append(account)
+            print("💾 Added new account. Total accounts: \(accounts.count)")
+        }
+
+        // Sort by last used (most recent first)
+        accounts.sort { $0.lastUsed > $1.lastUsed }
+
+        persistAccounts()
+        print("💾 Persisted \(accounts.count) account(s) to UserDefaults with key: \(storageKey)")
+    }
+
     /// Select an account and return its identity for use
     /// - Parameter account: The stored account to select
     /// - Returns: EAPlayerIdentity that can be used with existing auth system

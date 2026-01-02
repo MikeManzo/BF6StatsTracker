@@ -2,7 +2,7 @@
 //  SessionHistoryView.swift
 //  BF6StatsTracker
 //
-//  Displays play session history and trends
+//  Displays all SwiftData snapshots with delete functionality
 //
 
 import SwiftUI
@@ -11,26 +11,43 @@ struct SessionHistoryView: View {
     @StateObject private var historyManager = HistoryManager.shared
     @EnvironmentObject var viewModel: StatsViewModel
 
+    @State private var showingDeleteAlert = false
+    @State private var showingDeleteAllAlert = false
+    @State private var snapshotToDelete: StatsSnapshot?
+    @State private var searchText = ""
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header
-                header
+        VStack(spacing: 0) {
+            // Header
+            header
 
-                // Current Session (if active)
-                if let currentSession = historyManager.sessions.first(where: { $0.endTime == nil }) {
-                    currentSessionCard(currentSession)
-                }
+            // Search bar
+            searchBar
 
-                // Session Stats Summary
-                sessionSummary
-
-                // Recent Sessions
-                recentSessionsList
+            // Snapshots list
+            if filteredSnapshots.isEmpty {
+                emptyStateView
+            } else {
+                snapshotsList
             }
-            .padding()
         }
         .background(Theme.backgroundPrimary)
+        .alert("Delete Snapshot", isPresented: $showingDeleteAlert, presenting: snapshotToDelete) { snapshot in
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteSnapshot(snapshot)
+            }
+        } message: { snapshot in
+            Text("Are you sure you want to delete the snapshot from \(snapshot.timestamp.formatted(date: .abbreviated, time: .shortened))?\n\nThis action cannot be undone.")
+        }
+        .alert("Delete All Snapshots", isPresented: $showingDeleteAllAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete All", role: .destructive) {
+                deleteAllSnapshots()
+            }
+        } message: {
+            Text("Are you sure you want to delete all \(historyManager.recentSnapshots.count) snapshots?\n\nThis will permanently remove all historical data and cannot be undone.")
+        }
     }
 
     private var header: some View {
@@ -39,219 +56,276 @@ struct SessionHistoryView: View {
                 .foregroundColor(.cyan)
                 .font(.title2)
 
-            Text("Session History")
-                .font(.title2)
-                .fontWeight(.bold)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Snapshot History")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Text("\(historyManager.recentSnapshots.count)")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                        Text("snapshots")
+                            .font(.caption)
+                    }
+                    .foregroundColor(.secondary)
+
+                    Text("•")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "internaldrive")
+                            .font(.caption2)
+                        Text(totalStorageFormatted)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(.secondary)
+                }
+            }
 
             Spacer()
 
-            Button(action: startNewSession) {
-                Label("New Session", systemImage: "play.circle")
-                    .font(.caption)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.cyan.opacity(0.2))
-                    .cornerRadius(8)
-            }
-        }
-    }
-
-    private func currentSessionCard(_ session: PlaySession) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "circle.fill")
-                    .foregroundColor(.green)
-                    .font(.caption)
-
-                Text("Active Session")
-                    .font(.headline)
-
-                Spacer()
-
-                Text(formatDuration(session.duration))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            HStack(spacing: 16) {
-                StatBadge(label: "Kills", value: "\(session.killsGained)", color: .red)
-                StatBadge(label: "Deaths", value: "\(session.deathsGained)", color: Theme.textSecondary)
-                StatBadge(label: "Matches", value: "\(session.matchesPlayed)", color: .blue)
-            }
-
-            Button(action: { endCurrentSession(session) }) {
-                Text("End Session")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(Color.red.opacity(0.2))
-                    .cornerRadius(8)
+            // Delete All button
+            if !historyManager.recentSnapshots.isEmpty {
+                Button(role: .destructive) {
+                    showingDeleteAllAlert = true
+                } label: {
+                    Label("Delete All", systemImage: "trash.fill")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding()
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(16)
-        .transition(.scale.combined(with: .opacity))
+        .background(Theme.overlayColor)
     }
 
-    private var sessionSummary: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Last 7 Days")
-                .font(.headline)
+    private var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.secondary)
 
-            if let summary = historyManager.getPerformanceSummary(days: 7) {
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 12) {
-                    SummaryCard(title: "Avg K/D", value: String(format: "%.2f", summary.averageKD), trend: summary.trend)
-                    SummaryCard(title: "Best K/D", value: String(format: "%.2f", summary.maxKD), trend: nil)
-                    SummaryCard(title: "Sessions", value: "\(summary.snapshotCount)", trend: nil)
+            TextField("Search by EA ID, date, or stats...", text: $searchText)
+                .textFieldStyle(.plain)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
                 }
-            } else {
-                Text("Start playing to see your performance summary")
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .background(Theme.overlayColor.opacity(0.5))
+        .cornerRadius(10)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+    }
+
+    private var snapshotsList: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(filteredSnapshots, id: \.id) { snapshot in
+                    SnapshotRow(snapshot: snapshot) {
+                        snapshotToDelete = snapshot
+                        showingDeleteAlert = true
+                    }
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .scale.combined(with: .opacity)
+                    ))
+                }
+            }
+            .padding()
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: filteredSnapshots.count)
+        }
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "tray")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+
+            Text(searchText.isEmpty ? "No snapshots recorded yet" : "No snapshots match your search")
+                .font(.title3)
+                .foregroundColor(.secondary)
+
+            if searchText.isEmpty {
+                Text("Snapshots are automatically saved when you refresh your stats")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                    .padding()
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(40)
+    }
+
+    private var filteredSnapshots: [StatsSnapshot] {
+        if searchText.isEmpty {
+            return historyManager.recentSnapshots
+        } else {
+            let lowercased = searchText.lowercased()
+            return historyManager.recentSnapshots.filter { snapshot in
+                snapshot.playerName.lowercased().contains(lowercased) ||
+                (snapshot.eaId?.lowercased().contains(lowercased) ?? false) ||
+                "\(snapshot.kills)".contains(lowercased) ||
+                "\(snapshot.deaths)".contains(lowercased) ||
+                snapshot.timestamp.formatted().lowercased().contains(lowercased)
             }
         }
     }
 
-    private var recentSessionsList: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Sessions")
-                .font(.headline)
+    private var totalStorageSize: Int {
+        historyManager.recentSnapshots.reduce(0) { $0 + $1.approximateStorageSize }
+    }
 
-            if historyManager.sessions.isEmpty {
-                Text("No sessions recorded yet")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding()
-            } else {
-                ForEach(historyManager.sessions.prefix(10), id: \.id) { session in
-                    SessionRow(session: session)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .top).combined(with: .opacity),
-                            removal: .opacity
-                        ))
-                }
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: historyManager.sessions.count)
-            }
+    private var totalStorageFormatted: String {
+        let bytes = Double(totalStorageSize)
+        if bytes < 1024 {
+            return String(format: "%.0f B", bytes)
+        } else if bytes < 1024 * 1024 {
+            return String(format: "%.1f KB", bytes / 1024)
+        } else {
+            return String(format: "%.2f MB", bytes / (1024 * 1024))
         }
     }
 
     // MARK: - Actions
 
-    private func startNewSession() {
-        guard let playerName = viewModel.playerStats?.userName else { return }
-        historyManager.startSession(
-            playerName: playerName,
-            platform: viewModel.settings.platform.rawValue
-        )
+    private func deleteSnapshot(_ snapshot: StatsSnapshot) {
+        guard let context = historyManager.modelContext else { return }
+
+        withAnimation {
+            context.delete(snapshot)
+            try? context.save()
+            historyManager.loadRecentData()
+        }
     }
 
-    private func endCurrentSession(_ session: PlaySession) {
-        guard let stats = viewModel.playerStats else { return }
-        historyManager.endSession(with: stats)
-    }
+    private func deleteAllSnapshots() {
+        guard let context = historyManager.modelContext else { return }
 
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = (Int(duration) % 3600) / 60
-        return "\(hours)h \(minutes)m"
+        withAnimation {
+            for snapshot in historyManager.recentSnapshots {
+                context.delete(snapshot)
+            }
+            try? context.save()
+            historyManager.loadRecentData()
+        }
     }
 }
 
 // MARK: - Supporting Views
 
-struct SessionRow: View {
-    let session: PlaySession
+struct SnapshotRow: View {
+    let snapshot: StatsSnapshot
+    let onDelete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(session.startTime, style: .date)
+        HStack(spacing: 16) {
+            // Time and player indicator
+            VStack(alignment: .leading, spacing: 4) {
+                Text(snapshot.timestamp, style: .date)
                     .font(.subheadline)
-                    .fontWeight(.medium)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
 
-                Spacer()
+                Text(snapshot.timestamp, style: .time)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
 
-                if session.endTime != nil {
-                    Text(formatDuration(session.duration))
-                        .font(.caption)
+                // EA ID badge
+                if let eaId = snapshot.eaId {
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.badge.key.fill")
+                            .font(.system(size: 8))
+                            .foregroundColor(.green)
+                        Text(eaId)
+                            .font(.system(size: 9))
+                            .fontWeight(.medium)
+                            .foregroundColor(.green)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(4)
+                }
+
+                // Storage size
+                HStack(spacing: 4) {
+                    Image(systemName: "internaldrive")
+                        .font(.system(size: 8))
+                        .foregroundColor(.secondary)
+                    Text(snapshot.formattedStorageSize)
+                        .font(.system(size: 9))
                         .foregroundColor(.secondary)
                 }
             }
+            .frame(width: 120, alignment: .leading)
 
-            HStack(spacing: 12) {
-                StatChip(label: "K/D", value: String(format: "%.2f", session.avgKD), color: .red)
-                StatChip(label: "Kills", value: "\(session.killsGained)", color: .orange)
-                StatChip(label: "Matches", value: "\(session.matchesPlayed)", color: .blue)
+            Divider()
+
+            // Core stats
+            VStack(spacing: 8) {
+                HStack(spacing: 12) {
+                    StatChip(label: "K/D", value: String(format: "%.2f", snapshot.kdRatio), color: snapshot.kdRatio >= 1.0 ? .green : .orange)
+                    StatChip(label: "Kills", value: "\(snapshot.kills)", color: .red)
+                    StatChip(label: "Deaths", value: "\(snapshot.deaths)", color: Theme.textSecondary)
+                    StatChip(label: "Wins", value: "\(snapshot.wins)", color: .blue)
+                    StatChip(label: "Matches", value: "\(snapshot.matchesPlayed)", color: .cyan)
+                }
+
+                HStack(spacing: 12) {
+                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", snapshot.accuracy), color: .purple)
+                    StatChip(label: "HS%", value: String(format: "%.1f%%", snapshot.headshotPercentage), color: .yellow)
+                    StatChip(label: "KPM", value: String(format: "%.2f", snapshot.killsPerMinute), color: .pink)
+                    StatChip(label: "Score", value: formatScore(snapshot.totalScore), color: .indigo)
+                }
             }
+
+            Spacer()
+
+            // Delete button
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+                    .font(.title3)
+                    .frame(width: 32, height: 32)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .help("Delete this snapshot")
         }
         .padding()
         .background(Theme.overlayColor)
         .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = (Int(duration) % 3600) / 60
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
+    private func formatScore(_ score: Int) -> String {
+        if score >= 1_000_000 {
+            return String(format: "%.1fM", Double(score) / 1_000_000.0)
+        } else if score >= 1_000 {
+            return String(format: "%.1fK", Double(score) / 1_000.0)
         } else {
-            return "\(minutes)m"
+            return "\(score)"
         }
-    }
-}
-
-struct StatBadge: View {
-    let label: String
-    let value: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(color)
-
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(color.opacity(0.1))
-        .cornerRadius(8)
-    }
-}
-
-struct SummaryCard: View {
-    let title: String
-    let value: String
-    let trend: TrendDirection?
-
-    var body: some View {
-        VStack(spacing: 8) {
-            if let trend = trend {
-                Image(systemName: trend.icon)
-                    .foregroundColor(trend.color)
-            }
-
-            Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
-
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(12)
     }
 }
 
@@ -261,17 +335,17 @@ struct StatChip: View {
     let color: Color
 
     var body: some View {
-        HStack(spacing: 4) {
-            Text(label)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+        VStack(spacing: 2) {
             Text(value)
-                .font(.caption)
-                .fontWeight(.semibold)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundColor(color)
+
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundColor(.secondary)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .background(color.opacity(0.1))
         .cornerRadius(6)
     }
