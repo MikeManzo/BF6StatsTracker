@@ -40,6 +40,13 @@ class HistoryManager: ObservableObject {
     private func clearCorruptData() {
         guard let context = modelContext else { return }
 
+        // Check if we've already done this cleanup
+        let hasCleanedKey = "HasCleanedCorruptDailyPerformance_v1"
+        if UserDefaults.standard.bool(forKey: hasCleanedKey) {
+            // Already cleaned up, skip
+            return
+        }
+
         // Delete ALL DailyPerformance objects to prevent stale reference crashes
         // This is a one-time fix - future data will use @Relationship(deleteRule: .nullify)
         let descriptor = FetchDescriptor<DailyPerformance>()
@@ -51,6 +58,9 @@ class HistoryManager: ObservableObject {
             try? context.save()
             print("✅ Cleared corrupt DailyPerformance data")
         }
+
+        // Mark as cleaned
+        UserDefaults.standard.set(true, forKey: hasCleanedKey)
 
         // Clear the published properties
         todayPerformance = nil
@@ -432,16 +442,94 @@ class HistoryManager: ObservableObject {
         return (try? context.fetch(descriptor))?.first
     }
 
-    /// Calculate daily K/D trend
+    /// Calculate daily K/D trend from snapshots
     func getDailyKDTrend(days: Int = 7) -> [(Date, Double)] {
-        let performances = getRecentDailyPerformances(days: days)
-        return performances.map { ($0.date, $0.dailyKD) }.reversed()
+        guard let context = modelContext else { return [] }
+
+        // For "All" (days >= 365), fetch all snapshots without date filter
+        let descriptor: FetchDescriptor<StatsSnapshot>
+        if days >= 365 {
+            descriptor = FetchDescriptor<StatsSnapshot>(
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+        } else {
+            let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+            let predicate = #Predicate<StatsSnapshot> { snapshot in
+                snapshot.timestamp >= startDate
+            }
+            descriptor = FetchDescriptor<StatsSnapshot>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+        }
+
+        guard let snapshots = try? context.fetch(descriptor) else { return [] }
+
+        // Group snapshots by day and calculate daily K/D (delta between first and last snapshot of each day)
+        let calendar = Calendar.current
+        var dailyData: [Date: (startSnapshot: StatsSnapshot?, endSnapshot: StatsSnapshot?)] = [:]
+
+        for snapshot in snapshots {
+            let day = calendar.startOfDay(for: snapshot.timestamp)
+            if dailyData[day] == nil {
+                dailyData[day] = (snapshot, snapshot)
+            } else {
+                dailyData[day]?.endSnapshot = snapshot
+            }
+        }
+
+        // Calculate daily K/D from deltas
+        return dailyData.compactMap { (date, snapshots) -> (Date, Double)? in
+            guard let start = snapshots.startSnapshot, let end = snapshots.endSnapshot else { return nil }
+            let deltaKills = end.kills - start.kills
+            let deltaDeaths = end.deaths - start.deaths
+            let dailyKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
+            return (date, dailyKD)
+        }.sorted { $0.0 < $1.0 }
     }
 
-    /// Calculate daily kills trend
+    /// Calculate daily kills trend from snapshots
     func getDailyKillsTrend(days: Int = 7) -> [(Date, Int)] {
-        let performances = getRecentDailyPerformances(days: days)
-        return performances.map { ($0.date, $0.deltaKills) }.reversed()
+        guard let context = modelContext else { return [] }
+
+        // For "All" (days >= 365), fetch all snapshots without date filter
+        let descriptor: FetchDescriptor<StatsSnapshot>
+        if days >= 365 {
+            descriptor = FetchDescriptor<StatsSnapshot>(
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+        } else {
+            let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+            let predicate = #Predicate<StatsSnapshot> { snapshot in
+                snapshot.timestamp >= startDate
+            }
+            descriptor = FetchDescriptor<StatsSnapshot>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+        }
+
+        guard let snapshots = try? context.fetch(descriptor) else { return [] }
+
+        // Group snapshots by day and calculate daily kills (delta between first and last snapshot of each day)
+        let calendar = Calendar.current
+        var dailyData: [Date: (startSnapshot: StatsSnapshot?, endSnapshot: StatsSnapshot?)] = [:]
+
+        for snapshot in snapshots {
+            let day = calendar.startOfDay(for: snapshot.timestamp)
+            if dailyData[day] == nil {
+                dailyData[day] = (snapshot, snapshot)
+            } else {
+                dailyData[day]?.endSnapshot = snapshot
+            }
+        }
+
+        // Calculate daily kills from deltas
+        return dailyData.compactMap { (date, snapshots) -> (Date, Int)? in
+            guard let start = snapshots.startSnapshot, let end = snapshots.endSnapshot else { return nil }
+            let deltaKills = end.kills - start.kills
+            return (date, deltaKills)
+        }.sorted { $0.0 < $1.0 }
     }
 
     /// Get best daily performance
