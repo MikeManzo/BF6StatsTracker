@@ -7,10 +7,15 @@
 
 import SwiftUI
 import Charts
+import SwiftData
 
 struct PerformanceChartsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
     @StateObject private var historyManager = HistoryManager.shared
+
+    // Use @Query to automatically handle object lifecycle
+    @Query(sort: \StatsSnapshot.timestamp, order: .reverse)
+    private var allSnapshots: [StatsSnapshot]
 
     @State private var selectedPeriod: ChartPeriod = .week
     @State private var selectedMetric: ChartMetric = .kd
@@ -39,7 +44,7 @@ struct PerformanceChartsView: View {
                 timeOfDayHeatmap
 
                 // Stat comparison radar (if we have snapshots)
-                if !historyManager.recentSnapshots.isEmpty {
+                if !allSnapshots.isEmpty {
                     performanceRadar
                 }
             }
@@ -222,11 +227,11 @@ struct PerformanceChartsView: View {
             Text("K/D Trend")
                 .font(.headline)
 
-            if historyManager.recentSnapshots.isEmpty {
+            if allSnapshots.isEmpty {
                 noDataView
             } else {
                 Chart {
-                    ForEach(historyManager.recentSnapshots.prefix(10).reversed(), id: \.id) { snapshot in
+                    ForEach(allSnapshots.prefix(10).reversed(), id: \.id) { snapshot in
                         LineMark(
                             x: .value("Time", snapshot.timestamp),
                             y: .value("K/D", snapshot.kdRatio)
@@ -286,7 +291,7 @@ struct PerformanceChartsView: View {
             Text("Performance by Time")
                 .font(.headline)
 
-            if historyManager.recentSnapshots.isEmpty {
+            if allSnapshots.isEmpty {
                 noDataView
             } else {
                 let hourlyData = calculateHourlyPerformance()
@@ -342,7 +347,7 @@ struct PerformanceChartsView: View {
         let calendar = Calendar.current
         var hourlyStats: [Int: (totalKD: Double, count: Int)] = [:]
 
-        for snapshot in historyManager.recentSnapshots {
+        for snapshot in allSnapshots {
             let hour = calendar.component(.hour, from: snapshot.timestamp)
             let current = hourlyStats[hour] ?? (0, 0)
             hourlyStats[hour] = (current.totalKD + snapshot.kdRatio, current.count + 1)

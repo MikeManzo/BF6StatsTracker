@@ -6,10 +6,15 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SessionHistoryView: View {
     @StateObject private var historyManager = HistoryManager.shared
     @EnvironmentObject var viewModel: StatsViewModel
+
+    // Use @Query to automatically handle object lifecycle
+    @Query(sort: \StatsSnapshot.timestamp, order: .reverse)
+    private var allSnapshots: [StatsSnapshot]
 
     @State private var showingDeleteAlert = false
     @State private var showingDeleteAllAlert = false
@@ -46,7 +51,7 @@ struct SessionHistoryView: View {
                 deleteAllSnapshots()
             }
         } message: {
-            Text("Are you sure you want to delete all \(historyManager.recentSnapshots.count) snapshots?\n\nThis will permanently remove all historical data and cannot be undone.")
+            Text("Are you sure you want to delete all \(allSnapshots.count) snapshots?\n\nThis will permanently remove all historical data and cannot be undone.")
         }
     }
 
@@ -63,7 +68,7 @@ struct SessionHistoryView: View {
 
                 HStack(spacing: 12) {
                     HStack(spacing: 4) {
-                        Text("\(historyManager.recentSnapshots.count)")
+                        Text("\(allSnapshots.count)")
                             .font(.caption)
                             .fontWeight(.semibold)
                         Text("snapshots")
@@ -89,7 +94,7 @@ struct SessionHistoryView: View {
             Spacer()
 
             // Delete All button
-            if !historyManager.recentSnapshots.isEmpty {
+            if !allSnapshots.isEmpty {
                 Button(role: .destructive) {
                     showingDeleteAllAlert = true
                 } label: {
@@ -175,10 +180,10 @@ struct SessionHistoryView: View {
 
     private var filteredSnapshots: [StatsSnapshot] {
         if searchText.isEmpty {
-            return historyManager.recentSnapshots
+            return allSnapshots
         } else {
             let lowercased = searchText.lowercased()
-            return historyManager.recentSnapshots.filter { snapshot in
+            return allSnapshots.filter { snapshot in
                 snapshot.playerName.lowercased().contains(lowercased) ||
                 (snapshot.eaId?.lowercased().contains(lowercased) ?? false) ||
                 "\(snapshot.kills)".contains(lowercased) ||
@@ -189,7 +194,7 @@ struct SessionHistoryView: View {
     }
 
     private var totalStorageSize: Int {
-        historyManager.recentSnapshots.reduce(0) { $0 + $1.approximateStorageSize }
+        allSnapshots.reduce(0) { $0 + $1.approximateStorageSize }
     }
 
     private var totalStorageFormatted: String {
@@ -211,7 +216,6 @@ struct SessionHistoryView: View {
         withAnimation {
             context.delete(snapshot)
             try? context.save()
-            historyManager.loadRecentData()
         }
     }
 
@@ -219,11 +223,10 @@ struct SessionHistoryView: View {
         guard let context = historyManager.modelContext else { return }
 
         withAnimation {
-            for snapshot in historyManager.recentSnapshots {
+            for snapshot in allSnapshots {
                 context.delete(snapshot)
             }
             try? context.save()
-            historyManager.loadRecentData()
         }
     }
 }
@@ -279,21 +282,16 @@ struct SnapshotRow: View {
             Divider()
 
             // Core stats
-            VStack(spacing: 8) {
-                HStack(spacing: 12) {
-                    StatChip(label: "K/D", value: String(format: "%.2f", snapshot.kdRatio), color: snapshot.kdRatio >= 1.0 ? .green : .orange)
-                    StatChip(label: "Kills", value: "\(snapshot.kills)", color: .red)
-                    StatChip(label: "Deaths", value: "\(snapshot.deaths)", color: Theme.textSecondary)
-                    StatChip(label: "Wins", value: "\(snapshot.wins)", color: .blue)
-                    StatChip(label: "Matches", value: "\(snapshot.matchesPlayed)", color: .cyan)
-                }
-
-                HStack(spacing: 12) {
-                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", snapshot.accuracy), color: .purple)
-                    StatChip(label: "HS%", value: String(format: "%.1f%%", snapshot.headshotPercentage), color: .yellow)
-                    StatChip(label: "KPM", value: String(format: "%.2f", snapshot.killsPerMinute), color: .pink)
-                    StatChip(label: "Score", value: formatScore(snapshot.totalScore), color: .indigo)
-                }
+            HStack(spacing: 8) {
+                StatChip(label: "K/D", value: String(format: "%.2f", snapshot.kdRatio), color: snapshot.kdRatio >= 1.0 ? .green : .orange)
+                StatChip(label: "Kills", value: "\(snapshot.kills)", color: .red)
+                StatChip(label: "Deaths", value: "\(snapshot.deaths)", color: Theme.textSecondary)
+                StatChip(label: "Wins", value: "\(snapshot.wins)", color: .blue)
+                StatChip(label: "Matches", value: "\(snapshot.matchesPlayed)", color: .cyan)
+                StatChip(label: "Accuracy", value: String(format: "%.1f%%", snapshot.accuracy), color: .purple)
+                StatChip(label: "HS%", value: String(format: "%.1f%%", snapshot.headshotPercentage), color: .yellow)
+                StatChip(label: "KPM", value: String(format: "%.2f", snapshot.killsPerMinute), color: .pink)
+                StatChip(label: "Score", value: formatScore(snapshot.totalScore), color: .indigo)
             }
 
             Spacer()
@@ -335,19 +333,20 @@ struct StatChip: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 2) {
+        HStack(spacing: 4) {
             Text(value)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundColor(color)
 
             Text(label)
-                .font(.system(size: 9))
+                .font(.system(size: 10))
                 .foregroundColor(.secondary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(color.opacity(0.1))
         .cornerRadius(6)
+        .fixedSize()
     }
 }
 

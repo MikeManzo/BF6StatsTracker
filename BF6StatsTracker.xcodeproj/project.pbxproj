@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -104,6 +104,10 @@
 		27E798082EE646350002311A /* EALoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALoginView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		2749FA752F0997CC004D2E1D /* Images */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Images; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		2000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -132,6 +136,7 @@
 		3000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				2749FA752F0997CC004D2E1D /* Images */,
 				3000000000000002 /* BF6StatsTracker */,
 				3000000000000003 /* Products */,
 			);

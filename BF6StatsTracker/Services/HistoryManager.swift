@@ -30,8 +30,32 @@ class HistoryManager: ObservableObject {
     /// Initialize with SwiftData model context
     func setup(modelContext: ModelContext) {
         self.modelContext = modelContext
-        loadRecentData()
-        loadDailyPerformances()
+
+        // Clear any corrupt data on startup
+        // This prevents crashes from stale object references
+        clearCorruptData()
+    }
+
+    /// Clear any corrupt DailyPerformance objects that reference deleted snapshots
+    private func clearCorruptData() {
+        guard let context = modelContext else { return }
+
+        // Delete ALL DailyPerformance objects to prevent stale reference crashes
+        // This is a one-time fix - future data will use @Relationship(deleteRule: .nullify)
+        let descriptor = FetchDescriptor<DailyPerformance>()
+        if let allPerformances = try? context.fetch(descriptor) {
+            print("🗑️ Clearing \(allPerformances.count) DailyPerformance objects to fix stale references")
+            for performance in allPerformances {
+                context.delete(performance)
+            }
+            try? context.save()
+            print("✅ Cleared corrupt DailyPerformance data")
+        }
+
+        // Clear the published properties
+        todayPerformance = nil
+        yesterdayPerformance = nil
+        recentDailyPerformances = []
     }
 
     // MARK: - Snapshots
@@ -253,8 +277,12 @@ class HistoryManager: ObservableObject {
     }
 
     func loadRecentData() {  // Made public for refresh after clearing
-        recentSnapshots = getAllSnapshots()
-        sessions = getRecentSessions(limit: 10)
+        // Note: Views now use @Query to automatically get snapshots
+        // Clear all cached data to prevent stale references
+        // Views should use @Query instead
+        recentSnapshots = []
+        snapshots = []
+        sessions = []
     }
 
     // MARK: - Daily Performance

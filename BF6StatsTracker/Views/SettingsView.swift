@@ -13,6 +13,10 @@ struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var accountStore = EAAccountStore.shared
 
+    // Use @Query to automatically handle object lifecycle
+    @Query(sort: \StatsSnapshot.timestamp, order: .reverse)
+    private var allSnapshots: [StatsSnapshot]
+
     @State private var autoRefresh: Bool = true
     @State private var refreshInterval: Double = 300
     @State private var showNotifications: Bool = true
@@ -379,7 +383,7 @@ struct SettingsView: View {
     }
 
     private func getHistoricalDataSummary() -> String {
-        let snapshots = HistoryManager.shared.recentSnapshots.count
+        let snapshots = allSnapshots.count
         let sessions = HistoryManager.shared.sessions.count
 
         if snapshots == 0 && sessions == 0 {
@@ -404,16 +408,22 @@ struct SettingsView: View {
 
         // Clear snapshots and sessions
         if let context = HistoryManager.shared.modelContext {
+            // Delete all daily performances first (they reference snapshots)
+            let dailyPerfDescriptor = FetchDescriptor<DailyPerformance>()
+            if let allDailyPerf = try? context.fetch(dailyPerfDescriptor) {
+                allDailyPerf.forEach { context.delete($0) }
+            }
+
+            // Delete all sessions (they reference snapshots)
+            let sessionDescriptor = FetchDescriptor<PlaySession>()
+            if let allSessions = try? context.fetch(sessionDescriptor) {
+                allSessions.forEach { context.delete($0) }
+            }
+
             // Delete all snapshots
             let snapshotDescriptor = FetchDescriptor<StatsSnapshot>()
             if let allSnapshots = try? context.fetch(snapshotDescriptor) {
                 allSnapshots.forEach { context.delete($0) }
-            }
-
-            // Delete all sessions
-            let sessionDescriptor = FetchDescriptor<PlaySession>()
-            if let allSessions = try? context.fetch(sessionDescriptor) {
-                allSessions.forEach { context.delete($0) }
             }
 
             // Save deletions

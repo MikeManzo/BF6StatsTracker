@@ -18,8 +18,8 @@ final class DailyPerformance {
     var platform: String
 
     // Start and end snapshots for the day
-    var startSnapshot: StatsSnapshot?
-    var endSnapshot: StatsSnapshot?
+    @Relationship(deleteRule: .nullify) var startSnapshot: StatsSnapshot?
+    @Relationship(deleteRule: .nullify) var endSnapshot: StatsSnapshot?
 
     // Delta stats (calculated from snapshots)
     var deltaKills: Int
