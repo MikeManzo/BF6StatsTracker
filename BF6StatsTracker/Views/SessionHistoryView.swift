@@ -7,6 +7,8 @@
 
 import SwiftUI
 import SwiftData
+import AppKit
+import UniformTypeIdentifiers
 
 struct SessionHistoryView: View {
     @StateObject private var historyManager = HistoryManager.shared
@@ -25,6 +27,8 @@ struct SessionHistoryView: View {
     @State private var deleteStartDate = Date()
     @State private var deleteEndDate = Date()
     @State private var selectedEAID: String = ""
+    @State private var showingExportSheet = false
+    @State private var exportFormat: ExportFormat = .csv
 
     var body: some View {
         VStack(spacing: 0) {
@@ -75,6 +79,12 @@ struct SessionHistoryView: View {
                 }
             )
         }
+        .sheet(isPresented: $showingExportSheet) {
+            ExportHistoryView(
+                snapshots: filteredSnapshots,
+                exportFormat: $exportFormat
+            )
+        }
     }
 
     private var header: some View {
@@ -115,39 +125,56 @@ struct SessionHistoryView: View {
 
             Spacer()
 
-            // Delete options menu
+            // Export and Delete options
             if !allSnapshots.isEmpty {
-                Menu {
-                    Button(role: .destructive) {
-                        showingDeleteByDateAlert = true
+                HStack(spacing: 8) {
+                    // Export button
+                    Button {
+                        showingExportSheet = true
                     } label: {
-                        Label("Delete by Date Range", systemImage: "calendar")
+                        Label("Export", systemImage: "square.and.arrow.up")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue)
+                            .cornerRadius(8)
                     }
+                    .buttonStyle(.plain)
 
-                    Button(role: .destructive) {
-                        showingDeleteByEAIDAlert = true
+                    // Delete options menu
+                    Menu {
+                        Button(role: .destructive) {
+                            showingDeleteByDateAlert = true
+                        } label: {
+                            Label("Delete by Date Range", systemImage: "calendar")
+                        }
+
+                        Button(role: .destructive) {
+                            showingDeleteByEAIDAlert = true
+                        } label: {
+                            Label("Delete by EA ID", systemImage: "person.badge.key")
+                        }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            showingDeleteAllAlert = true
+                        } label: {
+                            Label("Delete All", systemImage: "trash.fill")
+                        }
                     } label: {
-                        Label("Delete by EA ID", systemImage: "person.badge.key")
+                        Label("Delete", systemImage: "trash")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.red)
+                            .cornerRadius(8)
                     }
-
-                    Divider()
-
-                    Button(role: .destructive) {
-                        showingDeleteAllAlert = true
-                    } label: {
-                        Label("Delete All", systemImage: "trash.fill")
-                    }
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.red)
-                        .cornerRadius(8)
+                    .menuStyle(.borderlessButton)
+                    .buttonStyle(.plain)
                 }
-                .menuStyle(.borderlessButton)
-                .buttonStyle(.plain)
             }
         }
         .padding()
@@ -363,22 +390,20 @@ struct SnapshotRow: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                // EA ID badge
-                if let eaId = snapshot.eaId {
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.badge.key.fill")
-                            .font(.system(size: 8))
-                            .foregroundColor(.green)
-                        Text(eaId)
-                            .font(.system(size: 9))
-                            .fontWeight(.medium)
-                            .foregroundColor(.green)
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.green.opacity(0.1))
-                    .cornerRadius(4)
+                // Player Name badge
+                HStack(spacing: 4) {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 8))
+                        .foregroundColor(.green)
+                    Text(snapshot.playerName)
+                        .font(.system(size: 9))
+                        .fontWeight(.medium)
+                        .foregroundColor(.green)
                 }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.green.opacity(0.1))
+                .cornerRadius(4)
 
                 // Storage size
                 HStack(spacing: 4) {
@@ -606,6 +631,236 @@ struct DeleteByEAIDView: View {
         }
         .padding()
         .frame(width: 400)
+    }
+}
+
+// MARK: - Export Format
+
+enum ExportFormat: String, CaseIterable {
+    case csv = "CSV"
+    case json = "JSON"
+
+    var fileExtension: String {
+        switch self {
+        case .csv: return "csv"
+        case .json: return "json"
+        }
+    }
+}
+
+// MARK: - Export History View
+
+struct ExportHistoryView: View {
+    let snapshots: [StatsSnapshot]
+    @Binding var exportFormat: ExportFormat
+    @Environment(\.dismiss) var dismiss
+
+    @State private var isExporting = false
+    @State private var exportError: String?
+    @State private var showingSavePanel = false
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Export Snapshot History")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Select export format:")
+                    .font(.headline)
+
+                Picker("Format", selection: $exportFormat) {
+                    ForEach(ExportFormat.allCases, id: \.self) { format in
+                        Text(format.rawValue).tag(format)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.blue)
+                    Text("\(snapshots.count) snapshot\(snapshots.count == 1 ? "" : "s") will be exported")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 8)
+
+                if let error = exportError {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundColor(.red)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+            .padding()
+            .background(Theme.overlayColor)
+            .cornerRadius(12)
+
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button {
+                    exportData()
+                } label: {
+                    if isExporting {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .frame(width: 100)
+                    } else {
+                        Text("Export")
+                            .frame(width: 100)
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(snapshots.isEmpty || isExporting)
+            }
+        }
+        .padding()
+        .frame(width: 400)
+    }
+
+    private func exportData() {
+        isExporting = true
+        exportError = nil
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result: Result<String, Error>
+
+            switch exportFormat {
+            case .csv:
+                result = generateCSV()
+            case .json:
+                result = generateJSON()
+            }
+
+            DispatchQueue.main.async {
+                isExporting = false
+
+                switch result {
+                case .success(let content):
+                    saveFile(content: content)
+                case .failure(let error):
+                    exportError = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func generateCSV() -> Result<String, Error> {
+        var csv = "Timestamp,Player Name,Platform,EA ID,Kills,Deaths,K/D Ratio,Wins,Losses,Matches Played,Total Score,Score Per Minute,Kills Per Minute,Accuracy,Headshot %,Time Played (min),Headshots,Assists,Revives,Resupplies\n"
+
+        for snapshot in snapshots {
+            let timePlayedMinutes = snapshot.timePlayed / 60
+            let eaId = snapshot.eaId ?? ""
+
+            let row = [
+                snapshot.timestamp.ISO8601Format(),
+                escapeCSVField(snapshot.playerName),
+                snapshot.platform,
+                escapeCSVField(eaId),
+                "\(snapshot.kills)",
+                "\(snapshot.deaths)",
+                String(format: "%.2f", snapshot.kdRatio),
+                "\(snapshot.wins)",
+                "\(snapshot.losses)",
+                "\(snapshot.matchesPlayed)",
+                "\(snapshot.totalScore)",
+                String(format: "%.2f", snapshot.scorePerMinute),
+                String(format: "%.2f", snapshot.killsPerMinute),
+                String(format: "%.2f", snapshot.accuracy),
+                String(format: "%.2f", snapshot.headshotPercentage),
+                "\(timePlayedMinutes)",
+                "\(snapshot.headshots)",
+                "\(snapshot.assists)",
+                "\(snapshot.revives)",
+                "\(snapshot.resupplies)"
+            ].joined(separator: ",")
+
+            csv += row + "\n"
+        }
+
+        return .success(csv)
+    }
+
+    private func generateJSON() -> Result<String, Error> {
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+
+            let exportData = snapshots.map { snapshot -> [String: Any] in
+                return [
+                    "timestamp": ISO8601DateFormatter().string(from: snapshot.timestamp),
+                    "playerName": snapshot.playerName,
+                    "platform": snapshot.platform,
+                    "eaId": snapshot.eaId ?? "",
+                    "kills": snapshot.kills,
+                    "deaths": snapshot.deaths,
+                    "kdRatio": snapshot.kdRatio,
+                    "wins": snapshot.wins,
+                    "losses": snapshot.losses,
+                    "matchesPlayed": snapshot.matchesPlayed,
+                    "totalScore": snapshot.totalScore,
+                    "scorePerMinute": snapshot.scorePerMinute,
+                    "killsPerMinute": snapshot.killsPerMinute,
+                    "accuracy": snapshot.accuracy,
+                    "headshotPercentage": snapshot.headshotPercentage,
+                    "timePlayedMinutes": snapshot.timePlayed / 60,
+                    "headshots": snapshot.headshots,
+                    "assists": snapshot.assists,
+                    "revives": snapshot.revives,
+                    "resupplies": snapshot.resupplies
+                ]
+            }
+
+            let jsonData = try JSONSerialization.data(withJSONObject: exportData, options: [.prettyPrinted, .sortedKeys])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                return .success(jsonString)
+            } else {
+                return .failure(NSError(domain: "ExportError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert JSON data to string"]))
+            }
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    private func escapeCSVField(_ field: String) -> String {
+        if field.contains(",") || field.contains("\"") || field.contains("\n") {
+            return "\"\(field.replacingOccurrences(of: "\"", with: "\"\""))\""
+        }
+        return field
+    }
+
+    private func saveFile(content: String) {
+        let savePanel = NSSavePanel()
+        savePanel.title = "Export Snapshot History"
+        savePanel.nameFieldStringValue = "snapshot_history_\(Date().ISO8601Format().prefix(10)).\(exportFormat.fileExtension)"
+        savePanel.canCreateDirectories = true
+
+        // Set allowed file type based on export format
+        switch exportFormat {
+        case .csv:
+            savePanel.allowedContentTypes = [UTType.commaSeparatedText]
+        case .json:
+            savePanel.allowedContentTypes = [UTType.json]
+        }
+
+        savePanel.begin { response in
+            if response == .OK, let url = savePanel.url {
+                do {
+                    try content.write(to: url, atomically: true, encoding: .utf8)
+                    dismiss()
+                } catch {
+                    exportError = "Failed to save file: \(error.localizedDescription)"
+                }
+            }
+        }
     }
 }
 
