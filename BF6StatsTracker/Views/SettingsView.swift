@@ -408,22 +408,25 @@ struct SettingsView: View {
 
         // Clear snapshots and sessions
         if let context = HistoryManager.shared.modelContext {
-            // Delete all daily performances first (they reference snapshots)
-            let dailyPerfDescriptor = FetchDescriptor<DailyPerformance>()
-            if let allDailyPerf = try? context.fetch(dailyPerfDescriptor) {
+            do {
+                // Delete all daily performances first (they reference snapshots)
+                let dailyPerfDescriptor = FetchDescriptor<DailyPerformance>()
+                let allDailyPerf = try context.fetch(dailyPerfDescriptor)
                 allDailyPerf.forEach { context.delete($0) }
-            }
 
-            // Delete all sessions (they reference snapshots)
-            let sessionDescriptor = FetchDescriptor<PlaySession>()
-            if let allSessions = try? context.fetch(sessionDescriptor) {
+                // Delete all sessions (they reference snapshots)
+                let sessionDescriptor = FetchDescriptor<PlaySession>()
+                let allSessions = try context.fetch(sessionDescriptor)
                 allSessions.forEach { context.delete($0) }
-            }
 
-            // Delete all snapshots
-            let snapshotDescriptor = FetchDescriptor<StatsSnapshot>()
-            if let allSnapshots = try? context.fetch(snapshotDescriptor) {
+                // Delete all snapshots
+                let snapshotDescriptor = FetchDescriptor<StatsSnapshot>()
+                let allSnapshots = try context.fetch(snapshotDescriptor)
                 allSnapshots.forEach { context.delete($0) }
+            } catch {
+                print("⚠️ Error clearing historical data: \(error)")
+                // Reset the cleanup flag so it runs again on next launch
+                UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
             }
 
             // Save deletions

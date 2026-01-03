@@ -41,26 +41,43 @@ class HistoryManager: ObservableObject {
         guard let context = modelContext else { return }
 
         // Check if we've already done this cleanup
-        let hasCleanedKey = "HasCleanedCorruptDailyPerformance_v1"
+        let hasCleanedKey = "HasCleanedCorruptDailyPerformance_v2"
         if UserDefaults.standard.bool(forKey: hasCleanedKey) {
             // Already cleaned up, skip
             return
         }
 
         // Delete ALL DailyPerformance objects to prevent stale reference crashes
-        // This is a one-time fix - future data will use @Relationship(deleteRule: .nullify)
-        let descriptor = FetchDescriptor<DailyPerformance>()
-        if let allPerformances = try? context.fetch(descriptor) {
+        // Wrap in do-catch because even fetching corrupt data can crash
+        do {
+            let descriptor = FetchDescriptor<DailyPerformance>()
+            let allPerformances = try context.fetch(descriptor)
             print("🗑️ Clearing \(allPerformances.count) DailyPerformance objects to fix stale references")
             for performance in allPerformances {
                 context.delete(performance)
             }
-            try? context.save()
+            try context.save()
             print("✅ Cleared corrupt DailyPerformance data")
-        }
 
-        // Mark as cleaned
-        UserDefaults.standard.set(true, forKey: hasCleanedKey)
+            // Mark as cleaned only if successful
+            UserDefaults.standard.set(true, forKey: hasCleanedKey)
+        } catch {
+            // If we can't even fetch DailyPerformance objects, the corruption is severe
+            // Delete the entire DailyPerformance table by deleting all data
+            print("⚠️ Severe corruption detected, performing emergency cleanup: \(error)")
+
+            // Try to delete using executeDelete (bypasses object loading)
+            do {
+                try context.delete(model: DailyPerformance.self)
+                try context.save()
+                print("✅ Emergency cleanup successful")
+                UserDefaults.standard.set(true, forKey: hasCleanedKey)
+            } catch {
+                print("⚠️ Emergency cleanup failed: \(error)")
+                // Mark as cleaned anyway to prevent infinite loops
+                UserDefaults.standard.set(true, forKey: hasCleanedKey)
+            }
+        }
 
         // Clear the published properties
         todayPerformance = nil
@@ -304,53 +321,63 @@ class HistoryManager: ObservableObject {
         let today = Calendar.current.startOfDay(for: Date())
 
         // Try to find existing daily performance for today
-        let predicate = #Predicate<DailyPerformance> { performance in
-            performance.date == today && performance.playerName == playerName
+        do {
+            let predicate = #Predicate<DailyPerformance> { performance in
+                performance.date == today && performance.playerName == playerName
+            }
+
+            let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
+            let existingPerformances = try context.fetch(descriptor)
+
+            if let existing = existingPerformances.first {
+                // Update existing daily performance
+                existing.update(with: snapshot)
+                currentDailyPerformance = existing
+            } else {
+                // Create new daily performance for today
+                let newPerformance = DailyPerformance(
+                    date: today,
+                    playerName: playerName,
+                    platform: platform,
+                    startSnapshot: snapshot
+                )
+                context.insert(newPerformance)
+                currentDailyPerformance = newPerformance
+
+                // End any previous active daily performance
+                endPreviousDailyPerformances(playerName: playerName, platform: platform)
+            }
+
+            try? context.save()
+        } catch {
+            print("⚠️ Error updating DailyPerformance: \(error)")
+            UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
         }
-
-        let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
-        let existingPerformances = (try? context.fetch(descriptor)) ?? []
-
-        if let existing = existingPerformances.first {
-            // Update existing daily performance
-            existing.update(with: snapshot)
-            currentDailyPerformance = existing
-        } else {
-            // Create new daily performance for today
-            let newPerformance = DailyPerformance(
-                date: today,
-                playerName: playerName,
-                platform: platform,
-                startSnapshot: snapshot
-            )
-            context.insert(newPerformance)
-            currentDailyPerformance = newPerformance
-
-            // End any previous active daily performance
-            endPreviousDailyPerformances(playerName: playerName, platform: platform)
-        }
-
-        try? context.save()
     }
 
     /// End all previous active daily performances (from previous days)
     private func endPreviousDailyPerformances(playerName: String, platform: String) {
         guard let context = modelContext else { return }
 
-        let today = Calendar.current.startOfDay(for: Date())
+        do {
+            let today = Calendar.current.startOfDay(for: Date())
 
-        let predicate = #Predicate<DailyPerformance> { performance in
-            performance.date < today && performance.isActive && performance.playerName == playerName
+            let predicate = #Predicate<DailyPerformance> { performance in
+                performance.date < today && performance.isActive && performance.playerName == playerName
+            }
+
+            let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
+            let previousPerformances = try context.fetch(descriptor)
+
+            for performance in previousPerformances {
+                performance.endSession()
+            }
+
+            try? context.save()
+        } catch {
+            print("⚠️ Error ending previous DailyPerformance objects: \(error)")
+            UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
         }
-
-        let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
-        let previousPerformances = (try? context.fetch(descriptor)) ?? []
-
-        for performance in previousPerformances {
-            performance.endSession()
-        }
-
-        try? context.save()
     }
 
     /// Load daily performances
@@ -358,41 +385,51 @@ class HistoryManager: ObservableObject {
     func loadDailyPerformances(playerName: String? = nil) {
         guard let context = modelContext else { return }
 
-        let today = Calendar.current.startOfDay(for: Date())
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) ?? today
+        // Wrap all DailyPerformance fetches in try-catch to handle corrupt data
+        do {
+            let today = Calendar.current.startOfDay(for: Date())
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) ?? today
 
-        // Load today's performance
-        if let playerName = playerName {
-            let todayPredicate = #Predicate<DailyPerformance> { performance in
-                performance.date == today && performance.playerName == playerName
+            // Load today's performance
+            if let playerName = playerName {
+                let todayPredicate = #Predicate<DailyPerformance> { performance in
+                    performance.date == today && performance.playerName == playerName
+                }
+                let todayDescriptor = FetchDescriptor<DailyPerformance>(predicate: todayPredicate)
+                todayPerformance = try context.fetch(todayDescriptor).first
+            } else {
+                let todayPredicate = #Predicate<DailyPerformance> { performance in
+                    performance.date == today
+                }
+                let todayDescriptor = FetchDescriptor<DailyPerformance>(predicate: todayPredicate)
+                todayPerformance = try context.fetch(todayDescriptor).first
             }
-            let todayDescriptor = FetchDescriptor<DailyPerformance>(predicate: todayPredicate)
-            todayPerformance = (try? context.fetch(todayDescriptor))?.first
-        } else {
-            let todayPredicate = #Predicate<DailyPerformance> { performance in
-                performance.date == today
+
+            // Load yesterday's performance
+            if let playerName = playerName {
+                let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
+                    performance.date == yesterday && performance.playerName == playerName
+                }
+                let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
+                yesterdayPerformance = try context.fetch(yesterdayDescriptor).first
+            } else {
+                let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
+                    performance.date == yesterday
+                }
+                let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
+                yesterdayPerformance = try context.fetch(yesterdayDescriptor).first
             }
-            let todayDescriptor = FetchDescriptor<DailyPerformance>(predicate: todayPredicate)
-            todayPerformance = (try? context.fetch(todayDescriptor))?.first
+
+            // Load recent daily performances (last 30 days)
+            recentDailyPerformances = getRecentDailyPerformances(days: 30, playerName: playerName)
+        } catch {
+            // If we can't fetch (likely due to corrupt data), reset the cleanup flag
+            print("⚠️ Error loading DailyPerformance objects: \(error)")
+            UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
+            todayPerformance = nil
+            yesterdayPerformance = nil
+            recentDailyPerformances = []
         }
-
-        // Load yesterday's performance
-        if let playerName = playerName {
-            let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
-                performance.date == yesterday && performance.playerName == playerName
-            }
-            let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
-            yesterdayPerformance = (try? context.fetch(yesterdayDescriptor))?.first
-        } else {
-            let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
-                performance.date == yesterday
-            }
-            let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
-            yesterdayPerformance = (try? context.fetch(yesterdayDescriptor))?.first
-        }
-
-        // Load recent daily performances (last 30 days)
-        recentDailyPerformances = getRecentDailyPerformances(days: 30, playerName: playerName)
     }
 
     /// Get daily performances for the last N days
@@ -402,44 +439,56 @@ class HistoryManager: ObservableObject {
     func getRecentDailyPerformances(days: Int = 30, playerName: String? = nil) -> [DailyPerformance] {
         guard let context = modelContext else { return [] }
 
-        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let startOfDay = Calendar.current.startOfDay(for: startDate)
+        do {
+            let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+            let startOfDay = Calendar.current.startOfDay(for: startDate)
 
-        let descriptor: FetchDescriptor<DailyPerformance>
+            let descriptor: FetchDescriptor<DailyPerformance>
 
-        if let playerName = playerName {
-            let predicate = #Predicate<DailyPerformance> { performance in
-                performance.date >= startOfDay && performance.playerName == playerName
+            if let playerName = playerName {
+                let predicate = #Predicate<DailyPerformance> { performance in
+                    performance.date >= startOfDay && performance.playerName == playerName
+                }
+                descriptor = FetchDescriptor<DailyPerformance>(
+                    predicate: predicate,
+                    sortBy: [SortDescriptor(\.date, order: .reverse)]
+                )
+            } else {
+                let predicate = #Predicate<DailyPerformance> { performance in
+                    performance.date >= startOfDay
+                }
+                descriptor = FetchDescriptor<DailyPerformance>(
+                    predicate: predicate,
+                    sortBy: [SortDescriptor(\.date, order: .reverse)]
+                )
             }
-            descriptor = FetchDescriptor<DailyPerformance>(
-                predicate: predicate,
-                sortBy: [SortDescriptor(\.date, order: .reverse)]
-            )
-        } else {
-            let predicate = #Predicate<DailyPerformance> { performance in
-                performance.date >= startOfDay
-            }
-            descriptor = FetchDescriptor<DailyPerformance>(
-                predicate: predicate,
-                sortBy: [SortDescriptor(\.date, order: .reverse)]
-            )
+
+            return try context.fetch(descriptor)
+        } catch {
+            print("⚠️ Error fetching recent DailyPerformance objects: \(error)")
+            UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
+            return []
         }
-
-        return (try? context.fetch(descriptor)) ?? []
     }
 
     /// Get daily performance for a specific date
     func getDailyPerformance(for date: Date) -> DailyPerformance? {
         guard let context = modelContext else { return nil }
 
-        let targetDate = Calendar.current.startOfDay(for: date)
+        do {
+            let targetDate = Calendar.current.startOfDay(for: date)
 
-        let predicate = #Predicate<DailyPerformance> { performance in
-            performance.date == targetDate
+            let predicate = #Predicate<DailyPerformance> { performance in
+                performance.date == targetDate
+            }
+
+            let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
+            return try context.fetch(descriptor).first
+        } catch {
+            print("⚠️ Error fetching DailyPerformance for date: \(error)")
+            UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
+            return nil
         }
-
-        let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
-        return (try? context.fetch(descriptor))?.first
     }
 
     /// Calculate daily K/D trend from snapshots

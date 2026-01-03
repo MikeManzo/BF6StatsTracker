@@ -18,8 +18,13 @@ struct SessionHistoryView: View {
 
     @State private var showingDeleteAlert = false
     @State private var showingDeleteAllAlert = false
+    @State private var showingDeleteByDateAlert = false
+    @State private var showingDeleteByEAIDAlert = false
     @State private var snapshotToDelete: StatsSnapshot?
     @State private var searchText = ""
+    @State private var deleteStartDate = Date()
+    @State private var deleteEndDate = Date()
+    @State private var selectedEAID: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,6 +57,23 @@ struct SessionHistoryView: View {
             }
         } message: {
             Text("Are you sure you want to delete all \(allSnapshots.count) snapshots?\n\nThis will permanently remove all historical data and cannot be undone.")
+        }
+        .sheet(isPresented: $showingDeleteByDateAlert) {
+            DeleteByDateRangeView(
+                allSnapshots: allSnapshots,
+                onDelete: { count in
+                    deleteSnapshotsByDateRange()
+                }
+            )
+        }
+        .sheet(isPresented: $showingDeleteByEAIDAlert) {
+            DeleteByEAIDView(
+                allSnapshots: allSnapshots,
+                onDelete: { eaId in
+                    selectedEAID = eaId
+                    deleteSnapshotsByEAID()
+                }
+            )
         }
     }
 
@@ -93,12 +115,30 @@ struct SessionHistoryView: View {
 
             Spacer()
 
-            // Delete All button
+            // Delete options menu
             if !allSnapshots.isEmpty {
-                Button(role: .destructive) {
-                    showingDeleteAllAlert = true
+                Menu {
+                    Button(role: .destructive) {
+                        showingDeleteByDateAlert = true
+                    } label: {
+                        Label("Delete by Date Range", systemImage: "calendar")
+                    }
+
+                    Button(role: .destructive) {
+                        showingDeleteByEAIDAlert = true
+                    } label: {
+                        Label("Delete by EA ID", systemImage: "person.badge.key")
+                    }
+
+                    Divider()
+
+                    Button(role: .destructive) {
+                        showingDeleteAllAlert = true
+                    } label: {
+                        Label("Delete All", systemImage: "trash.fill")
+                    }
                 } label: {
-                    Label("Delete All", systemImage: "trash.fill")
+                    Label("Delete", systemImage: "trash")
                         .font(.caption)
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
@@ -106,6 +146,7 @@ struct SessionHistoryView: View {
                         .background(Color.red)
                         .cornerRadius(8)
                 }
+                .menuStyle(.borderlessButton)
                 .buttonStyle(.plain)
             }
         }
@@ -214,6 +255,9 @@ struct SessionHistoryView: View {
         guard let context = historyManager.modelContext else { return }
 
         withAnimation {
+            // Delete related DailyPerformance objects that reference this snapshot
+            cleanupDailyPerformance(for: [snapshot])
+
             context.delete(snapshot)
             try? context.save()
         }
@@ -223,10 +267,79 @@ struct SessionHistoryView: View {
         guard let context = historyManager.modelContext else { return }
 
         withAnimation {
+            // Delete all DailyPerformance objects first
+            cleanupDailyPerformance(for: allSnapshots)
+
             for snapshot in allSnapshots {
                 context.delete(snapshot)
             }
             try? context.save()
+        }
+    }
+
+    private func deleteSnapshotsByDateRange() {
+        guard let context = historyManager.modelContext else { return }
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: deleteStartDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: deleteEndDate)) ?? deleteEndDate
+
+        withAnimation {
+            let snapshotsToDelete = allSnapshots.filter { snapshot in
+                snapshot.timestamp >= startOfDay && snapshot.timestamp < endOfDay
+            }
+
+            // Delete related DailyPerformance objects first
+            cleanupDailyPerformance(for: snapshotsToDelete)
+
+            for snapshot in snapshotsToDelete {
+                context.delete(snapshot)
+            }
+            try? context.save()
+        }
+
+        showingDeleteByDateAlert = false
+    }
+
+    private func deleteSnapshotsByEAID() {
+        guard let context = historyManager.modelContext else { return }
+        guard !selectedEAID.isEmpty else { return }
+
+        withAnimation {
+            let snapshotsToDelete = allSnapshots.filter { snapshot in
+                snapshot.eaId?.lowercased() == selectedEAID.lowercased()
+            }
+
+            // Delete related DailyPerformance objects first
+            cleanupDailyPerformance(for: snapshotsToDelete)
+
+            for snapshot in snapshotsToDelete {
+                context.delete(snapshot)
+            }
+            try? context.save()
+        }
+
+        showingDeleteByEAIDAlert = false
+    }
+
+    private func cleanupDailyPerformance(for snapshots: [StatsSnapshot]) {
+        guard let context = historyManager.modelContext else { return }
+
+        // Delete ALL DailyPerformance objects to avoid accessing potentially deleted snapshot references
+        // They will be recalculated from snapshots when needed
+        let descriptor = FetchDescriptor<DailyPerformance>()
+
+        do {
+            let allPerformances = try context.fetch(descriptor)
+            for performance in allPerformances {
+                context.delete(performance)
+            }
+            try context.save()
+        } catch {
+            // If we can't fetch (likely due to corrupt data), reset the cleanup flag
+            // so it runs again on next app launch
+            print("⚠️ Error fetching DailyPerformance objects: \(error)")
+            UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
         }
     }
 }
@@ -347,6 +460,152 @@ struct StatChip: View {
         .background(color.opacity(0.1))
         .cornerRadius(6)
         .fixedSize()
+    }
+}
+
+// MARK: - Delete by Date Range View
+
+struct DeleteByDateRangeView: View {
+    let allSnapshots: [StatsSnapshot]
+    let onDelete: (Int) -> Void
+    @Environment(\.dismiss) var dismiss
+
+    @State private var startDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+    @State private var endDate = Date()
+
+    private var snapshotsInRange: [StatsSnapshot] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: startDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: endDate)) ?? endDate
+
+        return allSnapshots.filter { snapshot in
+            snapshot.timestamp >= startOfDay && snapshot.timestamp < endOfDay
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Delete Snapshots by Date Range")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Select date range:")
+                    .font(.headline)
+
+                DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+                DatePicker("End Date", selection: $endDate, displayedComponents: .date)
+
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.orange)
+                    Text("\(snapshotsInRange.count) snapshot\(snapshotsInRange.count == 1 ? "" : "s") will be deleted")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 8)
+            }
+            .padding()
+            .background(Theme.overlayColor)
+            .cornerRadius(12)
+
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button(role: .destructive) {
+                    onDelete(snapshotsInRange.count)
+                    dismiss()
+                } label: {
+                    Text("Delete \(snapshotsInRange.count)")
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(snapshotsInRange.isEmpty)
+            }
+        }
+        .padding()
+        .frame(width: 400)
+    }
+}
+
+// MARK: - Delete by EA ID View
+
+struct DeleteByEAIDView: View {
+    let allSnapshots: [StatsSnapshot]
+    let onDelete: (String) -> Void
+    @Environment(\.dismiss) var dismiss
+
+    @State private var selectedEAID: String = ""
+
+    private var uniqueEAIDs: [String] {
+        let eaIds = allSnapshots.compactMap { $0.eaId }.filter { !$0.isEmpty }
+        return Array(Set(eaIds)).sorted()
+    }
+
+    private var snapshotsForEAID: [StatsSnapshot] {
+        guard !selectedEAID.isEmpty else { return [] }
+        return allSnapshots.filter { $0.eaId?.lowercased() == selectedEAID.lowercased() }
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Delete Snapshots by EA ID")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Select EA ID:")
+                    .font(.headline)
+
+                if uniqueEAIDs.isEmpty {
+                    Text("No EA IDs found in snapshots")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    Picker("EA ID", selection: $selectedEAID) {
+                        Text("Select EA ID").tag("")
+                        ForEach(uniqueEAIDs, id: \.self) { eaId in
+                            Text(eaId).tag(eaId)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    if !selectedEAID.isEmpty {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.orange)
+                            Text("\(snapshotsForEAID.count) snapshot\(snapshotsForEAID.count == 1 ? "" : "s") will be deleted")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 8)
+                    }
+                }
+            }
+            .padding()
+            .background(Theme.overlayColor)
+            .cornerRadius(12)
+
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button(role: .destructive) {
+                    onDelete(selectedEAID)
+                    dismiss()
+                } label: {
+                    Text("Delete \(snapshotsForEAID.count)")
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(selectedEAID.isEmpty || snapshotsForEAID.isEmpty)
+            }
+        }
+        .padding()
+        .frame(width: 400)
     }
 }
 
