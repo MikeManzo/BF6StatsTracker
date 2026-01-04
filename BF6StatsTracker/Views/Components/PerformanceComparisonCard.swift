@@ -91,9 +91,9 @@ struct PerformanceComparisonCard: View {
             }
             .frame(height: 6)
 
-            // Comparison with yesterday
+            // Comparison with previous session
             HStack(spacing: 4) {
-                Text("Last Played:")
+                Text("vs Previous:")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "minus")
@@ -113,7 +113,7 @@ struct PerformanceComparisonCard: View {
 
                 Spacer()
 
-                Text("vs \(yesterdayValue)")
+                Text("(\(yesterdayValue))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -218,9 +218,9 @@ struct PerformanceComparisonCardDouble: View {
             }
             .frame(height: 6)
 
-            // Comparison with yesterday
+            // Comparison with previous session
             HStack(spacing: 4) {
-                Text("Last Played:")
+                Text("vs Previous:")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Image(systemName: delta > 0.01 ? "arrow.up" : delta < -0.01 ? "arrow.down" : "minus")
@@ -240,7 +240,7 @@ struct PerformanceComparisonCardDouble: View {
 
                 Spacer()
 
-                Text("vs \(String(format: format, yesterdayValue))")
+                Text("(\(String(format: format, yesterdayValue)))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
