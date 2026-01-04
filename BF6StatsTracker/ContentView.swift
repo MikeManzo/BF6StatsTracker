@@ -82,10 +82,20 @@ struct ContentView: View {
                             DraggableTileContainer()
                         case .weapons:
                             WeaponStatsView()
+                        case .weaponMastery:
+                            WeaponMasteryView()
                         case .gadgets:
                             GadgetStatsView()
+                        case .utility:
+                            UtilityEffectivenessView()
                         case .vehicles:
                             VehicleStatsView()
+                        case .vehicleSpec:
+                            VehicleSpecialistView()
+                        case .support:
+                            TeamSupportView()
+                        case .intel:
+                            IntelligenceView()
                         case .loadout:
                             LoadoutAnalyzerView()
                         case .servers:

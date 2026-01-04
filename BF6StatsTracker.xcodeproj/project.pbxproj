@@ -41,6 +41,11 @@
 		2749FA1C2F05DD5C004D2E1D /* UnifiedStatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */; };
 		2749FA1E2F080A96004D2E1D /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1D2F080A96004D2E1D /* AboutView.swift */; };
 		27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C267BB2EEF35AF006168AA /* MapTracker.swift */; };
+		27C4B8972F0ADCA400B07E9D /* VehicleSpecialistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C4B8952F0ADCA400B07E9D /* VehicleSpecialistView.swift */; };
+		27C4B8982F0ADCA400B07E9D /* IntelligenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C4B8922F0ADCA400B07E9D /* IntelligenceView.swift */; };
+		27C4B8992F0ADCA400B07E9D /* TeamSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C4B8932F0ADCA400B07E9D /* TeamSupportView.swift */; };
+		27C4B89A2F0ADCA400B07E9D /* UtilityEffectivenessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C4B8942F0ADCA400B07E9D /* UtilityEffectivenessView.swift */; };
+		27C4B89B2F0ADCA400B07E9D /* WeaponMasteryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C4B8962F0ADCA400B07E9D /* WeaponMasteryView.swift */; };
 		27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543792EE98DF300B01618 /* StatsSnapshot.swift */; };
 		27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543782EE98DF300B01618 /* ServerModels.swift */; };
 		27E5437D2EE98E0800B01618 /* HistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E5437C2EE98E0800B01618 /* HistoryManager.swift */; };
@@ -93,6 +98,11 @@
 		2749FA1D2F080A96004D2E1D /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		2749FA772F0A26EF004D2E1D /* increment_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = increment_build.sh; sourceTree = "<group>"; };
 		27C267BB2EEF35AF006168AA /* MapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTracker.swift; sourceTree = "<group>"; };
+		27C4B8922F0ADCA400B07E9D /* IntelligenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceView.swift; sourceTree = "<group>"; };
+		27C4B8932F0ADCA400B07E9D /* TeamSupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamSupportView.swift; sourceTree = "<group>"; };
+		27C4B8942F0ADCA400B07E9D /* UtilityEffectivenessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityEffectivenessView.swift; sourceTree = "<group>"; };
+		27C4B8952F0ADCA400B07E9D /* VehicleSpecialistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSpecialistView.swift; sourceTree = "<group>"; };
+		27C4B8962F0ADCA400B07E9D /* WeaponMasteryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeaponMasteryView.swift; sourceTree = "<group>"; };
 		27E543782EE98DF300B01618 /* ServerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerModels.swift; sourceTree = "<group>"; };
 		27E543792EE98DF300B01618 /* StatsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsSnapshot.swift; sourceTree = "<group>"; };
 		27E5437C2EE98E0800B01618 /* HistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryManager.swift; sourceTree = "<group>"; };
@@ -228,6 +238,11 @@
 				27E543822EE98F1D00B01618 /* SessionHistoryView.swift */,
 				27E543842EE98F2D00B01618 /* PerformanceChartsView.swift */,
 				27E543862EE98F4000B01618 /* ServerBrowserView.swift */,
+				27C4B8922F0ADCA400B07E9D /* IntelligenceView.swift */,
+				27C4B8932F0ADCA400B07E9D /* TeamSupportView.swift */,
+				27C4B8942F0ADCA400B07E9D /* UtilityEffectivenessView.swift */,
+				27C4B8952F0ADCA400B07E9D /* VehicleSpecialistView.swift */,
+				27C4B8962F0ADCA400B07E9D /* WeaponMasteryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -356,6 +371,11 @@
 				0000000000000004 /* Models.swift in Sources */,
 				0000000000000005 /* APIService.swift in Sources */,
 				0000000000000006 /* CacheManager.swift in Sources */,
+				27C4B8972F0ADCA400B07E9D /* VehicleSpecialistView.swift in Sources */,
+				27C4B8982F0ADCA400B07E9D /* IntelligenceView.swift in Sources */,
+				27C4B8992F0ADCA400B07E9D /* TeamSupportView.swift in Sources */,
+				27C4B89A2F0ADCA400B07E9D /* UtilityEffectivenessView.swift in Sources */,
+				27C4B89B2F0ADCA400B07E9D /* WeaponMasteryView.swift in Sources */,
 				2747A7A02F037BB8001CF709 /* AccountSelectionView.swift in Sources */,
 				0000000000000007 /* ClassTileView.swift in Sources */,
 				0000000000000008 /* WeaponStatsView.swift in Sources */,

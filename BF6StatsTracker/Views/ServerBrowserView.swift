@@ -24,7 +24,7 @@ struct ServerBrowserView: View {
     var filteredAndSortedServers: [BF6Server] {
         var filtered = servers.filter { server in
             // Platform filter (client-side since API doesn't support it)
-            let matchesPlatform = server.platform.localizedCaseInsensitiveContains(selectedPlatform.rawValue)
+            let matchesPlatform = matchesPlatformFilter(server: server, selectedPlatform: selectedPlatform)
 
             // Search filter
             let matchesSearch = searchText.isEmpty ||
@@ -57,9 +57,25 @@ struct ServerBrowserView: View {
             filtered.sort { $0.region < $1.region }
         case .favorites:
             filtered.sort { (favoriteServerIds.contains($0.id) ? 0 : 1) < (favoriteServerIds.contains($1.id) ? 0 : 1) }
+        case .latency:
+            filtered.sort { ($0.latency ?? Int.max) < ($1.latency ?? Int.max) }
         }
 
         return filtered
+    }
+
+    // Helper function to match server platform with selected platform filter
+    private func matchesPlatformFilter(server: BF6Server, selectedPlatform: Platform) -> Bool {
+        let platform = server.platform.lowercased()
+
+        switch selectedPlatform {
+        case .pc, .steam:
+            return platform.contains("pc") || platform.contains("origin") || platform.contains("steam")
+        case .playstation, .ps3, .ps4, .ps5:
+            return platform.contains("playstation") || platform.contains("ps")
+        case .xbox, .xboxOne, .xboxSeries:
+            return platform.contains("xbox")
+        }
     }
 
     var body: some View {
@@ -118,6 +134,9 @@ struct ServerBrowserView: View {
                             label: "Shown",
                             color: .green
                         )
+
+                        // Platform breakdown
+                        PlatformBreakdownBadge(servers: servers, selectedPlatform: selectedPlatform)
                     }
                 }
 
@@ -163,7 +182,13 @@ struct ServerBrowserView: View {
                 Menu {
                     ForEach(ServerSortOption.allCases) { option in
                         Button(action: { sortBy = option }) {
-                            Label(option.rawValue, systemImage: sortBy == option ? "checkmark" : "")
+                            HStack {
+                                Text(option.rawValue)
+                                Spacer()
+                                if sortBy == option {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
                     }
                 } label: {
@@ -182,7 +207,13 @@ struct ServerBrowserView: View {
                 Menu {
                     ForEach(ServerRegion.allCases) { region in
                         Button(action: { selectedRegion = region }) {
-                            Label(region.rawValue, systemImage: selectedRegion == region ? "checkmark" : "")
+                            HStack {
+                                Text(region.rawValue)
+                                Spacer()
+                                if selectedRegion == region {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
                     }
                 } label: {
@@ -198,7 +229,13 @@ struct ServerBrowserView: View {
                 Menu {
                     ForEach(ServerMode.allCases) { mode in
                         Button(action: { selectedMode = mode }) {
-                            Label(mode.rawValue, systemImage: selectedMode == mode ? "checkmark" : "")
+                            HStack {
+                                Text(mode.rawValue)
+                                Spacer()
+                                if selectedMode == mode {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
                     }
                 } label: {
@@ -518,11 +555,42 @@ struct EnhancedServerCard: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+
+                    // Adventure mode & Experience level indicators
+                    HStack(spacing: 8) {
+                        if let adventure = server.adventure, !adventure.isEmpty {
+                            HStack(spacing: 4) {
+                                Image(systemName: "trophy.fill")
+                                    .font(.caption2)
+                                Text(adventure)
+                                    .font(.caption2)
+                            }
+                            .foregroundColor(.yellow)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.yellow.opacity(0.2))
+                            .cornerRadius(4)
+                        }
+
+                        if let subParam = server.subParam, !subParam.isEmpty {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.circle.fill")
+                                    .font(.caption2)
+                                Text(subParam)
+                                    .font(.caption2)
+                            }
+                            .foregroundColor(.cyan)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.cyan.opacity(0.2))
+                            .cornerRadius(4)
+                        }
+                    }
                 }
 
                 Spacer()
 
-                // Player count
+                // Player count & latency
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(server.playerCount)
                         .font(.title2)
@@ -532,6 +600,17 @@ struct EnhancedServerCard: View {
                     Text(server.isFull ? "FULL" : "\(server.slots.capacity - server.slots.inGame) slots")
                         .font(.caption2)
                         .foregroundColor(.secondary)
+
+                    // Latency indicator
+                    if let latency = server.latency {
+                        HStack(spacing: 4) {
+                            Image(systemName: "antenna.radiowaves.left.and.right")
+                                .font(.caption2)
+                            Text("\(latency)ms")
+                                .font(.caption2)
+                        }
+                        .foregroundColor(getLatencyColor(latency))
+                    }
 
                     if server.hasQueue {
                         HStack(spacing: 4) {
@@ -613,6 +692,26 @@ struct EnhancedServerCard: View {
                             value: server.isFull ? "Full" : "Available",
                             icon: server.isFull ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
                         )
+
+                        // Latency with color coding
+                        if let latency = server.latency {
+                            ServerDetailRowWithColor(
+                                label: "Latency",
+                                value: "\(latency)ms",
+                                icon: "antenna.radiowaves.left.and.right",
+                                color: getLatencyColor(latency)
+                            )
+                        }
+
+                        // Adventure mode
+                        if let adventure = server.adventure, !adventure.isEmpty {
+                            ServerDetailRow(label: "Adventure Mode", value: adventure, icon: "trophy.fill")
+                        }
+
+                        // Experience level (subParam)
+                        if let subParam = server.subParam, !subParam.isEmpty {
+                            ServerDetailRow(label: "Difficulty", value: subParam, icon: "star.circle.fill")
+                        }
                     }
 
                     // Map rotation
@@ -682,6 +781,20 @@ struct EnhancedServerCard: View {
                 .stroke(statusColor.opacity(0.3), lineWidth: 2)
         )
     }
+
+    // Helper function for latency color
+    private func getLatencyColor(_ latency: Int) -> Color {
+        switch latency {
+        case 0..<50:
+            return .green
+        case 50..<100:
+            return .yellow
+        case 100..<150:
+            return .orange
+        default:
+            return .red
+        }
+    }
 }
 
 // MARK: - Supporting Views
@@ -706,6 +819,83 @@ struct ServerStatBadge: View {
         .padding(.vertical, 4)
         .background(color.opacity(0.1))
         .cornerRadius(6)
+    }
+}
+
+struct PlatformBreakdownBadge: View {
+    let servers: [BF6Server]
+    let selectedPlatform: Platform
+
+    private var platformCounts: (pc: Int, playstation: Int, xbox: Int) {
+        var pc = 0
+        var playstation = 0
+        var xbox = 0
+
+        for server in servers {
+            let platform = server.platform.lowercased()
+            if platform.contains("pc") || platform.contains("origin") || platform.contains("steam") {
+                pc += 1
+            } else if platform.contains("playstation") || platform.contains("ps") {
+                playstation += 1
+            } else if platform.contains("xbox") {
+                xbox += 1
+            }
+        }
+
+        return (pc, playstation, xbox)
+    }
+
+    var body: some View {
+        let counts = platformCounts
+
+        HStack(spacing: 8) {
+            PlatformCount(
+                platform: .pc,
+                count: counts.pc,
+                isSelected: selectedPlatform == .pc
+            )
+
+            Text("•")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+
+            PlatformCount(
+                platform: .playstation,
+                count: counts.playstation,
+                isSelected: selectedPlatform == .playstation
+            )
+
+            Text("•")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+
+            PlatformCount(
+                platform: .xbox,
+                count: counts.xbox,
+                isSelected: selectedPlatform == .xbox
+            )
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.secondary.opacity(0.1))
+        .cornerRadius(6)
+    }
+}
+
+struct PlatformCount: View {
+    let platform: Platform
+    let count: Int
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            PlatformIconView(platform: platform, size: 12)
+
+            Text("\(count)")
+                .font(.caption)
+                .fontWeight(isSelected ? .bold : .medium)
+                .foregroundColor(isSelected ? Theme.textPrimary : .secondary)
+        }
     }
 }
 
@@ -759,6 +949,33 @@ struct ServerDetailRow: View {
     }
 }
 
+struct ServerDetailRowWithColor: View {
+    let label: String
+    let value: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .font(.caption)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+
+                Text(value)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(color)
+            }
+        }
+    }
+}
+
 // MARK: - Filter Types
 
 enum ServerRegion: String, CaseIterable, Identifiable {
@@ -786,6 +1003,7 @@ enum ServerSortOption: String, CaseIterable, Identifiable {
     case players = "Players"
     case name = "Name"
     case region = "Region"
+    case latency = "Latency"
     case favorites = "Favorites"
 
     var id: String { rawValue }
