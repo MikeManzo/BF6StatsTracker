@@ -10,6 +10,15 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
 
+    // Get app version and build number from Info.plist
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "N/A"
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -32,7 +41,7 @@ struct AboutView: View {
                             .fontWeight(.bold)
                             .foregroundColor(Theme.textPrimary)
 
-                        Text("Version 1.0.0")
+                        Text("Version \(appVersion) (Build \(buildNumber))")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -225,7 +234,7 @@ struct AboutView: View {
             .padding(.vertical, 12)
         }
         .background(Theme.backgroundPrimary)
-        .frame(width: 600, height: 700)
+        .frame(width: 400, height: 700)
     }
 }
 
