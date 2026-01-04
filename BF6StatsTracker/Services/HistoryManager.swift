@@ -405,19 +405,27 @@ class HistoryManager: ObservableObject {
                 todayPerformance = try context.fetch(todayDescriptor).first
             }
 
-            // Load yesterday's performance
+            // Load last performance (most recent non-today performance)
             if let playerName = playerName {
-                let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
-                    performance.date == yesterday && performance.playerName == playerName
+                let lastPlayedPredicate = #Predicate<DailyPerformance> { performance in
+                    performance.date < today && performance.playerName == playerName
                 }
-                let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
-                yesterdayPerformance = try context.fetch(yesterdayDescriptor).first
+                var lastPlayedDescriptor = FetchDescriptor<DailyPerformance>(
+                    predicate: lastPlayedPredicate,
+                    sortBy: [SortDescriptor(\.date, order: .reverse)]
+                )
+                lastPlayedDescriptor.fetchLimit = 1
+                yesterdayPerformance = try context.fetch(lastPlayedDescriptor).first
             } else {
-                let yesterdayPredicate = #Predicate<DailyPerformance> { performance in
-                    performance.date == yesterday
+                let lastPlayedPredicate = #Predicate<DailyPerformance> { performance in
+                    performance.date < today
                 }
-                let yesterdayDescriptor = FetchDescriptor<DailyPerformance>(predicate: yesterdayPredicate)
-                yesterdayPerformance = try context.fetch(yesterdayDescriptor).first
+                var lastPlayedDescriptor = FetchDescriptor<DailyPerformance>(
+                    predicate: lastPlayedPredicate,
+                    sortBy: [SortDescriptor(\.date, order: .reverse)]
+                )
+                lastPlayedDescriptor.fetchLimit = 1
+                yesterdayPerformance = try context.fetch(lastPlayedDescriptor).first
             }
 
             // Load recent daily performances (last 30 days)
