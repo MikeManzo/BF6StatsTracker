@@ -15,44 +15,46 @@ struct WeaponMasteryView: View {
     @State private var selectedCategory: WeaponCategory?
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Header
-            HStack {
-                Image(systemName: "scope")
-                    .font(.title)
-                    .foregroundColor(Theme.bf6Orange)
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header
+                HStack {
+                    Image(systemName: "scope")
+                        .font(.title)
+                        .foregroundColor(Theme.bf6Orange)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Weapon Mastery Analytics")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.textPrimary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Weapon Mastery Analytics")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Theme.textPrimary)
 
-                    Text("Deep dive into weapon performance and playstyle")
-                        .font(.caption)
+                        Text("Deep dive into weapon performance and playstyle")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+                }
+
+                if !viewModel.weaponStats.isEmpty {
+                    // Category Filter
+                    categoryFilterView
+
+                    // Weapons Grid
+                    weaponsGridView(weapons: filteredWeapons)
+
+                    // Detailed Stats for Selected Weapon
+                    if let weapon = selectedWeapon {
+                        weaponDetailView(weapon: weapon)
+                    }
+                } else {
+                    Text("No weapon stats available")
                         .foregroundColor(.secondary)
                 }
-
-                Spacer()
             }
-
-            if let weapons = viewModel.playerStats?.weapons, !weapons.isEmpty {
-                // Category Filter
-                categoryFilterView
-
-                // Weapons Grid
-                weaponsGridView(weapons: filteredWeapons)
-
-                // Detailed Stats for Selected Weapon
-                if let weapon = selectedWeapon {
-                    weaponDetailView(weapon: weapon)
-                }
-            } else {
-                Text("No weapon stats available")
-                    .foregroundColor(.secondary)
-            }
+            .padding()
         }
-        .padding()
     }
 
     // MARK: - Category Filter
@@ -90,7 +92,7 @@ struct WeaponMasteryView: View {
     // MARK: - Filtered Weapons
 
     private var filteredWeapons: [WeaponStats] {
-        guard let weapons = viewModel.playerStats?.weapons else { return [] }
+        let weapons = viewModel.weaponStats
 
         let filtered = selectedCategory == nil
             ? weapons
@@ -131,7 +133,7 @@ struct WeaponMasteryView: View {
             GridItem(.flexible()),
             GridItem(.flexible())
         ], spacing: 12) {
-            ForEach(weapons.prefix(9)) { weapon in
+            ForEach(weapons) { weapon in
                 weaponCard(weapon: weapon)
             }
         }

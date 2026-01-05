@@ -14,51 +14,53 @@ struct VehicleSpecialistView: View {
     @State private var selectedCategory: VehicleCategory?
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Header
-            HStack {
-                Image(systemName: "car.fill")
-                    .font(.title)
-                    .foregroundColor(Theme.bf6Orange)
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header
+                HStack {
+                    Image(systemName: "car.fill")
+                        .font(.title)
+                        .foregroundColor(Theme.bf6Orange)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Vehicle Specialist Dashboard")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.textPrimary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Vehicle Specialist Dashboard")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Theme.textPrimary)
 
-                    Text("Master of mechanized warfare")
-                        .font(.caption)
+                        Text("Master of mechanized warfare")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    if !viewModel.vehicleStats.isEmpty {
+                        vehicleSpecScore(vehicles: viewModel.vehicleStats)
+                    }
+                }
+
+                if !viewModel.vehicleStats.isEmpty {
+                    // Overall Vehicle Stats
+                    overallVehicleStats(vehicles: viewModel.vehicleStats)
+
+                    // Category Filter
+                    categoryFilterView
+
+                    // Vehicles Grid
+                    vehiclesGridView(vehicles: filteredVehicles)
+
+                    // Detailed Stats for Selected Vehicle
+                    if let vehicle = selectedVehicle {
+                        vehicleDetailView(vehicle: vehicle)
+                    }
+                } else {
+                    Text("No vehicle stats available")
                         .foregroundColor(.secondary)
                 }
-
-                Spacer()
-
-                if let vehicles = viewModel.playerStats?.vehicles {
-                    vehicleSpecScore(vehicles: vehicles)
-                }
             }
-
-            if let vehicles = viewModel.playerStats?.vehicles, !vehicles.isEmpty {
-                // Overall Vehicle Stats
-                overallVehicleStats(vehicles: vehicles)
-
-                // Category Filter
-                categoryFilterView
-
-                // Vehicles Grid
-                vehiclesGridView(vehicles: filteredVehicles)
-
-                // Detailed Stats for Selected Vehicle
-                if let vehicle = selectedVehicle {
-                    vehicleDetailView(vehicle: vehicle)
-                }
-            } else {
-                Text("No vehicle stats available")
-                    .foregroundColor(.secondary)
-            }
+            .padding()
         }
-        .padding()
     }
 
     // MARK: - Vehicle Specialist Score
@@ -219,7 +221,7 @@ struct VehicleSpecialistView: View {
     // MARK: - Filtered Vehicles
 
     private var filteredVehicles: [VehicleStats] {
-        guard let vehicles = viewModel.playerStats?.vehicles else { return [] }
+        let vehicles = viewModel.vehicleStats
 
         // Debug: Print all vehicle types
         if selectedCategory != nil {
@@ -309,7 +311,7 @@ struct VehicleSpecialistView: View {
             GridItem(.flexible()),
             GridItem(.flexible())
         ], spacing: 12) {
-            ForEach(vehicles.prefix(9)) { vehicle in
+            ForEach(vehicles) { vehicle in
                 vehicleCard(vehicle: vehicle)
             }
         }
