@@ -69,6 +69,64 @@ final class StatsSnapshot {
         self.sessionId = sessionId
     }
 
+    /// Direct initializer for creating synthetic snapshots
+    init(
+        playerName: String,
+        platform: String,
+        eaId: String?,
+        kills: Int,
+        deaths: Int,
+        wins: Int,
+        losses: Int,
+        matchesPlayed: Int,
+        totalScore: Int,
+        timePlayed: Int,
+        headshots: Int,
+        assists: Int,
+        revives: Int,
+        resupplies: Int,
+        sessionId: UUID? = nil
+    ) {
+        self.id = UUID()
+        self.timestamp = Date()
+        self.playerName = playerName
+        self.platform = platform
+        self.eaId = eaId
+
+        self.kills = kills
+        self.deaths = deaths
+        self.kdRatio = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
+        self.wins = wins
+        self.losses = losses
+        self.matchesPlayed = matchesPlayed
+        self.totalScore = totalScore
+        self.timePlayed = timePlayed
+        self.headshots = headshots
+        self.assists = assists
+        self.revives = revives
+        self.resupplies = resupplies
+
+        // Calculate derived stats
+        if timePlayed > 0 {
+            self.killsPerMinute = Double(kills) / (Double(timePlayed) / 60.0)
+            self.scorePerMinute = Double(totalScore) / (Double(timePlayed) / 60.0)
+        } else {
+            self.killsPerMinute = 0
+            self.scorePerMinute = 0
+        }
+
+        if kills > 0 {
+            self.headshotPercentage = (Double(headshots) / Double(kills)) * 100.0
+        } else {
+            self.headshotPercentage = 0
+        }
+
+        // Accuracy would need shots fired/hits data which we don't have in snapshots
+        self.accuracy = 0
+
+        self.sessionId = sessionId
+    }
+
     /// Calculate approximate storage size in bytes
     var approximateStorageSize: Int {
         var size = 0
@@ -115,6 +173,31 @@ final class StatsSnapshot {
         } else {
             return String(format: "%.2f MB", bytes / (1024 * 1024))
         }
+    }
+
+    /// Check if this snapshot has identical stats to another snapshot
+    /// - Parameter other: The snapshot to compare with
+    /// - Returns: True if all stat values are identical (ignores timestamp, id, and sessionId)
+    func isIdentical(to other: StatsSnapshot) -> Bool {
+        return self.playerName == other.playerName &&
+               self.platform == other.platform &&
+               self.eaId == other.eaId &&
+               self.kills == other.kills &&
+               self.deaths == other.deaths &&
+               self.kdRatio == other.kdRatio &&
+               self.wins == other.wins &&
+               self.losses == other.losses &&
+               self.matchesPlayed == other.matchesPlayed &&
+               self.totalScore == other.totalScore &&
+               self.scorePerMinute == other.scorePerMinute &&
+               self.killsPerMinute == other.killsPerMinute &&
+               self.accuracy == other.accuracy &&
+               self.headshotPercentage == other.headshotPercentage &&
+               self.timePlayed == other.timePlayed &&
+               self.headshots == other.headshots &&
+               self.assists == other.assists &&
+               self.revives == other.revives &&
+               self.resupplies == other.resupplies
     }
 }
 

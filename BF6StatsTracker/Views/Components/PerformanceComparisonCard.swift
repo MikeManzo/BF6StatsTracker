@@ -13,6 +13,7 @@ struct PerformanceComparisonCard: View {
     let yesterdayValue: Int
     let icon: String
     let accentColor: Color
+    var yesterdaySummary: Int = 0
 
     @State private var displayValue: Double = 0
 
@@ -55,12 +56,23 @@ struct PerformanceComparisonCard: View {
                 Spacer()
             }
 
-            // Today's value (large)
+            // Today's value (large) with trend indicator
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(Int(displayValue))")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText(value: displayValue))
+
+                // Trend arrow and percentage on the main value
+                if yesterdayValue > 0 {
+                    Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "minus")
+                        .font(.title3)
+                        .foregroundStyle(changeColor)
+
+                    Text("\(String(format: "%.0f", abs(percentChange)))%")
+                        .font(.caption)
+                        .foregroundStyle(changeColor)
+                }
 
                 Spacer()
             }
@@ -83,7 +95,13 @@ struct PerformanceComparisonCard: View {
                             )
                         )
                         .frame(
-                            width: min(CGFloat(todayValue) / max(CGFloat(yesterdayValue), 1) * geometry.size.width, geometry.size.width),
+                            width: {
+                                let base = max(1.0, Double(yesterdayValue))
+                                let ratio = max(0.0, min(1.0, Double(todayValue) / base))
+                                let w = ratio * Double(geometry.size.width)
+                                let safe = w.isFinite ? w : 0
+                                return CGFloat(safe)
+                            }(),
                             height: 6
                         )
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: todayValue)
@@ -96,24 +114,22 @@ struct PerformanceComparisonCard: View {
                 Text("vs Previous:")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "minus")
-                    .font(.caption2)
-                    .foregroundStyle(changeColor)
 
-                Text(delta > 0 ? "+\(delta)" : "\(delta)")
+                Text("\(yesterdayValue)")
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundStyle(changeColor)
+                    .foregroundStyle(.secondary)
 
                 if yesterdayValue > 0 {
-                    Text("(\(String(format: "%.0f", abs(percentChange)))%)")
+                    Text("(\(delta > 0 ? "+" : "")\(delta))")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(changeColor)
                 }
 
                 Spacer()
 
-                Text("(\(yesterdayValue))")
+                // Yesterday summary in lower right corner
+                Text("Yesterday: \(yesterdaySummary)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -145,6 +161,7 @@ struct PerformanceComparisonCardDouble: View {
     let icon: String
     let accentColor: Color
     let format: String
+    var yesterdaySummary: Double = 0.0
 
     @State private var displayValue: Double = 0
 
@@ -182,12 +199,23 @@ struct PerformanceComparisonCardDouble: View {
                 Spacer()
             }
 
-            // Today's value (large)
+            // Today's value (large) with trend indicator
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(String(format: format, displayValue))
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText(value: displayValue))
+
+                // Trend arrow and percentage on the main value
+                if yesterdayValue > 0 {
+                    Image(systemName: delta > 0.01 ? "arrow.up" : delta < -0.01 ? "arrow.down" : "minus")
+                        .font(.title3)
+                        .foregroundStyle(changeColor)
+
+                    Text("\(String(format: "%.0f", abs(percentChange)))%")
+                        .font(.caption)
+                        .foregroundStyle(changeColor)
+                }
 
                 Spacer()
             }
@@ -210,7 +238,13 @@ struct PerformanceComparisonCardDouble: View {
                             )
                         )
                         .frame(
-                            width: min(CGFloat(todayValue) / max(CGFloat(yesterdayValue), 0.1) * geometry.size.width, geometry.size.width),
+                            width: {
+                                let base = max(0.0001, yesterdayValue)
+                                let ratio = max(0.0, min(1.0, todayValue / base))
+                                let w = ratio * Double(geometry.size.width)
+                                let safe = w.isFinite ? w : 0
+                                return CGFloat(safe)
+                            }(),
                             height: 6
                         )
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: todayValue)
@@ -223,24 +257,22 @@ struct PerformanceComparisonCardDouble: View {
                 Text("vs Previous:")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                Image(systemName: delta > 0.01 ? "arrow.up" : delta < -0.01 ? "arrow.down" : "minus")
-                    .font(.caption2)
-                    .foregroundStyle(changeColor)
 
-                Text(String(format: format, abs(delta)))
+                Text(String(format: format, yesterdayValue))
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundStyle(changeColor)
+                    .foregroundStyle(.secondary)
 
                 if yesterdayValue > 0 {
-                    Text("(\(String(format: "%.0f", abs(percentChange)))%)")
+                    Text("(\(delta > 0 ? "+" : "")\(String(format: format, delta)))")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(changeColor)
                 }
 
                 Spacer()
 
-                Text("(\(String(format: format, yesterdayValue)))")
+                // Yesterday summary in lower right corner
+                Text("Yesterday: \(String(format: format, yesterdaySummary))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

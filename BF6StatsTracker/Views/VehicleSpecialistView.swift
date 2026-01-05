@@ -221,11 +221,84 @@ struct VehicleSpecialistView: View {
     private var filteredVehicles: [VehicleStats] {
         guard let vehicles = viewModel.playerStats?.vehicles else { return [] }
 
+        // Debug: Print all vehicle types
+        if selectedCategory != nil {
+            print("📋 All vehicle types available:")
+            for vehicle in vehicles {
+                print("  - \(vehicle.vehicleName): '\(vehicle.type)'")
+            }
+        }
+
         let filtered = selectedCategory == nil
             ? vehicles
-            : vehicles.filter { $0.type == selectedCategory?.rawValue }
+            : vehicles.filter { matchesCategory($0, category: selectedCategory!) }
+
+        print("✅ Filtered \(filtered.count) vehicles for category: \(selectedCategory?.rawValue ?? "All")")
 
         return filtered.sorted { $0.kills > $1.kills }
+    }
+
+    /// Flexible category matching that handles various API response formats
+    /// API returns: 'Air Combat', 'Ground Combat', 'Ground Transport'
+    /// We need to differentiate based on vehicle name patterns
+    private func matchesCategory(_ vehicle: VehicleStats, category: VehicleCategory) -> Bool {
+        let type = vehicle.type.lowercased()
+        let name = vehicle.vehicleName.lowercased()
+
+        // Debug: Print vehicle type when filtering
+        print("🔍 Checking vehicle '\(vehicle.vehicleName)' with type '\(vehicle.type)' against category '\(category.rawValue)'")
+
+        switch category {
+        case .mainBattleTank:
+            // Ground Combat + tank names (M1A2, Leo, T-series, etc.)
+            return type.contains("ground combat") && (
+                name.contains("m1") || name.contains("leo") || name.contains("abrams") ||
+                name.contains("merkava") || name.contains("t-") || name.contains("challenger")
+            )
+        case .lightArmor:
+            // Ground Combat + IFV/light vehicle names (Bradley, BMP, Strf, LAV, etc.)
+            return type.contains("ground combat") && (
+                name.contains("bradley") || name.contains("strf") || name.contains("bmp") ||
+                name.contains("lav") || name.contains("warrior") || name.contains("marder") ||
+                name.contains("cv90") || name.contains("ifv")
+            )
+        case .antiAircraft:
+            // Ground Combat + AA names (Cheetah, Tunguska, etc.)
+            return type.contains("ground combat") && (
+                name.contains("cheetah") || name.contains("tunguska") || name.contains("aa") ||
+                name.contains("anti-air") || name.contains("gepard")
+            )
+        case .attackHelicopter:
+            // Air Combat + helicopter names (Panthera, Falchion are BF2042 helicopters)
+            return type.contains("air combat") && (
+                name.contains("apache") || name.contains("havoc") || name.contains("tiger") ||
+                name.contains("z-") || name.contains("mi-") || name.contains("ah-") ||
+                name.contains("ka-") || name.contains("panthera") || name.contains("falchion") ||
+                name.contains("m77")
+            )
+        case .transportHelicopter:
+            // Air Combat + transport heli names (Black Hawk, Hip, etc.)
+            return type.contains("air combat") && (
+                name.contains("black hawk") || name.contains("hip") || name.contains("huey") ||
+                name.contains("uh-") || name.contains("ch-")
+            )
+        case .jet:
+            // Air Combat + jet/fighter names (F-, Su-, etc.)
+            // Exclude helicopters (panthera, falchion, m77)
+            return type.contains("air combat") && !name.contains("panthera") &&
+                   !name.contains("falchion") && !name.contains("m77") && (
+                name.contains("f-") || name.contains("su-") || name.contains("mig") ||
+                name.contains("eurofighter") || name.contains("rafale") || name.contains("j-") ||
+                name.contains("stealth") || name.contains("fighter")
+            )
+        case .transportVehicle:
+            // Ground Transport
+            return type.contains("ground transport") || (
+                type.contains("transport") && !type.contains("air")
+            )
+        case .watercraft:
+            return type.contains("boat") || type.contains("water") || type.contains("naval")
+        }
     }
 
     // MARK: - Vehicles Grid

@@ -63,7 +63,7 @@ struct WeaponMasteryView: View {
                 categoryButton(category: nil, label: "All Weapons")
 
                 ForEach(WeaponCategory.allCases) { category in
-                    categoryButton(category: category, label: category.rawValue)
+                    categoryButton(category: category, label: category.displayName)
                 }
             }
         }
@@ -94,9 +94,33 @@ struct WeaponMasteryView: View {
 
         let filtered = selectedCategory == nil
             ? weapons
-            : weapons.filter { $0.type == selectedCategory?.rawValue }
+            : weapons.filter { matchesCategory($0, category: selectedCategory!) }
 
         return filtered.sorted { $0.kills > $1.kills }
+    }
+
+    /// Flexible category matching that handles various API response formats
+    private func matchesCategory(_ weapon: WeaponStats, category: WeaponCategory) -> Bool {
+        let type = weapon.type.lowercased()
+
+        switch category {
+        case .assaultRifles:
+            return type.contains("assault")
+        case .carbines:
+            return type.contains("carbine")
+        case .smgs:
+            return type.contains("smg") || type.contains("submachine") || type.contains("pdw")
+        case .lmgs:
+            return type.contains("lmg") || type.contains("light machine") || type.contains("machine gun")
+        case .dmrs:
+            return type.contains("dmr") || type.contains("marksman")
+        case .sniperRifles:
+            return type == "rifles" || type.contains("sniper")
+        case .shotguns:
+            return type.contains("shotgun")
+        case .pistols:
+            return type.contains("pistol") || type.contains("sidearm")
+        }
     }
 
     // MARK: - Weapons Grid
@@ -135,7 +159,7 @@ struct WeaponMasteryView: View {
                     }
                 }
 
-                Text(weapon.type)
+                Text(displayTypeName(weapon.type))
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
@@ -186,7 +210,7 @@ struct WeaponMasteryView: View {
                         .fontWeight(.bold)
                         .foregroundColor(Theme.textPrimary)
 
-                    Text(weapon.type)
+                    Text(displayTypeName(weapon.type))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -511,6 +535,18 @@ struct WeaponMasteryView: View {
     }
 
     // MARK: - Helper Functions
+
+    private func displayTypeName(_ apiType: String) -> String {
+        // Map API type strings to user-friendly display names
+        switch apiType {
+        case "LMG": return "LMGs"
+        case "DMR": return "DMRs"
+        case "SMG-PDW": return "SMGs"
+        case "Rifles": return "Sniper Rifles"
+        case "Shotgun": return "Shotguns"
+        default: return apiType  // For "Assault Rifles", "Carbines", "Pistols" which match
+        }
+    }
 
     private func bodyPercent(weapon: WeaponStats) -> Double {
         guard weapon.kills > 0 else { return 0 }

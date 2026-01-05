@@ -87,23 +87,154 @@ class HistoryManager: ObservableObject {
 
     // MARK: - Snapshots
 
-    /// Save a stats snapshot
+    /// Save a stats snapshot only if it differs from the most recent snapshot
     func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil) {
         guard let context = modelContext else { return }
 
-        let snapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId)
-        context.insert(snapshot)
+        let newSnapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId)
+
+        // Get the most recent snapshot for comparison
+        let recentSnapshots = getRecentSnapshots(limit: 1)
+        if let mostRecent = recentSnapshots.first {
+            // Check if the new snapshot is identical to the most recent one
+            if newSnapshot.isIdentical(to: mostRecent) {
+                print("⏭️ Skipping snapshot save - identical to previous snapshot")
+                return
+            }
+        }
+
+        // Snapshot differs from previous, save it
+        context.insert(newSnapshot)
+        print("💾 Saving new snapshot - stats have changed")
 
         if let session = currentSession {
-            session.snapshots.append(snapshot)
+            session.snapshots.append(newSnapshot)
         }
 
         // Update or create daily performance
-        updateDailyPerformance(with: snapshot, playerName: stats.userName, platform: stats.platform)
+        updateDailyPerformance(with: newSnapshot, playerName: stats.userName, platform: stats.platform)
 
         try? context.save()
         loadRecentData()
         loadDailyPerformances(playerName: stats.userName)
+    }
+
+    /// Create a synthetic snapshot for debugging (randomly increments stats)
+    func createSyntheticSnapshot() {
+        guard let context = modelContext else { return }
+
+        // Get the most recent snapshot as a base
+        let recentSnapshots = getRecentSnapshots(limit: 1)
+        guard let baseSnapshot = recentSnapshots.first else {
+            print("⚠️ No snapshots available to base synthetic snapshot on")
+            return
+        }
+
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+
+        // Create 10 snapshots for yesterday
+        var yesterdayBase = baseSnapshot.kills
+        var yesterdayDeaths = baseSnapshot.deaths
+        var yesterdayMatches = baseSnapshot.matchesPlayed
+        var yesterdayHeadshots = baseSnapshot.headshots
+        var yesterdayAssists = baseSnapshot.assists
+        var yesterdayScore = baseSnapshot.totalScore
+        var yesterdayRevives = baseSnapshot.revives
+        var yesterdayResupplies = baseSnapshot.resupplies
+        var yesterdayTimePlayed = baseSnapshot.timePlayed
+        var yesterdayWins = baseSnapshot.wins
+        var yesterdayLosses = baseSnapshot.losses
+
+        print("🧪 Creating 10 synthetic snapshots for yesterday...")
+
+        for i in 0..<10 {
+            let killsIncrease = Int.random(in: 1...20)
+            let deathsIncrease = Int.random(in: 0...3)
+            let matchesIncrease = Int.random(in: 0...10)
+            let headshotsIncrease = Int.random(in: 0...5)
+            let assistsIncrease = Int.random(in: 0...10)
+            let scoreIncrease = Int.random(in: 1000...5000)
+            let revivesIncrease = Int.random(in: 0...5)
+            let resuppliesIncrease = Int.random(in: 0...8)
+            let timeIncrease = Int.random(in: 600...3600)
+
+            yesterdayBase += killsIncrease
+            yesterdayDeaths += deathsIncrease
+            yesterdayMatches += matchesIncrease
+            yesterdayHeadshots += headshotsIncrease
+            yesterdayAssists += assistsIncrease
+            yesterdayScore += scoreIncrease
+            yesterdayRevives += revivesIncrease
+            yesterdayResupplies += resuppliesIncrease
+            yesterdayTimePlayed += timeIncrease
+            yesterdayWins += (matchesIncrease > 0 ? Int.random(in: 0...matchesIncrease) : 0)
+            yesterdayLosses += (matchesIncrease > 0 ? Int.random(in: 0...matchesIncrease) : 0)
+
+            let snapshot = StatsSnapshot(
+                playerName: baseSnapshot.playerName,
+                platform: baseSnapshot.platform,
+                eaId: baseSnapshot.eaId,
+                kills: yesterdayBase,
+                deaths: yesterdayDeaths,
+                wins: yesterdayWins,
+                losses: yesterdayLosses,
+                matchesPlayed: yesterdayMatches,
+                totalScore: yesterdayScore,
+                timePlayed: yesterdayTimePlayed,
+                headshots: yesterdayHeadshots,
+                assists: yesterdayAssists,
+                revives: yesterdayRevives,
+                resupplies: yesterdayResupplies,
+                sessionId: nil
+            )
+
+            // Set timestamp to yesterday with progressive hours
+            let hourOffset = TimeInterval(i * 2 * 3600) // Every 2 hours
+            snapshot.timestamp = calendar.date(byAdding: .second, value: Int(hourOffset), to: calendar.startOfDay(for: yesterday)) ?? yesterday
+
+            context.insert(snapshot)
+            updateDailyPerformance(with: snapshot, playerName: snapshot.playerName, platform: snapshot.platform)
+        }
+
+        print("🧪 Created 10 snapshots for yesterday")
+
+        // Now create 1 snapshot for today
+        let killsIncrease = Int.random(in: 1...20)
+        let deathsIncrease = Int.random(in: 0...3)
+        let matchesIncrease = Int.random(in: 0...10)
+        let headshotsIncrease = Int.random(in: 0...5)
+        let assistsIncrease = Int.random(in: 0...10)
+        let scoreIncrease = Int.random(in: 1000...5000)
+        let revivesIncrease = Int.random(in: 0...5)
+        let resuppliesIncrease = Int.random(in: 0...8)
+
+        let todaySnapshot = StatsSnapshot(
+            playerName: baseSnapshot.playerName,
+            platform: baseSnapshot.platform,
+            eaId: baseSnapshot.eaId,
+            kills: yesterdayBase + killsIncrease,
+            deaths: yesterdayDeaths + deathsIncrease,
+            wins: yesterdayWins + (matchesIncrease > 0 ? Int.random(in: 0...matchesIncrease) : 0),
+            losses: yesterdayLosses + (matchesIncrease > 0 ? Int.random(in: 0...matchesIncrease) : 0),
+            matchesPlayed: yesterdayMatches + matchesIncrease,
+            totalScore: yesterdayScore + scoreIncrease,
+            timePlayed: yesterdayTimePlayed + Int.random(in: 600...3600),
+            headshots: yesterdayHeadshots + headshotsIncrease,
+            assists: yesterdayAssists + assistsIncrease,
+            revives: yesterdayRevives + revivesIncrease,
+            resupplies: yesterdayResupplies + resuppliesIncrease,
+            sessionId: nil
+        )
+
+        context.insert(todaySnapshot)
+        print("🧪 Created 1 snapshot for today: +\(killsIncrease) kills, +\(deathsIncrease) deaths, +\(matchesIncrease) matches")
+
+        updateDailyPerformance(with: todaySnapshot, playerName: todaySnapshot.playerName, platform: todaySnapshot.platform)
+
+        try? context.save()
+        loadRecentData()
+        loadDailyPerformances(playerName: baseSnapshot.playerName)
     }
 
     /// Get snapshots for a date range
@@ -152,7 +283,7 @@ class HistoryManager: ObservableObject {
         guard let context = modelContext else { return }
 
         // End current session if exists
-        if let current = currentSession {
+        if currentSession != nil {
             // Session will be ended when next snapshot is saved
         }
 
@@ -388,7 +519,6 @@ class HistoryManager: ObservableObject {
         // Wrap all DailyPerformance fetches in try-catch to handle corrupt data
         do {
             let today = Calendar.current.startOfDay(for: Date())
-            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) ?? today
 
             // Load today's performance
             if let playerName = playerName {

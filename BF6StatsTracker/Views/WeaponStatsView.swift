@@ -131,7 +131,7 @@ struct WeaponStatsView: View {
 
                 ForEach(WeaponCategory.allCases) { category in
                     CategoryPill(
-                        title: category.rawValue,
+                        title: category.displayName,
                         icon: category.icon,
                         isSelected: selectedCategory == category,
                         color: categoryColor(for: category)

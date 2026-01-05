@@ -975,15 +975,28 @@ enum BF6Class: String, CaseIterable, Identifiable {
 enum WeaponCategory: String, CaseIterable, Identifiable {
     case assaultRifles = "Assault Rifles"
     case carbines = "Carbines"
-    case smgs = "SMGs"
-    case lmgs = "LMGs"
-    case dmrs = "DMRs"
-    case sniperRifles = "Sniper Rifles"
-    case shotguns = "Shotguns"
+    case smgs = "SMG-PDW"  // API uses "SMG-PDW"
+    case lmgs = "LMG"      // API uses "LMG" (singular)
+    case dmrs = "DMR"      // API uses "DMR" (singular)
+    case sniperRifles = "Rifles"  // API uses "Rifles"
+    case shotguns = "Shotgun"     // API uses "Shotgun" (singular)
     case pistols = "Pistols"
-    
+
     var id: String { rawValue }
-    
+
+    var displayName: String {
+        switch self {
+        case .assaultRifles: return "Assault Rifles"
+        case .carbines: return "Carbines"
+        case .smgs: return "SMGs"
+        case .lmgs: return "LMGs"
+        case .dmrs: return "DMRs"
+        case .sniperRifles: return "Sniper Rifles"
+        case .shotguns: return "Shotguns"
+        case .pistols: return "Pistols"
+        }
+    }
+
     var icon: String {
         switch self {
         case .assaultRifles: return "scope"
@@ -1121,8 +1134,8 @@ struct AppSettings: Codable {
     var tilePositions: [String: TilePosition]
     var showNotifications: Bool
     var compactMode: Bool
-    var showEnhancedOverview: Bool
     var selectedColorScheme: AppColorScheme
+    var debugMode: Bool
 
     // EA Identity fields - populated from EAIdentityKit
     var nucleusId: String?        // pidId - Master account identifier
@@ -1138,8 +1151,8 @@ struct AppSettings: Codable {
         self.tilePositions = [:]
         self.showNotifications = true
         self.compactMode = false
-        self.showEnhancedOverview = true
         self.selectedColorScheme = .orange
+        self.debugMode = false
         self.nucleusId = nil
         self.personaId = nil
         self.eaId = nil
@@ -1161,6 +1174,33 @@ struct AppSettings: Codable {
         self.personaId = nil
         self.eaId = nil
         self.isEAAuthenticated = false
+    }
+
+    // Custom decoding to handle backward compatibility
+    enum CodingKeys: String, CodingKey {
+        case playerName, platform, autoRefresh, refreshInterval, tilePositions
+        case showNotifications, compactMode, selectedColorScheme, debugMode
+        case nucleusId, personaId, eaId, isEAAuthenticated
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        playerName = try container.decode(String.self, forKey: .playerName)
+        platform = try container.decode(Platform.self, forKey: .platform)
+        autoRefresh = try container.decode(Bool.self, forKey: .autoRefresh)
+        refreshInterval = try container.decode(TimeInterval.self, forKey: .refreshInterval)
+        tilePositions = try container.decode([String: TilePosition].self, forKey: .tilePositions)
+        showNotifications = try container.decode(Bool.self, forKey: .showNotifications)
+        compactMode = try container.decode(Bool.self, forKey: .compactMode)
+        selectedColorScheme = try container.decode(AppColorScheme.self, forKey: .selectedColorScheme)
+
+        // Default to false if debugMode doesn't exist in saved settings
+        debugMode = try container.decodeIfPresent(Bool.self, forKey: .debugMode) ?? false
+
+        nucleusId = try container.decodeIfPresent(String.self, forKey: .nucleusId)
+        personaId = try container.decodeIfPresent(String.self, forKey: .personaId)
+        eaId = try container.decodeIfPresent(String.self, forKey: .eaId)
+        isEAAuthenticated = try container.decode(Bool.self, forKey: .isEAAuthenticated)
     }
 }
 

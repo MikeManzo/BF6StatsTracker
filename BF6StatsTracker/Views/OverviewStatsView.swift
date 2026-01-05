@@ -13,26 +13,9 @@ struct OverviewStatsView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Daily Performance (Today's stats)
-            if let todayPerformance = historyManager.todayPerformance {
-                if viewModel.settings.showEnhancedOverview {
-                    TodayVsYesterdayView()
-                        .environmentObject(historyManager)
-                } else {
-                    DailyPerformanceView(
-                        dailyPerformance: todayPerformance,
-                        yesterdayPerformance: historyManager.yesterdayPerformance,
-                        showComparison: true
-                    )
-                }
-            } else if let lastMatch = viewModel.playerStats?.lastMatch, lastMatch.hasData {
-                // Fallback to last match if no daily performance yet
-                LastMatchStatsView(lastMatch: lastMatch, lastUpdated: viewModel.lastUpdated)
-            } else {
-                Text("No performance data available yet")
-                    .font(.footnote)
-                    .foregroundColor(Theme.textSecondary)
-            }
+            // Daily Performance (Today's stats) - Always show enhanced view
+            TodayVsYesterdayView()
+                .environmentObject(historyManager)
 
             // Data Completeness Warning Banner
             if viewModel.hasPlayerData && !viewModel.hasCompleteData {

@@ -45,13 +45,13 @@ class MapTracker: ObservableObject {
     /// Update map statistics based on current stats and snapshots
     /// This creates realistic map distribution from overall stats
     func updateMapStats(from stats: PlayerStats) {
-        guard let context = modelContext else { return }
+        guard modelContext != nil else { return }
 
         let playerName = stats.userName
         let platform = stats.platform
 
         // Get existing map stats
-        var existingMaps = getMapStats(playerName: playerName, platform: platform)
+        let existingMaps = getMapStats(playerName: playerName, platform: platform)
 
         // If no maps exist yet, create initial distribution
         if existingMaps.isEmpty {

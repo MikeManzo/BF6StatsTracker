@@ -128,6 +128,23 @@ struct SessionHistoryView: View {
             // Export and Delete options
             if !allSnapshots.isEmpty {
                 HStack(spacing: 8) {
+                    // Debug: Create synthetic snapshot button
+                    if viewModel.settings.debugMode {
+                        Button {
+                            historyManager.createSyntheticSnapshot()
+                        } label: {
+                            Label("Create Synthetic", systemImage: "flask")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.purple)
+                                .cornerRadius(8)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Create a synthetic snapshot with random stat increases for testing")
+                    }
+
                     // Export button
                     Button {
                         showingExportSheet = true

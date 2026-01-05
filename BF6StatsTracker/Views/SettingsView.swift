@@ -21,8 +21,8 @@ struct SettingsView: View {
     @State private var refreshInterval: Double = 300
     @State private var showNotifications: Bool = true
     @State private var compactMode: Bool = false
-    @State private var showEnhancedOverview: Bool = true
     @State private var selectedColorScheme: AppColorScheme = .orange
+    @State private var debugMode: Bool = false
     @State private var showClearHistoryConfirmation = false
     @State private var showAbout = false
     @State private var accountToDelete: StoredEAAccount?
@@ -190,21 +190,8 @@ struct SettingsView: View {
 
                             Divider()
 
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Overview Style")
-                                    .font(.subheadline)
-                                    .foregroundColor(Theme.textSecondary)
-
-                                Picker("Overview Style", selection: $showEnhancedOverview) {
-                                    Text("Enhanced").tag(true)
-                                    Text("Classic").tag(false)
-                                }
-                                .pickerStyle(.segmented)
-
-                                Text("Choose between the modern enhanced view or classic overview layout")
-                                    .font(.caption)
-                                    .foregroundColor(Theme.textSecondary)
-                            }
+                            Toggle("Debug Mode (Synthetic Snapshots)", isOn: $debugMode)
+                                .foregroundColor(Theme.textPrimary)
                         }
                     }
                     
@@ -361,8 +348,8 @@ struct SettingsView: View {
         refreshInterval = viewModel.settings.refreshInterval
         showNotifications = viewModel.settings.showNotifications
         compactMode = viewModel.settings.compactMode
-        showEnhancedOverview = viewModel.settings.showEnhancedOverview
         selectedColorScheme = viewModel.settings.selectedColorScheme
+        debugMode = viewModel.settings.debugMode
         Theme.setAccentScheme(selectedColorScheme)
     }
 
@@ -371,15 +358,16 @@ struct SettingsView: View {
         viewModel.settings.refreshInterval = refreshInterval
         viewModel.settings.showNotifications = showNotifications
         viewModel.settings.compactMode = compactMode
-        viewModel.settings.showEnhancedOverview = showEnhancedOverview
         viewModel.settings.selectedColorScheme = selectedColorScheme
+        viewModel.settings.debugMode = debugMode
         Theme.setAccentScheme(selectedColorScheme)
 
         Task {
             await viewModel.saveSettings()
+            await MainActor.run {
+                dismiss()
+            }
         }
-
-        dismiss()
     }
 
     private func getHistoricalDataSummary() -> String {
@@ -440,6 +428,12 @@ struct SettingsView: View {
         MapTracker.shared.clearMapStats(playerName: playerName, platform: platform.rawValue)
 
         print("🗑️ Historical data cleared successfully")
+
+        // Immediately refresh stats to create a new snapshot
+        Task {
+            await viewModel.forceRefreshStats()
+            print("🔄 Stats refreshed after clearing history")
+        }
     }
 
     private func formatDate(_ dateString: String) -> String {

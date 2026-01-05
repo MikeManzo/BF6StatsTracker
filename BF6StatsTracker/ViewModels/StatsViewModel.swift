@@ -384,6 +384,10 @@ class StatsViewModel: ObservableObject {
                 if !weapons.isEmpty {
                     self.weaponStats = weapons
                     print("   ✅ Updated weapon stats: \(weapons.count) items")
+
+                    // Debug: Show all unique weapon types from API
+                    let uniqueTypes = Set(weapons.map { $0.type })
+                    print("   📋 Weapon types from API: \(uniqueTypes.sorted())")
                 }
             } catch {
                 print("   ⚠️ Failed to fetch weapon stats: \(error)")
@@ -401,6 +405,10 @@ class StatsViewModel: ObservableObject {
                 if !vehicles.isEmpty {
                     self.vehicleStats = vehicles
                     print("   ✅ Updated vehicle stats: \(vehicles.count) items")
+
+                    // Debug: Show all unique vehicle types from API
+                    let uniqueTypes = Set(vehicles.map { $0.type })
+                    print("   📋 Vehicle types from API: \(uniqueTypes.sorted())")
                 }
             } catch {
                 print("   ⚠️ Failed to fetch vehicle stats: \(error)")

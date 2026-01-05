@@ -2,7 +2,7 @@
 //  TodayVsYesterdayView.swift
 //  BF6StatsTracker
 //
-//  Created by Claude on 2025-12-29.
+//  Refactored to use snapshot-based comparison
 //
 
 import SwiftUI
@@ -10,208 +10,186 @@ import SwiftUI
 struct TodayVsYesterdayView: View {
     @EnvironmentObject var historyManager: HistoryManager
     @State private var hasAnimated = false
+    @State private var showSingleSnapshotInfo = false
+
+    // Get current and previous snapshots for comparison
+    private var currentSnapshot: StatsSnapshot? {
+        let snapshots = historyManager.getAllSnapshots()
+        return snapshots.first
+    }
+
+    private var previousSnapshot: StatsSnapshot? {
+        let snapshots = historyManager.getAllSnapshots()
+        guard snapshots.count >= 2 else { return nil }
+        return snapshots[1]
+    }
+
+    private var thirdSnapshot: StatsSnapshot? {
+        let snapshots = historyManager.getAllSnapshots()
+        guard snapshots.count >= 3 else { return nil }
+        return snapshots[2]
+    }
+
+    // Calculate deltas between current and previous snapshot
+    // If only one snapshot exists (Rule 2), show current values instead of deltas
+    private var deltaKills: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else { return current.kills }
+        return current.kills - previous.kills
+    }
+
+    private var deltaDeaths: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else { return current.deaths }
+        return current.deaths - previous.deaths
+    }
+
+    private var deltaKD: Double {
+        guard let current = currentSnapshot else { return 0.0 }
+        guard let previous = previousSnapshot else { return current.kdRatio }
+        let kills = current.kills - previous.kills
+        let deaths = current.deaths - previous.deaths
+        return deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
+    }
+
+    private var deltaMatches: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else { return current.matchesPlayed }
+        return current.matchesPlayed - previous.matchesPlayed
+    }
+
+    private var deltaHeadshots: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else { return current.headshots }
+        return current.headshots - previous.headshots
+    }
+
+    private var deltaAssists: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else { return current.assists }
+        return current.assists - previous.assists
+    }
+
+    private var deltaScore: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else { return current.totalScore }
+        return current.totalScore - previous.totalScore
+    }
+
+    // Previous session's delta values for comparison (used as "yesterdayValue" when no yesterday data exists)
+    // This calculates the delta between the 2nd and 3rd most recent snapshots
+    private var previousDeltaKills: Int {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0 }
+        return second.kills - third.kills
+    }
+
+    private var previousDeltaDeaths: Int {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0 }
+        return second.deaths - third.deaths
+    }
+
+    private var previousDeltaKD: Double {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0.0 }
+        let kills = second.kills - third.kills
+        let deaths = second.deaths - third.deaths
+        return deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
+    }
+
+    private var previousDeltaMatches: Int {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0 }
+        return second.matchesPlayed - third.matchesPlayed
+    }
+
+    // Get today's total matches played by summing deltas between all snapshots
+    private var todayMatches: Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        let snapshots = historyManager.getAllSnapshots()
+        let todaySnapshots = snapshots.filter { snapshot in
+            calendar.isDate(snapshot.timestamp, inSameDayAs: today)
+        }
+
+        guard !todaySnapshots.isEmpty else { return deltaMatches }
+
+        // Sort by timestamp (newest first, as returned by getAllSnapshots)
+        let sorted = todaySnapshots.sorted { $0.timestamp > $1.timestamp }
+
+        // Sum the deltas between consecutive snapshots
+        var totalMatches = 0
+        for i in 0..<(sorted.count - 1) {
+            let current = sorted[i]
+            let previous = sorted[i + 1]
+            let delta = current.matchesPlayed - previous.matchesPlayed
+            totalMatches += delta
+        }
+
+        return totalMatches
+    }
+
+    // Get yesterday's total kills (return 0 if no data)
+    private var yesterdayKills: Int {
+        yesterdayData?.deltaKills ?? 0
+    }
+
+    // Get yesterday's total deaths (return 0 if no data)
+    private var yesterdayDeaths: Int {
+        yesterdayData?.deltaDeaths ?? 0
+    }
+
+    // Get yesterday's K/D (return 0 if no data)
+    private var yesterdayKD: Double {
+        yesterdayData?.dailyKD ?? 0.0
+    }
+
+    // Get yesterday's total matches (return 0 if no data)
+    private var yesterdayMatches: Int {
+        yesterdayData?.deltaMatchesPlayed ?? 0
+    }
+
+    // Get yesterday's data by summing all snapshots from the previous day
+    private var yesterdayData: DailyPerformanceData? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+
+        let snapshots = historyManager.getAllSnapshots()
+        let yesterdaySnapshots = snapshots.filter { snapshot in
+            calendar.isDate(snapshot.timestamp, inSameDayAs: yesterday)
+        }
+
+        guard !yesterdaySnapshots.isEmpty else { return nil }
+
+        // Sort by timestamp to get first and last
+        let sorted = yesterdaySnapshots.sorted { $0.timestamp < $1.timestamp }
+        guard let first = sorted.first, let last = sorted.last else { return nil }
+
+        let kills = last.kills - first.kills
+        let deaths = last.deaths - first.deaths
+        let matches = last.matchesPlayed - first.matchesPlayed
+        let kd = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
+        let headshots = last.headshots - first.headshots
+        let assists = last.assists - first.assists
+        let score = last.totalScore - first.totalScore
+
+        return DailyPerformanceData(
+            deltaKills: kills,
+            deltaDeaths: deaths,
+            deltaHeadshots: headshots,
+            deltaAssists: assists,
+            deltaMatchesPlayed: matches,
+            deltaScore: score,
+            dailyKD: kd,
+            dailyAccuracy: last.accuracy,
+            dailyHeadshotPercent: last.headshotPercentage,
+            dailyKPM: last.killsPerMinute,
+            dailyWinRate: matches > 0 ? (Double(last.wins - first.wins) / Double(matches)) * 100.0 : 0.0
+        )
+    }
 
     private var last7Days: [DailyPerformance] {
         Array(historyManager.recentDailyPerformances.prefix(7).reversed())
     }
-
-    // Get the last snapshot and second-to-last snapshot for "Last Played" comparison
-    private var lastPlayedData: DailyPerformanceData? {
-        let snapshots = historyManager.getAllSnapshots()
-
-        // Need at least 2 snapshots to calculate deltas for the last session
-        guard snapshots.count >= 2 else {
-            // If only 1 snapshot, use it as baseline with 0 deltas
-            if let lastSnapshot = snapshots.first {
-                return DailyPerformanceData(
-                    deltaKills: lastSnapshot.kills,
-                    deltaDeaths: lastSnapshot.deaths,
-                    deltaHeadshots: lastSnapshot.headshots,
-                    deltaAssists: lastSnapshot.assists,
-                    deltaMatchesPlayed: lastSnapshot.matchesPlayed,
-                    deltaScore: lastSnapshot.totalScore,
-                    dailyKD: lastSnapshot.deaths > 0 ? Double(lastSnapshot.kills) / Double(lastSnapshot.deaths) : Double(lastSnapshot.kills),
-                    dailyAccuracy: lastSnapshot.accuracy,
-                    dailyHeadshotPercent: lastSnapshot.headshotPercentage,
-                    dailyKPM: lastSnapshot.killsPerMinute,
-                    dailyWinRate: lastSnapshot.matchesPlayed > 0 ? (Double(lastSnapshot.wins) / Double(lastSnapshot.matchesPlayed)) * 100.0 : 0.0
-                )
-            }
-            return nil
-        }
-
-        // Get the most recent snapshot
-        let lastSnapshot = snapshots[0]
-
-        // Find the most recent snapshot where values actually changed
-        var comparisonSnapshot: StatsSnapshot? = nil
-        for i in 1..<snapshots.count {
-            let previousSnapshot = snapshots[i]
-            // Check if any stat values changed from this snapshot to the last one
-            if lastSnapshot.kills != previousSnapshot.kills ||
-               lastSnapshot.deaths != previousSnapshot.deaths ||
-               lastSnapshot.matchesPlayed != previousSnapshot.matchesPlayed {
-                comparisonSnapshot = previousSnapshot
-                break
-            }
-        }
-
-        // If no comparison snapshot found (all snapshots are identical), use the second-to-last
-        guard let beforeLastSnapshot = comparisonSnapshot ?? snapshots.dropFirst().first else {
-            return nil
-        }
-
-        // Calculate deltas for the last session (difference between last snapshot and last changed snapshot)
-        let deltaKills = lastSnapshot.kills - beforeLastSnapshot.kills
-        let deltaDeaths = lastSnapshot.deaths - beforeLastSnapshot.deaths
-        let deltaHeadshots = lastSnapshot.headshots - beforeLastSnapshot.headshots
-        let deltaAssists = lastSnapshot.assists - beforeLastSnapshot.assists
-        let deltaMatchesPlayed = lastSnapshot.matchesPlayed - beforeLastSnapshot.matchesPlayed
-        let deltaScore = lastSnapshot.totalScore - beforeLastSnapshot.totalScore
-
-        // Calculate K/D from the deltas
-        let dailyKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
-
-        return DailyPerformanceData(
-            deltaKills: deltaKills,
-            deltaDeaths: deltaDeaths,
-            deltaHeadshots: deltaHeadshots,
-            deltaAssists: deltaAssists,
-            deltaMatchesPlayed: deltaMatchesPlayed,
-            deltaScore: deltaScore,
-            dailyKD: dailyKD,
-            dailyAccuracy: lastSnapshot.accuracy,
-            dailyHeadshotPercent: lastSnapshot.headshotPercentage,
-            dailyKPM: lastSnapshot.killsPerMinute,
-            dailyWinRate: lastSnapshot.matchesPlayed > 0 ? (Double(lastSnapshot.wins) / Double(lastSnapshot.matchesPlayed)) * 100.0 : 0.0
-        )
-    }
-
-    // Get the second-to-last snapshot data for comparison
-    private var previousPlayedData: DailyPerformanceData? {
-        let snapshots = historyManager.getAllSnapshots()
-
-        // Need at least 2 snapshots
-        guard snapshots.count >= 2 else {
-            return nil
-        }
-
-        // Find the first snapshot where values changed (this becomes our "current" for previous session)
-        let lastSnapshot = snapshots[0]
-        var firstChangedIndex: Int? = nil
-        for i in 1..<snapshots.count {
-            let previousSnapshot = snapshots[i]
-            if lastSnapshot.kills != previousSnapshot.kills ||
-               lastSnapshot.deaths != previousSnapshot.deaths ||
-               lastSnapshot.matchesPlayed != previousSnapshot.matchesPlayed {
-                firstChangedIndex = i
-                break
-            }
-        }
-
-        // If no change found or not enough snapshots after the change, return nil
-        guard let changedIndex = firstChangedIndex, changedIndex + 1 < snapshots.count else {
-            // Return zero deltas if we only have 2 snapshots or no previous session
-            if snapshots.count >= 2 {
-                let beforeLastSnapshot = snapshots[1]
-                return DailyPerformanceData(
-                    deltaKills: 0,
-                    deltaDeaths: 0,
-                    deltaHeadshots: 0,
-                    deltaAssists: 0,
-                    deltaMatchesPlayed: 0,
-                    deltaScore: 0,
-                    dailyKD: beforeLastSnapshot.deaths > 0 ? Double(beforeLastSnapshot.kills) / Double(beforeLastSnapshot.deaths) : Double(beforeLastSnapshot.kills),
-                    dailyAccuracy: beforeLastSnapshot.accuracy,
-                    dailyHeadshotPercent: beforeLastSnapshot.headshotPercentage,
-                    dailyKPM: beforeLastSnapshot.killsPerMinute,
-                    dailyWinRate: beforeLastSnapshot.matchesPlayed > 0 ? (Double(beforeLastSnapshot.wins) / Double(beforeLastSnapshot.matchesPlayed)) * 100.0 : 0.0
-                )
-            }
-            return nil
-        }
-
-        // The snapshot at changedIndex is where the last session started
-        // Now find the previous session by looking for the next change
-        let sessionStartSnapshot = snapshots[changedIndex]
-        var previousSessionEndIndex: Int? = nil
-        for i in (changedIndex + 1)..<snapshots.count {
-            let previousSnapshot = snapshots[i]
-            if sessionStartSnapshot.kills != previousSnapshot.kills ||
-               sessionStartSnapshot.deaths != previousSnapshot.deaths ||
-               sessionStartSnapshot.matchesPlayed != previousSnapshot.matchesPlayed {
-                previousSessionEndIndex = changedIndex  // The session ended at changedIndex
-                break
-            }
-        }
-
-        // If we found a previous session, calculate deltas
-        if let prevEndIndex = previousSessionEndIndex, prevEndIndex + 1 < snapshots.count {
-            let prevSessionEnd = snapshots[prevEndIndex]
-
-            // Find where that previous session started
-            var prevSessionStart = snapshots[prevEndIndex + 1]
-            for i in (prevEndIndex + 1)..<snapshots.count {
-                let olderSnapshot = snapshots[i]
-                if prevSessionEnd.kills != olderSnapshot.kills ||
-                   prevSessionEnd.deaths != olderSnapshot.deaths ||
-                   prevSessionEnd.matchesPlayed != olderSnapshot.matchesPlayed {
-                    prevSessionStart = olderSnapshot
-                    break
-                }
-            }
-
-            let deltaKills = prevSessionEnd.kills - prevSessionStart.kills
-            let deltaDeaths = prevSessionEnd.deaths - prevSessionStart.deaths
-            let deltaHeadshots = prevSessionEnd.headshots - prevSessionStart.headshots
-            let deltaAssists = prevSessionEnd.assists - prevSessionStart.assists
-            let deltaMatchesPlayed = prevSessionEnd.matchesPlayed - prevSessionStart.matchesPlayed
-            let deltaScore = prevSessionEnd.totalScore - prevSessionStart.totalScore
-            let dailyKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
-
-            return DailyPerformanceData(
-                deltaKills: deltaKills,
-                deltaDeaths: deltaDeaths,
-                deltaHeadshots: deltaHeadshots,
-                deltaAssists: deltaAssists,
-                deltaMatchesPlayed: deltaMatchesPlayed,
-                deltaScore: deltaScore,
-                dailyKD: dailyKD,
-                dailyAccuracy: prevSessionEnd.accuracy,
-                dailyHeadshotPercent: prevSessionEnd.headshotPercentage,
-                dailyKPM: prevSessionEnd.killsPerMinute,
-                dailyWinRate: prevSessionEnd.matchesPlayed > 0 ? (Double(prevSessionEnd.wins) / Double(prevSessionEnd.matchesPlayed)) * 100.0 : 0.0
-            )
-        }
-
-        // Fallback: use the snapshot at changedIndex with zero deltas
-        let fallbackSnapshot = snapshots[changedIndex]
-        return DailyPerformanceData(
-            deltaKills: 0,
-            deltaDeaths: 0,
-            deltaHeadshots: 0,
-            deltaAssists: 0,
-            deltaMatchesPlayed: 0,
-            deltaScore: 0,
-            dailyKD: fallbackSnapshot.deaths > 0 ? Double(fallbackSnapshot.kills) / Double(fallbackSnapshot.deaths) : Double(fallbackSnapshot.kills),
-            dailyAccuracy: fallbackSnapshot.accuracy,
-            dailyHeadshotPercent: fallbackSnapshot.headshotPercentage,
-            dailyKPM: fallbackSnapshot.killsPerMinute,
-            dailyWinRate: fallbackSnapshot.matchesPlayed > 0 ? (Double(fallbackSnapshot.wins) / Double(fallbackSnapshot.matchesPlayed)) * 100.0 : 0.0
-        )
-    }
-
-    // Helper to get comparison values
-    private var comparisonKills: Int { previousPlayedData?.deltaKills ?? 0 }
-    private var comparisonDeaths: Int { previousPlayedData?.deltaDeaths ?? 0 }
-    private var comparisonKD: Double { previousPlayedData?.dailyKD ?? 0.0 }
-    private var comparisonMatches: Int { previousPlayedData?.deltaMatchesPlayed ?? 0 }
-    private var comparisonHeadshots: Int { previousPlayedData?.deltaHeadshots ?? 1 }
-    private var comparisonAccuracy: Double { previousPlayedData?.dailyAccuracy ?? 1.0 }
-    private var comparisonKPM: Double { previousPlayedData?.dailyKPM ?? 1.0 }
-    private var comparisonAssists: Int { previousPlayedData?.deltaAssists ?? 1 }
-    private var comparisonWinRate: Double { previousPlayedData?.dailyWinRate ?? 1.0 }
-    private var comparisonScore: Int { previousPlayedData?.deltaScore ?? 1 }
 
     private func calculateStreakDays() -> Int {
         let performances = historyManager.recentDailyPerformances
@@ -231,15 +209,15 @@ struct TodayVsYesterdayView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                if let lastPlayed = lastPlayedData {
+                if currentSnapshot != nil {
                     // Header
                     header
 
                     // Main comparison cards
-                    mainStatsGrid(lastPlayed: lastPlayed)
+                    mainStatsGrid
 
                     // Combat performance breakdown
-                    combatBreakdown(lastPlayed: lastPlayed)
+                    combatBreakdown
 
                     // 7-day trend (full width)
                     if !last7Days.isEmpty {
@@ -259,6 +237,11 @@ struct TodayVsYesterdayView: View {
             // Reset animation state when view disappears so it animates again on next view
             hasAnimated = false
         }
+        .alert("Single Snapshot", isPresented: $showSingleSnapshotInfo) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("You currently have only one snapshot. Comparison data will be available after you play a match and stats change.")
+        }
     }
 
     // MARK: - Header
@@ -270,10 +253,24 @@ struct TodayVsYesterdayView: View {
                     .font(.title2)
                     .fontWeight(.bold)
 
-                if let snapshots = historyManager.getAllSnapshots().prefix(1).first {
-                    Text(snapshots.timestamp.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                if let snapshot = currentSnapshot {
+                    HStack(spacing: 4) {
+                        Text(snapshot.timestamp.formatted(date: .abbreviated, time: .shortened))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        if previousSnapshot == nil {
+                            Button {
+                                showSingleSnapshotInfo = true
+                            } label: {
+                                Image(systemName: "info.circle")
+                                    .font(.caption)
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Single snapshot - more data after next match")
+                        }
+                    }
                 }
             }
 
@@ -313,7 +310,7 @@ struct TodayVsYesterdayView: View {
 
     // MARK: - Main Stats Grid
 
-    private func mainStatsGrid(lastPlayed: DailyPerformanceData) -> some View {
+    private var mainStatsGrid: some View {
         LazyVGrid(columns: [
             GridItem(.flexible()),
             GridItem(.flexible()),
@@ -322,35 +319,39 @@ struct TodayVsYesterdayView: View {
         ], spacing: 16) {
             PerformanceComparisonCard(
                 title: "Kills",
-                todayValue: lastPlayed.deltaKills,
-                yesterdayValue: comparisonKills,
+                todayValue: deltaKills,
+                yesterdayValue: yesterdayData?.deltaKills ?? previousDeltaKills,
                 icon: "target",
-                accentColor: .green
+                accentColor: .green,
+                yesterdaySummary: yesterdayKills
             )
 
             PerformanceComparisonCard(
                 title: "Deaths",
-                todayValue: lastPlayed.deltaDeaths,
-                yesterdayValue: comparisonDeaths,
+                todayValue: deltaDeaths,
+                yesterdayValue: yesterdayData?.deltaDeaths ?? previousDeltaDeaths,
                 icon: "xmark.circle",
-                accentColor: .red
+                accentColor: .red,
+                yesterdaySummary: yesterdayDeaths
             )
 
             PerformanceComparisonCardDouble(
                 title: "K/D",
-                todayValue: lastPlayed.dailyKD,
-                yesterdayValue: comparisonKD,
+                todayValue: deltaKD,
+                yesterdayValue: yesterdayData?.dailyKD ?? previousDeltaKD,
                 icon: "chart.line.uptrend.xyaxis",
                 accentColor: .orange,
-                format: "%.2f"
+                format: "%.2f",
+                yesterdaySummary: yesterdayKD
             )
 
             PerformanceComparisonCard(
                 title: "Matches",
-                todayValue: lastPlayed.deltaMatchesPlayed,
-                yesterdayValue: comparisonMatches,
+                todayValue: todayMatches,
+                yesterdayValue: yesterdayData?.deltaMatchesPlayed ?? previousDeltaMatches,
                 icon: "gamecontroller.fill",
-                accentColor: .blue
+                accentColor: .blue,
+                yesterdaySummary: yesterdayMatches
             )
         }
         .padding(.horizontal)
@@ -358,7 +359,7 @@ struct TodayVsYesterdayView: View {
 
     // MARK: - Combat Breakdown
 
-    private func combatBreakdown(lastPlayed: DailyPerformanceData) -> some View {
+    private var combatBreakdown: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Combat Breakdown")
                 .font(.headline)
@@ -368,9 +369,9 @@ struct TodayVsYesterdayView: View {
             VStack(spacing: 12) {
                 // Headshots
                 AnimatedComparisonProgressBar(
-                    todayValue: Double(lastPlayed.deltaHeadshots),
-                    yesterdayValue: Double(comparisonHeadshots),
-                    label: "🎯 Headshots (\(String(format: "%.1f%%", lastPlayed.dailyHeadshotPercent)))",
+                    todayValue: Double(deltaHeadshots),
+                    yesterdayValue: Double(yesterdayData?.deltaHeadshots ?? 1),
+                    label: "🎯 Headshots",
                     accentColor: .purple,
                     delay: 0.0,
                     shouldAnimate: !hasAnimated
@@ -378,8 +379,8 @@ struct TodayVsYesterdayView: View {
 
                 // Accuracy
                 AnimatedComparisonProgressBar(
-                    todayValue: lastPlayed.dailyAccuracy,
-                    yesterdayValue: comparisonAccuracy,
+                    todayValue: currentSnapshot?.accuracy ?? 0,
+                    yesterdayValue: yesterdayData?.dailyAccuracy ?? 1.0,
                     label: "🎪 Accuracy",
                     accentColor: .orange,
                     delay: 0.1,
@@ -388,8 +389,8 @@ struct TodayVsYesterdayView: View {
 
                 // KPM
                 AnimatedComparisonProgressBar(
-                    todayValue: lastPlayed.dailyKPM,
-                    yesterdayValue: comparisonKPM,
+                    todayValue: currentSnapshot?.killsPerMinute ?? 0,
+                    yesterdayValue: yesterdayData?.dailyKPM ?? 1.0,
                     label: "⚡ Kills Per Minute",
                     accentColor: .yellow,
                     delay: 0.2,
@@ -398,8 +399,8 @@ struct TodayVsYesterdayView: View {
 
                 // Assists
                 AnimatedComparisonProgressBar(
-                    todayValue: Double(lastPlayed.deltaAssists),
-                    yesterdayValue: Double(comparisonAssists),
+                    todayValue: Double(deltaAssists),
+                    yesterdayValue: Double(yesterdayData?.deltaAssists ?? 1),
                     label: "🤝 Assists",
                     accentColor: .cyan,
                     delay: 0.3,
@@ -408,8 +409,8 @@ struct TodayVsYesterdayView: View {
 
                 // Win Rate
                 AnimatedComparisonProgressBar(
-                    todayValue: lastPlayed.dailyWinRate,
-                    yesterdayValue: comparisonWinRate,
+                    todayValue: currentSnapshot?.matchesPlayed ?? 0 > 0 ? (Double(currentSnapshot?.wins ?? 0) / Double(currentSnapshot?.matchesPlayed ?? 1)) * 100.0 : 0.0,
+                    yesterdayValue: yesterdayData?.dailyWinRate ?? 1.0,
                     label: "🏆 Win Rate",
                     accentColor: .green,
                     delay: 0.4,
@@ -418,8 +419,8 @@ struct TodayVsYesterdayView: View {
 
                 // Score
                 AnimatedComparisonProgressBar(
-                    todayValue: Double(lastPlayed.deltaScore) / 1000,
-                    yesterdayValue: Double(comparisonScore) / 1000,
+                    todayValue: Double(deltaScore) / 1000,
+                    yesterdayValue: Double(yesterdayData?.deltaScore ?? 1000) / 1000,
                     label: "🎖️ Score (thousands)",
                     accentColor: .blue,
                     delay: 0.5,
@@ -492,7 +493,7 @@ struct AnimatedComparisonProgressBar: View {
                 Spacer()
 
                 HStack(spacing: 4) {
-                    Text("Last:")
+                    Text("Current:")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Text(String(format: "%.1f", todayValue))
@@ -504,7 +505,7 @@ struct AnimatedComparisonProgressBar: View {
                         .font(.caption2)
                         .foregroundStyle(isImprovement ? .green : .red)
 
-                    Text("Previous:")
+                    Text("Yesterday:")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Text(String(format: "%.1f", yesterdayValue))
