@@ -300,33 +300,33 @@ actor APIService {
     }
     
     // MARK: - Image URLs
-    
+
     /// Get image URL for a weapon
-    func getWeaponImageURL(weaponName: String) -> URL? {
+    nonisolated func getWeaponImageURL(weaponName: String) -> URL? {
         let cleanName = weaponName.replacingOccurrences(of: " ", with: "_").lowercased()
         return URL(string: "https://eaassets-a.akamaihd.net/battlelog/bf6/weapons/\(cleanName).png")
     }
-    
+
     /// Get image URL for a vehicle
-    func getVehicleImageURL(vehicleName: String) -> URL? {
+    nonisolated func getVehicleImageURL(vehicleName: String) -> URL? {
         let cleanName = vehicleName.replacingOccurrences(of: " ", with: "_").lowercased()
         return URL(string: "https://eaassets-a.akamaihd.net/battlelog/bf6/vehicles/\(cleanName).png")
     }
-    
+
     /// Get image URL for a gadget
-    func getGadgetImageURL(gadgetName: String) -> URL? {
+    nonisolated func getGadgetImageURL(gadgetName: String) -> URL? {
         let cleanName = gadgetName.replacingOccurrences(of: " ", with: "_").lowercased()
         return URL(string: "https://eaassets-a.akamaihd.net/battlelog/bf6/gadgets/\(cleanName).png")
     }
-    
+
     /// Get image URL for a class
-    func getClassImageURL(className: String) -> URL? {
+    nonisolated func getClassImageURL(className: String) -> URL? {
         let cleanName = className.lowercased()
         return URL(string: "https://eaassets-a.akamaihd.net/battlelog/bf6/classes/\(cleanName).png")
     }
-    
+
     /// Get rank emblem image URL
-    func getRankImageURL(rank: Int) -> URL? {
+    nonisolated func getRankImageURL(rank: Int) -> URL? {
         return URL(string: "https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/\(rank).png")
     }
 

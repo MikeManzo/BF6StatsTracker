@@ -107,6 +107,8 @@ struct OverviewStatsView: View {
                             subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
                             trend: convertTrend(viewModel.wlTrend)
                         )
+
+                        RankCard(stats: stats)
                     }
                 }
             }
@@ -461,6 +463,64 @@ struct ClassPreviewCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(bf6Class.color.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Rank Card with Decorative Icon
+
+struct RankCard: View {
+    let stats: PlayerStats
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            // Decorative rank icon in background
+            Image(systemName: stats.isSRank ? "crown.fill" : "shield.fill")
+                .font(.system(size: 70))
+                .foregroundStyle(stats.isSRank ? Theme.bf6Orange.opacity(0.12) : Theme.bf6Orange.opacity(0.1))
+                .offset(x: -10, y: 0)
+
+            // Card content
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 6) {
+                        Image(systemName: stats.isSRank ? "crown.fill" : "chevron.up.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(Theme.bf6Orange)
+
+                        Text("RANK (Approx)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Theme.textSecondary)
+
+                        Spacer()
+                    }
+
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(stats.rankString)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.textPrimary)
+
+                        Spacer()
+                    }
+
+                    Text("XP: \((stats.xpData?.first?.total ?? 0).formatted())")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                Spacer()
+            }
+            .padding(16)
+        }
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(
+                    Theme.bf6Orange.opacity(0.2),
+                    lineWidth: 1
+                )
         )
     }
 }

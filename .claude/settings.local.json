@@ -29,7 +29,11 @@
       "Bash(if [ -f \"$PLIST\" ])",
       "Bash(then grep -A 1 \"CFBundleVersion\" \"$PLIST\")",
       "Bash(else echo \"File not found, trying alternate name...\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(grep:*)",
+      "Bash(swift -)",
+      "Bash(swift:*)",
+      "Bash(for url in \"https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/131.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf2042/ranks/32.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf2042/ranks/131.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/s032.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/S032.png\")"
     ],
     "deny": [],
     "ask": []

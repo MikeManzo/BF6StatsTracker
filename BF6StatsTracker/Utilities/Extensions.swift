@@ -152,7 +152,7 @@ enum ResponsiveBreakpoint {
         switch self {
         case .compact: return 2
         case .regular: return 3
-        case .large: return 4
+        case .large: return 5  // Increased to 5 to accommodate Rank card
         }
     }
 

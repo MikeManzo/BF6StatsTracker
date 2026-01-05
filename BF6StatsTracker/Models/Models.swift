@@ -270,6 +270,40 @@ struct PlayerStats: Codable, Identifiable {
         return min(xp / 25_000, 100)
     }
 
+    /// Calculate player rank based on XP
+    /// BF2042 has ranks 1-199 (no S-rank system)
+    /// Returns the estimated rank number
+    /// Calibrated with: 7,774,370 XP = Rank 131
+    var rank: Int {
+        let xp = xpData?.first?.total ?? 0
+
+        // Debug logging
+        print("🎖️ Rank Calculation - Total XP: \(xp)")
+
+        // Calibrated XP curve for BF2042
+        // Based on actual data: 7,774,370 XP = Rank 131
+        // Each rank requires approximately: 7,774,370 / 131 ≈ 59,346 XP per rank
+
+        let calculatedRank = min(199, max(1, xp / 59_346))
+        print("🎖️ Calculated Rank: \(calculatedRank)")
+        return calculatedRank
+    }
+
+    /// Get formatted rank string (just the rank number)
+    var rankString: String {
+        return "\(rank)"
+    }
+
+    /// Check if player has reached high rank (100+)
+    var isSRank: Bool {
+        return rank >= 100
+    }
+
+    /// Get the display rank number (same as rank for BF2042)
+    var displayRank: Int {
+        return rank
+    }
+
     // Convert percentage strings to doubles for display
     var accuracy: Double {
         parsePercentage(accuracyPercent)
