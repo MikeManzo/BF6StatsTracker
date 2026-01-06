@@ -100,31 +100,42 @@ struct TodayVsYesterdayView: View {
         return second.matchesPlayed - third.matchesPlayed
     }
 
-    // Get today's total matches played by summing deltas between all snapshots
+    // Get today's total matches - compare last snapshot of today to last snapshot before today
     private var todayMatches: Int {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
 
         let snapshots = historyManager.getAllSnapshots()
         let todaySnapshots = snapshots.filter { snapshot in
-            calendar.isDate(snapshot.timestamp, inSameDayAs: today)
+            calendar.isDate(snapshot.timestamp, inSameDayAs: now)
         }
 
-        guard !todaySnapshots.isEmpty else { return deltaMatches }
+        guard todaySnapshots.count > 0 else { return 0 }
 
-        // Sort by timestamp (newest first, as returned by getAllSnapshots)
-        let sorted = todaySnapshots.sorted { $0.timestamp > $1.timestamp }
+        // Get last snapshot of today
+        let sorted = todaySnapshots.sorted { $0.timestamp < $1.timestamp }
+        guard let lastToday = sorted.last else { return 0 }
 
-        // Sum the deltas between consecutive snapshots
-        var totalMatches = 0
-        for i in 0..<(sorted.count - 1) {
-            let current = sorted[i]
-            let previous = sorted[i + 1]
-            let delta = current.matchesPlayed - previous.matchesPlayed
-            totalMatches += delta
+        // Get last snapshot from before today
+        let beforeTodaySnapshots = snapshots.filter { snapshot in
+            snapshot.timestamp < today
+        }.sorted { $0.timestamp > $1.timestamp }
+
+        if let lastBeforeToday = beforeTodaySnapshots.first {
+            let matches = lastToday.matchesPlayed - lastBeforeToday.matchesPlayed + 1
+            print("📊 Total matches today: \(matches) (today: \(lastToday.matchesPlayed), yesterday: \(lastBeforeToday.matchesPlayed))")
+            return matches
+        } else {
+            // No baseline from before today - just use deltas between today's snapshots
+            var totalMatches = 0
+            for i in 0..<sorted.count - 1 {
+                let delta = sorted[i + 1].matchesPlayed - sorted[i].matchesPlayed
+                totalMatches += delta
+            }
+            print("📊 Total matches today: \(totalMatches) (no baseline, from \(sorted.count) snapshots)")
+            return totalMatches
         }
-
-        return totalMatches
     }
 
     // Get yesterday's total kills (return 0 if no data)
@@ -188,7 +199,10 @@ struct TodayVsYesterdayView: View {
     }
 
     private var last7Days: [DailyPerformance] {
-        Array(historyManager.recentDailyPerformances.prefix(7).reversed())
+        let performances = Array(historyManager.recentDailyPerformances.prefix(7).reversed())
+        print("📊 last7Days: \(performances.count) daily performance records")
+        print("📊 recentDailyPerformances total: \(historyManager.recentDailyPerformances.count)")
+        return performances
     }
 
     private func calculateStreakDays() -> Int {
@@ -219,8 +233,8 @@ struct TodayVsYesterdayView: View {
                     // Combat performance breakdown
                     combatBreakdown
 
-                    // 7-day trend (full width)
-                    if !last7Days.isEmpty {
+                    // 7-day trend (full width) - show if we have at least 2 days of data
+                    if last7Days.count >= 2 {
                         SevenDayTrendView(
                             dailyPerformances: last7Days,
                             metric: .kd
@@ -320,7 +334,7 @@ struct TodayVsYesterdayView: View {
             PerformanceComparisonCard(
                 title: "Kills",
                 todayValue: deltaKills,
-                yesterdayValue: yesterdayData?.deltaKills ?? previousDeltaKills,
+                yesterdayValue: previousDeltaKills,
                 icon: "target",
                 accentColor: .green,
                 yesterdaySummary: yesterdayKills
@@ -329,7 +343,7 @@ struct TodayVsYesterdayView: View {
             PerformanceComparisonCard(
                 title: "Deaths",
                 todayValue: deltaDeaths,
-                yesterdayValue: yesterdayData?.deltaDeaths ?? previousDeltaDeaths,
+                yesterdayValue: previousDeltaDeaths,
                 icon: "xmark.circle",
                 accentColor: .red,
                 yesterdaySummary: yesterdayDeaths
@@ -338,17 +352,16 @@ struct TodayVsYesterdayView: View {
             PerformanceComparisonCardDouble(
                 title: "K/D",
                 todayValue: deltaKD,
-                yesterdayValue: yesterdayData?.dailyKD ?? previousDeltaKD,
+                yesterdayValue: previousDeltaKD,
                 icon: "chart.line.uptrend.xyaxis",
                 accentColor: .orange,
                 format: "%.2f",
                 yesterdaySummary: yesterdayKD
             )
 
-            PerformanceComparisonCard(
+            PerformanceSimpleCard(
                 title: "Matches",
                 todayValue: todayMatches,
-                yesterdayValue: yesterdayData?.deltaMatchesPlayed ?? previousDeltaMatches,
                 icon: "gamecontroller.fill",
                 accentColor: .blue,
                 yesterdaySummary: yesterdayMatches

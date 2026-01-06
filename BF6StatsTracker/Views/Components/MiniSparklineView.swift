@@ -142,6 +142,10 @@ struct SevenDayTrendView: View {
 
             // Sparkline
             MiniSparklineView(data: chartData, color: metric.color, showLabels: true)
+                .onAppear {
+                    print("📊 SevenDayTrendView - Daily performances count: \(dailyPerformances.count)")
+                    print("📊 Chart data points: \(chartData.count), values: \(chartData)")
+                }
 
             // Best day
             HStack {

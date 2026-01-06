@@ -297,6 +297,95 @@ struct PerformanceComparisonCardDouble: View {
     }
 }
 
+// Simple card without comparison - just shows today's value and yesterday's summary
+struct PerformanceSimpleCard: View {
+    let title: String
+    let todayValue: Int
+    let icon: String
+    let accentColor: Color
+    var yesterdaySummary: Int = 0
+
+    @State private var displayValue: Double = 0
+
+    var body: some View {
+        VStack(spacing: 12) {
+            // Icon and title
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(accentColor)
+
+                Text(title.uppercased())
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+            }
+
+            // Today's value (large)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(Int(displayValue))")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .contentTransition(.numericText(value: displayValue))
+
+                Spacer()
+            }
+
+            // Progress bar (always full since no comparison)
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.secondary.opacity(0.2))
+                        .frame(height: 6)
+
+                    // Progress (full)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            LinearGradient(
+                                colors: [accentColor, accentColor.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width, height: 6)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: todayValue)
+                }
+            }
+            .frame(height: 6)
+
+            // Yesterday summary only (no comparison)
+            HStack(spacing: 4) {
+                Spacer()
+
+                // Yesterday summary in lower right corner
+                Text("Yesterday: \(yesterdaySummary)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(accentColor.opacity(0.3), lineWidth: 1)
+        )
+        .onAppear {
+            displayValue = Double(todayValue)
+        }
+        .onChange(of: todayValue) { oldValue, newValue in
+            withAnimation(.easeOut(duration: 0.8)) {
+                displayValue = Double(newValue)
+            }
+        }
+    }
+}
+
 #Preview {
     VStack {
         PerformanceComparisonCard(
@@ -314,6 +403,14 @@ struct PerformanceComparisonCardDouble: View {
             icon: "chart.line.uptrend.xyaxis",
             accentColor: .orange,
             format: "%.2f"
+        )
+
+        PerformanceSimpleCard(
+            title: "Matches",
+            todayValue: 12,
+            icon: "gamecontroller.fill",
+            accentColor: .blue,
+            yesterdaySummary: 8
         )
     }
     .padding()

@@ -352,6 +352,12 @@ class StatsViewModel: ObservableObject {
                 HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId)
                 MapTracker.shared.updateMapStats(from: stats)
                 print("💾 Saved stats snapshot and updated map stats in SwiftData (EA ID: \(eaId ?? "N/A"))")
+
+                // Rebuild DailyPerformance records if needed (only on first load)
+                if HistoryManager.shared.recentDailyPerformances.isEmpty {
+                    print("🔧 No DailyPerformance records found, rebuilding...")
+                    HistoryManager.shared.rebuildDailyPerformances(playerName: stats.userName)
+                }
             }
 
             // Fetch additional detailed stats if main stats are incomplete

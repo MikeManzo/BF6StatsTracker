@@ -739,6 +739,77 @@ class HistoryManager: ObservableObject {
         let totalKD = performances.reduce(0.0) { $0 + $1.dailyKD }
         return totalKD / Double(performances.count)
     }
+
+    /// Rebuild DailyPerformance records from existing snapshots
+    /// Call this to regenerate daily performance data from snapshot history
+    func rebuildDailyPerformances(playerName: String) {
+        guard let context = modelContext else { return }
+
+        print("🔧 Rebuilding DailyPerformance records from snapshots...")
+
+        // Get all snapshots for this player
+        let descriptor = FetchDescriptor<StatsSnapshot>(
+            predicate: #Predicate<StatsSnapshot> { snapshot in
+                snapshot.playerName == playerName
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+
+        guard let snapshots = try? context.fetch(descriptor) else {
+            print("⚠️ Failed to fetch snapshots")
+            return
+        }
+
+        print("🔧 Found \(snapshots.count) snapshots to process")
+
+        // Group snapshots by day
+        let calendar = Calendar.current
+        var snapshotsByDay: [Date: [StatsSnapshot]] = [:]
+
+        for snapshot in snapshots {
+            let day = calendar.startOfDay(for: snapshot.timestamp)
+            snapshotsByDay[day, default: []].append(snapshot)
+        }
+
+        print("🔧 Grouped into \(snapshotsByDay.count) days")
+
+        // Create DailyPerformance for each day
+        for (day, daySnapshots) in snapshotsByDay.sorted(by: { $0.key < $1.key }) {
+            guard let first = daySnapshots.first,
+                  let last = daySnapshots.last else { continue }
+
+            // Check if DailyPerformance already exists for this day
+            let existingPredicate = #Predicate<DailyPerformance> { performance in
+                performance.date == day && performance.playerName == playerName
+            }
+            let existingDescriptor = FetchDescriptor<DailyPerformance>(predicate: existingPredicate)
+
+            if let existing = try? context.fetch(existingDescriptor).first {
+                // Update existing
+                existing.update(with: last)
+                print("📝 Updated DailyPerformance for \(day)")
+            } else {
+                // Create new
+                let performance = DailyPerformance(
+                    date: day,
+                    playerName: first.playerName,
+                    platform: first.platform,
+                    startSnapshot: first
+                )
+                performance.update(with: last)
+                context.insert(performance)
+                print("✅ Created DailyPerformance for \(day)")
+            }
+        }
+
+        // Save changes
+        try? context.save()
+
+        // Reload daily performances
+        loadDailyPerformances(playerName: playerName)
+
+        print("🔧 Rebuild complete! Now have \(recentDailyPerformances.count) daily performance records")
+    }
 }
 
 // MARK: - Supporting Types

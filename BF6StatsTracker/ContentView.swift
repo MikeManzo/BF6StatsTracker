@@ -156,6 +156,7 @@ struct ContentView: View {
                                         .font(.caption)
                                         .fontWeight(.semibold)
                                         .foregroundColor(Theme.textPrimary)
+                                        .help("XP Total")
                                 }
 
                                 Text("•")
@@ -168,6 +169,7 @@ struct ContentView: View {
                                     Text("\(formatXP(xp.performance))")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
+                                        .help("XP Performance")
                                 }
 
                                 HStack(spacing: 4) {
@@ -177,6 +179,7 @@ struct ContentView: View {
                                     Text("\(formatXP(xp.accolades))")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
+                                        .help("XP Accolades")
                                 }
                             }
                         } else {

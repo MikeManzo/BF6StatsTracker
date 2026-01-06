@@ -74,6 +74,12 @@ struct BF6StatsTrackerApp: App {
 
                 Divider()
 
+                Button("Rebuild Daily Performance") {
+                    if let playerName = viewModel.playerStats?.userName {
+                        HistoryManager.shared.rebuildDailyPerformances(playerName: playerName)
+                    }
+                }
+
                 Button("Clear Cache") {
                     viewModel.clearCache()
                 }

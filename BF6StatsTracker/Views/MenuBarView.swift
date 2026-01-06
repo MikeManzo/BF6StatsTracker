@@ -104,6 +104,7 @@ struct MenuBarView: View {
                     .font(.caption2)
                     .foregroundColor(Theme.textSecondary)
             }
+            .help(viewModel.isLoading ? "Updating stats..." : "Last updated: \(viewModel.lastUpdated?.formatted(date: .abbreviated, time: .shortened) ?? "Never")")
         }
     }
     
@@ -128,42 +129,48 @@ struct MenuBarView: View {
                     icon: "target",
                     label: "Kills",
                     value: stats.kills.formatted(),
-                    color: Theme.bf6Red
+                    color: Theme.bf6Red,
+                    tooltip: "Total eliminations across all matches"
                 )
 
                 MenuBarStatItem(
                     icon: "xmark.circle",
                     label: "Deaths",
                     value: stats.deaths.formatted(),
-                    color: Theme.textSecondary
+                    color: Theme.textSecondary,
+                    tooltip: "Total deaths across all matches"
                 )
 
                 MenuBarStatItem(
                     icon: "chart.line.uptrend.xyaxis",
                     label: "K/D Ratio",
                     value: String(format: "%.2f", stats.kdRatio),
-                    color: stats.kdRatio >= 1 ? Theme.bf6Green : Theme.bf6Orange
+                    color: stats.kdRatio >= 1 ? Theme.bf6Green : Theme.bf6Orange,
+                    tooltip: "Kill/Death ratio - higher is better"
                 )
 
                 MenuBarStatItem(
                     icon: "trophy.fill",
                     label: "Wins",
                     value: stats.wins.formatted(),
-                    color: .yellow
+                    color: .yellow,
+                    tooltip: "Total matches won"
                 )
 
                 MenuBarStatItem(
                     icon: "scope",
                     label: "Accuracy",
                     value: String(format: "%.1f%%", stats.accuracy),
-                    color: Theme.bf6Blue
+                    color: Theme.bf6Blue,
+                    tooltip: "Overall shooting accuracy"
                 )
 
                 MenuBarStatItem(
                     icon: "clock.fill",
                     label: "Time Played",
                     value: viewModel.formattedPlayTime,
-                    color: Theme.bf6Purple
+                    color: Theme.bf6Purple,
+                    tooltip: "Total time spent in matches"
                 )
             }
 
@@ -183,14 +190,16 @@ struct MenuBarView: View {
                             icon: "target",
                             label: "Performance",
                             value: formatXP(xp.performance),
-                            color: Theme.bf6Blue
+                            color: Theme.bf6Blue,
+                            tooltip: "XP earned from combat performance"
                         )
 
                         MenuBarStatItem(
                             icon: "trophy.fill",
                             label: "Accolades",
                             value: formatXP(xp.accolades),
-                            color: Theme.bf6Orange
+                            color: Theme.bf6Orange,
+                            tooltip: "XP earned from accolades and achievements"
                         )
                     }
                 }
@@ -248,6 +257,7 @@ struct MenuBarView: View {
             .padding(10)
             .background(Theme.overlayColor)
             .cornerRadius(10)
+            .help("Your most played class with its K/D ratio")
         }
     }
     
@@ -274,6 +284,7 @@ struct MenuBarView: View {
             }
             .buttonStyle(.plain)
             .disabled(viewModel.isLoading)
+            .help("Fetch latest stats from EA servers")
 
             // Open Main Window Button
             Button {
@@ -291,6 +302,7 @@ struct MenuBarView: View {
                 .cornerRadius(8)
             }
             .buttonStyle(.plain)
+            .help("Open the main application window with detailed stats")
 
             Divider()
 
@@ -308,6 +320,7 @@ struct MenuBarView: View {
                 .padding(.vertical, 6)
             }
             .buttonStyle(.plain)
+            .help("Quit BF6 Stats Tracker")
         }
     }
     
@@ -343,6 +356,7 @@ struct MenuBarView: View {
                 .cornerRadius(8)
             }
             .buttonStyle(.plain)
+            .help("Open the main window to search for a player")
 
             Divider()
 
@@ -354,6 +368,7 @@ struct MenuBarView: View {
                     .foregroundColor(Theme.bf6Red)
             }
             .buttonStyle(.plain)
+            .help("Quit BF6 Stats Tracker")
         }
         .padding(.vertical, 20)
     }
@@ -392,6 +407,7 @@ struct MenuBarStatItem: View {
     let label: String
     let value: String
     let color: Color
+    var tooltip: String = ""
 
     var body: some View {
         HStack(spacing: 8) {
@@ -415,6 +431,7 @@ struct MenuBarStatItem: View {
         .padding(8)
         .background(Theme.overlayColor)
         .cornerRadius(8)
+        .help(tooltip.isEmpty ? label : tooltip)
     }
 }
 
