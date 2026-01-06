@@ -123,12 +123,12 @@ struct TodayVsYesterdayView: View {
         }.sorted { $0.timestamp > $1.timestamp }
 
         if let lastBeforeToday = beforeTodaySnapshots.first {
-            let matches = lastToday.matchesPlayed - lastBeforeToday.matchesPlayed + 1
+            let matches = lastToday.matchesPlayed - lastBeforeToday.matchesPlayed
             print("📊 Total matches today: \(matches) (today: \(lastToday.matchesPlayed), yesterday: \(lastBeforeToday.matchesPlayed))")
             return matches
         } else {
-            // No baseline from before today - just use deltas between today's snapshots
-            var totalMatches = 0
+            // No baseline from before today - first snapshot represents 1 match, then add deltas
+            var totalMatches = 1  // First snapshot = 1 match
             for i in 0..<sorted.count - 1 {
                 let delta = sorted[i + 1].matchesPlayed - sorted[i].matchesPlayed
                 totalMatches += delta
@@ -177,7 +177,7 @@ struct TodayVsYesterdayView: View {
 
         let kills = last.kills - first.kills
         let deaths = last.deaths - first.deaths
-        let matches = last.matchesPlayed - first.matchesPlayed
+        let matches = last.matchesPlayed - first.matchesPlayed + 1
         let kd = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
         let headshots = last.headshots - first.headshots
         let assists = last.assists - first.assists
