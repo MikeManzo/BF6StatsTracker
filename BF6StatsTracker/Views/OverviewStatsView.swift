@@ -123,10 +123,6 @@ struct OverviewStatsView: View {
                 )
             }
 
-            // Maps Played Card
-            MapsPlayedCard()
-                .environmentObject(historyManager)
-
             HStack(spacing: 16) {
                 // Combat Stats
                 VStack(alignment: .leading, spacing: 16) {

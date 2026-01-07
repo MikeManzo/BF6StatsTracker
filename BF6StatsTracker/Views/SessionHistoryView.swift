@@ -857,17 +857,26 @@ struct ExportHistoryView: View {
     }
 
     private func generateCSV() -> Result<String, Error> {
-        var csv = "Timestamp,Player Name,Platform,EA ID,Kills,Deaths,K/D Ratio,Wins,Losses,Matches Played,Total Score,Score Per Minute,Kills Per Minute,Accuracy,Headshot %,Time Played (min),Headshots,Assists,Revives,Resupplies\n"
+        var csv = "Timestamp,Player Name,Platform,EA ID,Session ID,Progression Mode,Kills,Deaths,K/D Ratio,Wins,Losses,Matches Played,Total Score,Score Per Minute,Kills Per Minute,Accuracy,Headshot %,Time Played (min),Headshots,Assists,Revives,Resupplies,Maps Played Count,Top Maps\n"
 
         for snapshot in snapshots {
             let timePlayedMinutes = snapshot.timePlayed / 60
             let eaId = snapshot.eaId ?? ""
+            let sessionId = snapshot.sessionId?.uuidString ?? ""
+            let progressionMode = snapshot.progressionMode ?? ""
+
+            // Get map information
+            let maps = snapshot.maps ?? []
+            let mapsCount = maps.count
+            let topMaps = maps.prefix(3).map { "\($0.mapName)(\($0.matches))" }.joined(separator: "; ")
 
             let row = [
                 snapshot.timestamp.ISO8601Format(),
                 escapeCSVField(snapshot.playerName),
                 snapshot.platform,
                 escapeCSVField(eaId),
+                escapeCSVField(sessionId),
+                escapeCSVField(progressionMode),
                 "\(snapshot.kills)",
                 "\(snapshot.deaths)",
                 String(format: "%.2f", snapshot.kdRatio),
@@ -883,7 +892,9 @@ struct ExportHistoryView: View {
                 "\(snapshot.headshots)",
                 "\(snapshot.assists)",
                 "\(snapshot.revives)",
-                "\(snapshot.resupplies)"
+                "\(snapshot.resupplies)",
+                "\(mapsCount)",
+                escapeCSVField(topMaps)
             ].joined(separator: ",")
 
             csv += row + "\n"
@@ -899,7 +910,25 @@ struct ExportHistoryView: View {
             encoder.dateEncodingStrategy = .iso8601
 
             let exportData = snapshots.map { snapshot -> [String: Any] in
-                return [
+                // Prepare maps array if available
+                var mapsData: [[String: Any]] = []
+                if let maps = snapshot.maps {
+                    mapsData = maps.map { map in
+                        return [
+                            "mapId": map.mapId,
+                            "mapName": map.mapName,
+                            "image": map.image,
+                            "wins": map.wins,
+                            "losses": map.losses,
+                            "matches": map.matches,
+                            "winPercent": map.winPercentString,
+                            "secondsPlayed": map.secondsPlayed,
+                            "timePlayed": map.timePlayed
+                        ]
+                    }
+                }
+
+                var data: [String: Any] = [
                     "timestamp": ISO8601DateFormatter().string(from: snapshot.timestamp),
                     "playerName": snapshot.playerName,
                     "platform": snapshot.platform,
@@ -916,11 +945,23 @@ struct ExportHistoryView: View {
                     "accuracy": snapshot.accuracy,
                     "headshotPercentage": snapshot.headshotPercentage,
                     "timePlayedMinutes": snapshot.timePlayed / 60,
+                    "timePlayedSeconds": snapshot.timePlayed,
                     "headshots": snapshot.headshots,
                     "assists": snapshot.assists,
                     "revives": snapshot.revives,
-                    "resupplies": snapshot.resupplies
+                    "resupplies": snapshot.resupplies,
+                    "maps": mapsData
                 ]
+
+                // Add optional fields only if they exist
+                if let sessionId = snapshot.sessionId {
+                    data["sessionId"] = sessionId.uuidString
+                }
+                if let progressionMode = snapshot.progressionMode {
+                    data["progressionMode"] = progressionMode
+                }
+
+                return data
             }
 
             let jsonData = try JSONSerialization.data(withJSONObject: exportData, options: [.prettyPrinted, .sortedKeys])
