@@ -330,6 +330,45 @@ actor APIService {
         return URL(string: "https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/\(rank).png")
     }
 
+    // MARK: - Progression Types
+
+    /// Fetch BF6 progression types (XP multipliers and stat tracking rules)
+    /// Returns array of progression modes with XP factors
+    func fetchProgressionTypes() async throws -> [ProgressionMode] {
+        let urlString = "\(baseURL)/bf6/progressiontypes/"
+
+        print("🎯 Fetching progression types from: \(urlString)")
+
+        guard let url = URL(string: urlString) else {
+            throw BF6TrackerError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            print("❌ Progression types request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+            throw BF6TrackerError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = JSONDecoder()
+
+        do {
+            let progressionResponse = try decoder.decode(ProgressionTypeResponse.self, from: data)
+            print("✅ Decoded \(progressionResponse.entries.count) progression modes")
+            return progressionResponse.entries
+        } catch {
+            print("❌ Decoding error for progression types: \(error)")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📋 Raw response: \(jsonString.prefix(500))...")
+            }
+            throw BF6TrackerError.decodingError(error)
+        }
+    }
+
     // MARK: - Server Browser
 
     /// Fetch BF6 servers list

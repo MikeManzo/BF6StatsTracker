@@ -10,6 +10,13 @@ import SwiftUI
 struct LastMatchStatsView: View {
     let lastMatch: LastMatchStats
     let lastUpdated: Date?
+    let progressionMode: ProgressionMode?
+
+    init(lastMatch: LastMatchStats, lastUpdated: Date?, progressionMode: ProgressionMode? = nil) {
+        self.lastMatch = lastMatch
+        self.lastUpdated = lastUpdated
+        self.progressionMode = progressionMode
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -71,6 +78,11 @@ struct LastMatchStatsView: View {
 
     private var statsContent: some View {
         VStack(spacing: 16) {
+            // Progression Type Badge (if available)
+            if let mode = progressionMode {
+                ProgressionBadge(progressionMode: mode)
+            }
+
             // Quick Stats Summary Row (Always visible)
             quickStatsSummary
 

@@ -102,11 +102,7 @@ struct ModeEfficiencyView: View {
     // MARK: - Mode Comparison Grid
 
     private var modeComparisonGrid: some View {
-        let filteredModes = viewModel.progressionModes
-            .filter { !showOnlyRanked || $0.persistStats }
-            .sorted(by: sortComparator)
-
-        return LazyVGrid(columns: [
+        LazyVGrid(columns: [
             GridItem(.flexible()),
             GridItem(.flexible())
         ], spacing: 16) {
@@ -114,6 +110,15 @@ struct ModeEfficiencyView: View {
                 ModeEfficiencyCard(mode: mode)
             }
         }
+        .id(showOnlyRanked)
+    }
+
+    // MARK: - Filtered Modes
+
+    private var filteredModes: [ProgressionMode] {
+        viewModel.progressionModes
+            .filter { !showOnlyRanked || $0.persistStats }
+            .sorted(by: sortComparator)
     }
 
     // MARK: - Loading View

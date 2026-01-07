@@ -98,6 +98,10 @@ struct ContentView: View {
                             IntelligenceView()
                         case .loadout:
                             LoadoutAnalyzerView()
+                        case .xpCalculator:
+                            XPCalculatorView()
+                        case .modeEfficiency:
+                            ModeEfficiencyView()
                         case .servers:
                             ServerBrowserView()
                         }

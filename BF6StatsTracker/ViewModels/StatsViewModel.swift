@@ -19,6 +19,8 @@ class StatsViewModel: ObservableObject {
     @Published var weaponStats: [WeaponStats] = []
     @Published var vehicleStats: [VehicleStats] = []
     @Published var gadgetStats: [GadgetStats] = []
+    @Published var progressionModes: [ProgressionMode] = []
+    @Published var currentProgressionMode: ProgressionMode?
 
     @Published var isLoading = false
     @Published var error: BF6TrackerError?
@@ -52,6 +54,9 @@ class StatsViewModel: ObservableObject {
         Task {
             await loadSettings()
             await checkEAAuthenticationStatus()
+
+            // Fetch progression types (XP multipliers) - do this early as it's static data
+            await fetchProgressionTypes()
 
             // Auto-login: If we have stored accounts but no current player data, use the most recent account
             if settings.playerName.isEmpty && !EAAccountStore.shared.accounts.isEmpty {
@@ -349,9 +354,10 @@ class StatsViewModel: ObservableObject {
             await MainActor.run {
                 // Try to get EA ID from settings first, then fall back to most recent account
                 let eaId = settings.eaId ?? EAAccountStore.shared.mostRecentAccount?.eaId
-                HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId)
+                let progressionModeId = self.currentProgressionMode?.progressionMode
+                HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId)
                 MapTracker.shared.updateMapStats(from: stats)
-                print("💾 Saved stats snapshot and updated map stats in SwiftData (EA ID: \(eaId ?? "N/A"))")
+                print("💾 Saved stats snapshot and updated map stats in SwiftData (EA ID: \(eaId ?? "N/A"), Mode: \(progressionModeId ?? "N/A"))")
 
                 // Rebuild DailyPerformance records if needed (only on first load)
                 if HistoryManager.shared.recentDailyPerformances.isEmpty {
@@ -448,7 +454,31 @@ class StatsViewModel: ObservableObject {
 
         print("🔄 fetchAdditionalStats completed - Final counts: Classes(\(classStats.count)), Weapons(\(weaponStats.count)), Vehicles(\(vehicleStats.count)), Gadgets(\(gadgetStats.count))")
     }
-    
+
+    // MARK: - Progression Types
+
+    /// Fetch progression types (XP multipliers and stat tracking rules) from API
+    func fetchProgressionTypes() async {
+        do {
+            print("🎯 Fetching progression types...")
+            let modes = try await APIService.shared.fetchProgressionTypes()
+            self.progressionModes = modes
+
+            // Set default progression mode to official-progression if available
+            if let officialMode = modes.first(where: { $0.progressionMode == "official-progression" }) {
+                self.currentProgressionMode = officialMode
+                print("🎯 Set current progression mode to: \(officialMode.displayName)")
+            } else if let firstMode = modes.first {
+                self.currentProgressionMode = firstMode
+                print("🎯 Set current progression mode to: \(firstMode.displayName)")
+            }
+
+            print("✅ Loaded \(modes.count) progression modes")
+        } catch {
+            print("❌ Failed to fetch progression types: \(error)")
+        }
+    }
+
     // MARK: - Auto Refresh
     
     private func setupAutoRefresh() {
@@ -655,6 +685,8 @@ enum StatTab: String, CaseIterable, Identifiable {
     case support = "Support"
     case intel = "Intel"
     case loadout = "Loadout"
+    case xpCalculator = "XP Calc"
+    case modeEfficiency = "Modes"
     case servers = "Servers"
     case history = "History"
 
@@ -676,6 +708,8 @@ enum StatTab: String, CaseIterable, Identifiable {
         case .support: return "heart.text.square.fill"
         case .intel: return "eye.fill"
         case .loadout: return "chart.bar.doc.horizontal"
+        case .xpCalculator: return "chart.bar.doc.horizontal"
+        case .modeEfficiency: return "chart.bar.xaxis"
         case .servers: return "server.rack"
         }
     }

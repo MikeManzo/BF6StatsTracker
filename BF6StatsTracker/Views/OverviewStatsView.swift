@@ -113,7 +113,16 @@ struct OverviewStatsView: View {
                 }
             }
             .frame(height: 160)
-            
+
+            // Last Match Stats with Progression Badge
+            if let stats = viewModel.playerStats, let lastMatch = stats.lastMatch, lastMatch.hasData {
+                LastMatchStatsView(
+                    lastMatch: lastMatch,
+                    lastUpdated: viewModel.lastUpdated,
+                    progressionMode: viewModel.currentProgressionMode
+                )
+            }
+
             HStack(spacing: 16) {
                 // Combat Stats
                 VStack(alignment: .leading, spacing: 16) {

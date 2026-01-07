@@ -88,10 +88,10 @@ class HistoryManager: ObservableObject {
     // MARK: - Snapshots
 
     /// Save a stats snapshot only if it differs from the most recent snapshot
-    func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil) {
+    func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil) {
         guard let context = modelContext else { return }
 
-        let newSnapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId)
+        let newSnapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId, progressionMode: progressionMode)
 
         // Get the most recent snapshot for comparison
         let recentSnapshots = getRecentSnapshots(limit: 1)
@@ -466,11 +466,14 @@ class HistoryManager: ObservableObject {
                 currentDailyPerformance = existing
             } else {
                 // Create new daily performance for today
+                // Use yesterday's last snapshot as the starting point
+                let startSnapshot = getLastSnapshotFromYesterday(playerName: playerName) ?? snapshot
+
                 let newPerformance = DailyPerformance(
                     date: today,
                     playerName: playerName,
                     platform: platform,
-                    startSnapshot: snapshot
+                    startSnapshot: startSnapshot
                 )
                 context.insert(newPerformance)
                 currentDailyPerformance = newPerformance
@@ -483,6 +486,33 @@ class HistoryManager: ObservableObject {
         } catch {
             print("⚠️ Error updating DailyPerformance: \(error)")
             UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
+        }
+    }
+
+    /// Get the last snapshot from yesterday for a given player
+    private func getLastSnapshotFromYesterday(playerName: String) -> StatsSnapshot? {
+        guard let context = modelContext else { return nil }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
+            return nil
+        }
+
+        do {
+            // Find yesterday's DailyPerformance
+            let predicate = #Predicate<DailyPerformance> { performance in
+                performance.date == yesterday && performance.playerName == playerName
+            }
+
+            let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
+            let yesterdayPerformances = try context.fetch(descriptor)
+
+            // Return yesterday's end snapshot (which is the last snapshot of the day)
+            return yesterdayPerformances.first?.endSnapshot
+        } catch {
+            print("⚠️ Error fetching yesterday's snapshot: \(error)")
+            return nil
         }
     }
 

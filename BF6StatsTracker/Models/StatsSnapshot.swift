@@ -40,8 +40,9 @@ final class StatsSnapshot {
 
     // Session metadata
     var sessionId: UUID?
+    var progressionMode: String? // The progression mode for this snapshot (e.g., "official-progression")
 
-    init(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil) {
+    init(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil) {
         self.id = UUID()
         self.timestamp = Date()
         self.playerName = stats.userName
@@ -67,6 +68,7 @@ final class StatsSnapshot {
         self.resupplies = stats.resupplies
 
         self.sessionId = sessionId
+        self.progressionMode = progressionMode
     }
 
     /// Direct initializer for creating synthetic snapshots
@@ -85,7 +87,8 @@ final class StatsSnapshot {
         assists: Int,
         revives: Int,
         resupplies: Int,
-        sessionId: UUID? = nil
+        sessionId: UUID? = nil,
+        progressionMode: String? = nil
     ) {
         self.id = UUID()
         self.timestamp = Date()
@@ -125,6 +128,7 @@ final class StatsSnapshot {
         self.accuracy = 0
 
         self.sessionId = sessionId
+        self.progressionMode = progressionMode
     }
 
     /// Calculate approximate storage size in bytes

@@ -96,9 +96,16 @@ final class DailyPerformance {
         deltaResupplies = newSnapshot.resupplies - start.resupplies
         deltaWins = newSnapshot.wins - start.wins
         deltaLosses = newSnapshot.losses - start.losses
-        deltaMatchesPlayed = newSnapshot.matchesPlayed - start.matchesPlayed
         deltaScore = newSnapshot.totalScore - start.totalScore
         deltaTimePlayed = newSnapshot.timePlayed - start.timePlayed
+
+        // Calculate matches played from time delta (more reliable than API matchesPlayed)
+        // Average BF6 match duration is ~18 minutes (1080 seconds)
+        // Use time played delta to estimate matches
+        deltaMatchesPlayed = estimateMatchesFromTimePlayed(
+            startTime: start.timePlayed,
+            endTime: newSnapshot.timePlayed
+        )
 
         // Calculate daily K/D
         dailyKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
@@ -153,6 +160,29 @@ final class DailyPerformance {
         } else {
             return "\(minutes)m"
         }
+    }
+
+    /// Estimate matches played from time delta
+    /// More reliable than using API's matchesPlayed which can be incorrect
+    private func estimateMatchesFromTimePlayed(startTime: Int, endTime: Int) -> Int {
+        let deltaSeconds = endTime - startTime
+
+        // Guard against negative or zero deltas
+        guard deltaSeconds > 0 else { return 0 }
+
+        // Average match duration constants (in seconds)
+        let averageMatchDuration = 1080 // 18 minutes
+        let minMatchDuration = 600      // 10 minutes (minimum to count as a match)
+
+        // If delta is less than minimum match duration, count as 0 matches
+        if deltaSeconds < minMatchDuration {
+            return 0
+        }
+
+        // Calculate matches played by dividing time delta by average match duration
+        // Round to nearest whole number for better accuracy
+        let estimatedMatches = Double(deltaSeconds) / Double(averageMatchDuration)
+        return max(1, Int(round(estimatedMatches)))
     }
 
     /// Estimate shots fired (helper for accuracy calculation)
