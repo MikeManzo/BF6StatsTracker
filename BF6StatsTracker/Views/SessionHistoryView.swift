@@ -393,8 +393,25 @@ struct SessionHistoryView: View {
 struct SnapshotRow: View {
     let snapshot: StatsSnapshot
     let onDelete: () -> Void
+    @State private var showingMapsDetail = false
 
     var body: some View {
+        VStack(spacing: 12) {
+            // Main snapshot row
+            mainRow
+
+            // Maps played section (if available)
+            if let mapsPlayed = getMapsPlayed(), !mapsPlayed.isEmpty {
+                mapsPlayedSection(mapsPlayed)
+            }
+        }
+        .padding()
+        .background(Theme.overlayColor)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+
+    private var mainRow: some View {
         HStack(spacing: 16) {
             // Time and player indicator
             VStack(alignment: .leading, spacing: 4) {
@@ -465,10 +482,80 @@ struct SnapshotRow: View {
             .buttonStyle(.plain)
             .help("Delete this snapshot")
         }
-        .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+
+    private func getMapsPlayed() -> [MapActivity]? {
+        // Get all snapshots from HistoryManager
+        guard let allSnapshots = try? HistoryManager.shared.modelContext?.fetch(
+            FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        ) else {
+            return nil
+        }
+
+        // Find the snapshot immediately before this one
+        guard let currentIndex = allSnapshots.firstIndex(where: { $0.id == snapshot.id }),
+              currentIndex + 1 < allSnapshots.count else {
+            return nil
+        }
+
+        let previous = allSnapshots[currentIndex + 1]
+        return snapshot.mapsPlayedSince(previous)
+    }
+
+    private func mapsPlayedSection(_ maps: [MapActivity]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+
+            HStack {
+                Image(systemName: "map.fill")
+                    .font(.caption)
+                    .foregroundColor(Theme.bf6Orange)
+
+                Text("Maps Played")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textSecondary)
+
+                Spacer()
+
+                Text("\(maps.count) map\(maps.count == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
+
+            // Maps list
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                ForEach(maps.prefix(6)) { mapActivity in
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Theme.bf6Orange)
+                            .frame(width: 4, height: 4)
+
+                        Text(mapActivity.mapName)
+                            .font(.caption2)
+                            .foregroundColor(Theme.textPrimary)
+                            .lineLimit(1)
+
+                        Spacer()
+
+                        Text("\(mapActivity.matchesPlayed)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(Theme.bf6Orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Theme.bf6Orange.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+                }
+            }
+
+            if maps.count > 6 {
+                Text("+ \(maps.count - 6) more")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
+        }
     }
 
     private func formatScore(_ score: Int) -> String {

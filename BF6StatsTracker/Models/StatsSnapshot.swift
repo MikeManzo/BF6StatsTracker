@@ -42,6 +42,20 @@ final class StatsSnapshot {
     var sessionId: UUID?
     var progressionMode: String? // The progression mode for this snapshot (e.g., "official-progression")
 
+    // Map statistics snapshot
+    @Attribute(.externalStorage) var mapsJSON: Data?
+
+    // Computed property to access maps
+    var maps: [MapPerformance]? {
+        get {
+            guard let data = mapsJSON else { return nil }
+            return try? JSONDecoder().decode([MapPerformance].self, from: data)
+        }
+        set {
+            mapsJSON = try? JSONEncoder().encode(newValue)
+        }
+    }
+
     init(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil) {
         self.id = UUID()
         self.timestamp = Date()
@@ -69,6 +83,9 @@ final class StatsSnapshot {
 
         self.sessionId = sessionId
         self.progressionMode = progressionMode
+
+        // Store map statistics
+        self.maps = stats.maps
     }
 
     /// Direct initializer for creating synthetic snapshots
@@ -294,5 +311,82 @@ final class MapStats {
         self.losses = losses
         self.matchesPlayed = matchesPlayed
         self.winRate = matchesPlayed > 0 ? Double(wins) / Double(matchesPlayed) * 100 : 0
+    }
+}
+
+// MARK: - Map Activity Tracking
+
+/// Represents activity on a single map between snapshots
+struct MapActivity: Identifiable {
+    let id = UUID()
+    let mapName: String
+    let mapId: String
+    let matchesPlayed: Int
+    let timePlayedSeconds: Int
+
+    /// Format time played as human-readable string
+    var timePlayedFormatted: String {
+        let minutes = timePlayedSeconds / 60
+        let seconds = timePlayedSeconds % 60
+        if minutes > 0 {
+            return "\(minutes)m \(seconds)s"
+        } else {
+            return "\(seconds)s"
+        }
+    }
+
+    /// Format time played as short version (just minutes if applicable)
+    var timePlayedShort: String {
+        let minutes = timePlayedSeconds / 60
+        if minutes > 0 {
+            return "\(minutes)m"
+        } else {
+            return "\(timePlayedSeconds)s"
+        }
+    }
+}
+
+extension StatsSnapshot {
+    /// Get all maps that were played between this snapshot and a previous one
+    /// Returns detailed activity for each map, sorted by time played (descending)
+    func mapsPlayedSince(_ previous: StatsSnapshot?) -> [MapActivity] {
+        guard let currentMaps = self.maps,
+              let previousMaps = previous?.maps else {
+            return []
+        }
+
+        var activities: [MapActivity] = []
+
+        for currentMap in currentMaps {
+            if let prevMap = previousMaps.first(where: { $0.mapId == currentMap.mapId }) {
+                let timeDelta = currentMap.secondsPlayed - prevMap.secondsPlayed
+                let matchesDelta = currentMap.matches - prevMap.matches
+
+                // Only include maps that had activity
+                if timeDelta > 0 || matchesDelta > 0 {
+                    activities.append(
+                        MapActivity(
+                            mapName: currentMap.mapName,
+                            mapId: currentMap.mapId,
+                            matchesPlayed: matchesDelta,
+                            timePlayedSeconds: timeDelta
+                        )
+                    )
+                }
+            } else if currentMap.matches > 0 {
+                // New map that wasn't in previous snapshot
+                activities.append(
+                    MapActivity(
+                        mapName: currentMap.mapName,
+                        mapId: currentMap.mapId,
+                        matchesPlayed: currentMap.matches,
+                        timePlayedSeconds: currentMap.secondsPlayed
+                    )
+                )
+            }
+        }
+
+        // Sort by time played (descending) - most played first
+        return activities.sorted { $0.timePlayedSeconds > $1.timePlayedSeconds }
     }
 }

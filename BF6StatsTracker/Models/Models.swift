@@ -432,7 +432,15 @@ struct PlayerStats: Codable, Identifiable {
         }
 
         // Decode all fields with defaults for optional values
-        userId = try container.decodeIfPresent(Int.self, forKey: .userId) ?? 0
+        // Handle userId which can come as either Int or String from API
+        if let userIdInt = try? container.decode(Int.self, forKey: .userId) {
+            userId = userIdInt
+        } else if let userIdString = try? container.decode(String.self, forKey: .userId),
+                  let userIdInt = Int(userIdString) {
+            userId = userIdInt
+        } else {
+            userId = 0
+        }
         userName = try container.decodeIfPresent(String.self, forKey: .userName) ?? "Unknown"
         avatar = try container.decodeIfPresent(String.self, forKey: .avatar) ?? ""
         platform = try container.decodeIfPresent(String.self, forKey: .platform) ?? "pc"
