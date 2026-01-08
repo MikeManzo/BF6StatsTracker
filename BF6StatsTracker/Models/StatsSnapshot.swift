@@ -323,6 +323,8 @@ struct MapActivity: Identifiable {
     let mapId: String
     let matchesPlayed: Int
     let timePlayedSeconds: Int
+    let wins: Int
+    let losses: Int
 
     /// Format time played as human-readable string
     var timePlayedFormatted: String {
@@ -344,6 +346,21 @@ struct MapActivity: Identifiable {
             return "\(timePlayedSeconds)s"
         }
     }
+
+    /// Get win/loss record as formatted string
+    var recordFormatted: String {
+        "\(wins)W-\(losses)L"
+    }
+
+    /// Check if this activity had any wins
+    var hasWins: Bool {
+        wins > 0
+    }
+
+    /// Check if this activity had any losses
+    var hasLosses: Bool {
+        losses > 0
+    }
 }
 
 extension StatsSnapshot {
@@ -361,6 +378,8 @@ extension StatsSnapshot {
             if let prevMap = previousMaps.first(where: { $0.mapId == currentMap.mapId }) {
                 let timeDelta = currentMap.secondsPlayed - prevMap.secondsPlayed
                 let matchesDelta = currentMap.matches - prevMap.matches
+                let winsDelta = currentMap.wins - prevMap.wins
+                let lossesDelta = currentMap.losses - prevMap.losses
 
                 // Only include maps that had activity
                 if timeDelta > 0 || matchesDelta > 0 {
@@ -369,7 +388,9 @@ extension StatsSnapshot {
                             mapName: currentMap.mapName,
                             mapId: currentMap.mapId,
                             matchesPlayed: matchesDelta,
-                            timePlayedSeconds: timeDelta
+                            timePlayedSeconds: timeDelta,
+                            wins: winsDelta,
+                            losses: lossesDelta
                         )
                     )
                 }
@@ -380,7 +401,9 @@ extension StatsSnapshot {
                         mapName: currentMap.mapName,
                         mapId: currentMap.mapId,
                         matchesPlayed: currentMap.matches,
-                        timePlayedSeconds: currentMap.secondsPlayed
+                        timePlayedSeconds: currentMap.secondsPlayed,
+                        wins: currentMap.wins,
+                        losses: currentMap.losses
                     )
                 )
             }
