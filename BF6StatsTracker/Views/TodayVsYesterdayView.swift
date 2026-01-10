@@ -52,10 +52,36 @@ struct TodayVsYesterdayView: View {
         return deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
     }
 
+    private var deltaKDA: Double {
+        guard let current = currentSnapshot else { return 0.0 }
+        guard let previous = previousSnapshot else {
+            // If only one snapshot, calculate KDA from absolute values
+            let killAssists = current.kills + current.assists
+            return current.deaths > 0 ? Double(killAssists) / Double(current.deaths) : Double(killAssists)
+        }
+        let kills = current.kills - previous.kills
+        let assists = current.assists - previous.assists
+        let deaths = current.deaths - previous.deaths
+        let killAssists = kills + assists
+        return deaths > 0 ? Double(killAssists) / Double(deaths) : Double(killAssists)
+    }
+
     private var deltaMatches: Int {
         guard let current = currentSnapshot else { return 0 }
         guard let previous = previousSnapshot else { return current.matchesPlayed }
         return current.matchesPlayed - previous.matchesPlayed
+    }
+
+    private var deltaWinRate: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else {
+            // If only one snapshot, calculate win rate from absolute values
+            let matches = current.matchesPlayed
+            return matches > 0 ? Int(round((Double(current.wins) / Double(matches)) * 100.0)) : 0
+        }
+        let wins = current.wins - previous.wins
+        let matches = current.matchesPlayed - previous.matchesPlayed
+        return matches > 0 ? Int(round((Double(wins) / Double(matches)) * 100.0)) : 0
     }
 
     private var deltaHeadshots: Int {
@@ -68,6 +94,12 @@ struct TodayVsYesterdayView: View {
         guard let current = currentSnapshot else { return 0 }
         guard let previous = previousSnapshot else { return current.assists }
         return current.assists - previous.assists
+    }
+
+    private var deltaRevives: Int {
+        guard let current = currentSnapshot else { return 0 }
+        guard let previous = previousSnapshot else { return current.revives }
+        return current.revives - previous.revives
     }
 
     private var deltaScore: Int {
@@ -95,9 +127,35 @@ struct TodayVsYesterdayView: View {
         return deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
     }
 
+    private var previousDeltaKDA: Double {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0.0 }
+        let kills = second.kills - third.kills
+        let assists = second.assists - third.assists
+        let deaths = second.deaths - third.deaths
+        let killAssists = kills + assists
+        return deaths > 0 ? Double(killAssists) / Double(deaths) : Double(killAssists)
+    }
+
     private var previousDeltaMatches: Int {
         guard let second = previousSnapshot, let third = thirdSnapshot else { return 0 }
         return second.matchesPlayed - third.matchesPlayed
+    }
+
+    private var previousDeltaWinRate: Int {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0 }
+        let wins = second.wins - third.wins
+        let matches = second.matchesPlayed - third.matchesPlayed
+        return matches > 0 ? Int(round((Double(wins) / Double(matches)) * 100.0)) : 0
+    }
+
+    private var previousDeltaAssists: Int {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0 }
+        return second.assists - third.assists
+    }
+
+    private var previousDeltaRevives: Int {
+        guard let second = previousSnapshot, let third = thirdSnapshot else { return 0 }
+        return second.revives - third.revives
     }
 
     // Get today's total matches - compare last snapshot of today to last snapshot before today
@@ -153,9 +211,29 @@ struct TodayVsYesterdayView: View {
         yesterdayData?.dailyKD ?? 0.0
     }
 
+    // Get yesterday's KDA (return 0 if no data)
+    private var yesterdayKDA: Double {
+        yesterdayData?.dailyKDA ?? 0.0
+    }
+
     // Get yesterday's total matches (return 0 if no data)
     private var yesterdayMatches: Int {
         yesterdayData?.deltaMatchesPlayed ?? 0
+    }
+
+    // Get yesterday's win rate (return 0 if no data)
+    private var yesterdayWinRate: Int {
+        Int(round(yesterdayData?.dailyWinRate ?? 0.0))
+    }
+
+    // Get yesterday's total assists (return 0 if no data)
+    private var yesterdayAssists: Int {
+        yesterdayData?.deltaAssists ?? 0
+    }
+
+    // Get yesterday's total revives (return 0 if no data)
+    private var yesterdayRevives: Int {
+        yesterdayData?.deltaRevives ?? 0
     }
 
     // Get yesterday's data by summing all snapshots from the previous day
@@ -181,16 +259,21 @@ struct TodayVsYesterdayView: View {
         let kd = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
         let headshots = last.headshots - first.headshots
         let assists = last.assists - first.assists
+        let revives = last.revives - first.revives
         let score = last.totalScore - first.totalScore
+        let killAssists = kills + assists
+        let kda = deaths > 0 ? Double(killAssists) / Double(deaths) : Double(killAssists)
 
         return DailyPerformanceData(
             deltaKills: kills,
             deltaDeaths: deaths,
             deltaHeadshots: headshots,
             deltaAssists: assists,
+            deltaRevives: revives,
             deltaMatchesPlayed: matches,
             deltaScore: score,
             dailyKD: kd,
+            dailyKDA: kda,
             dailyAccuracy: last.accuracy,
             dailyHeadshotPercent: last.headshotPercentage,
             dailyKPM: last.killsPerMinute,
@@ -334,40 +417,63 @@ struct TodayVsYesterdayView: View {
             GridItem(.flexible()),
             GridItem(.flexible())
         ], spacing: 16) {
-            PerformanceComparisonCard(
-                title: "Kills",
-                todayValue: deltaKills,
-                yesterdayValue: previousDeltaKills,
+            PerformanceDualComparisonCard(
+                title: "Offense",
+                leftLabel: "Kills",
+                leftTodayValue: deltaKills,
+                leftYesterdayValue: previousDeltaKills,
+                rightLabel: "Assists",
+                rightTodayValue: deltaAssists,
+                rightYesterdayValue: previousDeltaAssists,
                 icon: "target",
                 accentColor: .green,
-                yesterdaySummary: yesterdayKills
+                leftYesterdaySummary: yesterdayKills,
+                rightYesterdaySummary: yesterdayAssists
             )
 
-            PerformanceComparisonCard(
-                title: "Deaths",
-                todayValue: deltaDeaths,
-                yesterdayValue: previousDeltaDeaths,
-                icon: "xmark.circle",
+            PerformanceDualComparisonCard(
+                title: "Combat Cycle",
+                leftLabel: "Deaths",
+                leftTodayValue: deltaDeaths,
+                leftYesterdayValue: previousDeltaDeaths,
+                rightLabel: "Revives",
+                rightTodayValue: deltaRevives,
+                rightYesterdayValue: previousDeltaRevives,
+                icon: "heart.circle",
                 accentColor: .red,
-                yesterdaySummary: yesterdayDeaths
+                leftYesterdaySummary: yesterdayDeaths,
+                rightYesterdaySummary: yesterdayRevives,
+                leftLowerIsBetter: true,
+                rightLowerIsBetter: false
             )
 
-            PerformanceComparisonCardDouble(
-                title: "K/D",
-                todayValue: deltaKD,
-                yesterdayValue: previousDeltaKD,
+            PerformanceDualComparisonCardDouble(
+                title: "Ratios",
+                leftLabel: "K/D",
+                leftTodayValue: deltaKD,
+                leftYesterdayValue: previousDeltaKD,
+                rightLabel: "KDA",
+                rightTodayValue: deltaKDA,
+                rightYesterdayValue: previousDeltaKDA,
                 icon: "chart.line.uptrend.xyaxis",
                 accentColor: .orange,
                 format: "%.2f",
-                yesterdaySummary: yesterdayKD
+                leftYesterdaySummary: yesterdayKD,
+                rightYesterdaySummary: yesterdayKDA
             )
 
-            PerformanceSimpleCard(
-                title: "Matches",
-                todayValue: todayMatches,
-                icon: "gamecontroller.fill",
+            PerformanceDualComparisonCard(
+                title: "Performance",
+                leftLabel: "Matches",
+                leftTodayValue: deltaMatches,
+                leftYesterdayValue: previousDeltaMatches,
+                rightLabel: "Win Rate",
+                rightTodayValue: deltaWinRate,
+                rightYesterdayValue: previousDeltaWinRate,
+                icon: "trophy.fill",
                 accentColor: .blue,
-                yesterdaySummary: yesterdayMatches
+                leftYesterdaySummary: yesterdayMatches,
+                rightYesterdaySummary: yesterdayWinRate
             )
         }
         .padding(.horizontal)
@@ -724,9 +830,11 @@ struct DailyPerformanceData {
     let deltaDeaths: Int
     let deltaHeadshots: Int
     let deltaAssists: Int
+    let deltaRevives: Int
     let deltaMatchesPlayed: Int
     let deltaScore: Int
     let dailyKD: Double
+    let dailyKDA: Double
     let dailyAccuracy: Double
     let dailyHeadshotPercent: Double
     let dailyKPM: Double

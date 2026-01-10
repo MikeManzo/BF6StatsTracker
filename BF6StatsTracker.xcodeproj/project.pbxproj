@@ -36,6 +36,8 @@
 		2749FA142F045D97004D2E1D /* ProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA112F045D97004D2E1D /* ProgressBarView.swift */; };
 		2749FA152F045D97004D2E1D /* PerformanceComparisonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA102F045D97004D2E1D /* PerformanceComparisonCard.swift */; };
 		2749FA162F045D97004D2E1D /* MiniSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA0E2F045D97004D2E1D /* MiniSparklineView.swift */; };
+		2749FA192F045E00004D2E1D /* PerformanceDualComparisonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */; };
+		2749FA1B2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */; };
 		2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */; };
 		2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA192F05DD55004D2E1D /* SearchableListView.swift */; };
 		2749FA1C2F05DD5C004D2E1D /* UnifiedStatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */; };
@@ -96,6 +98,8 @@
 		2749FA0F2F045D97004D2E1D /* PerformanceBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceBadgeView.swift; sourceTree = "<group>"; };
 		2749FA102F045D97004D2E1D /* PerformanceComparisonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceComparisonCard.swift; sourceTree = "<group>"; };
 		2749FA112F045D97004D2E1D /* ProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBarView.swift; sourceTree = "<group>"; };
+		2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceDualComparisonCard.swift; sourceTree = "<group>"; };
+		2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceDualComparisonCardDouble.swift; sourceTree = "<group>"; };
 		2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayVsYesterdayView.swift; sourceTree = "<group>"; };
 		2749FA192F05DD55004D2E1D /* SearchableListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableListView.swift; sourceTree = "<group>"; };
 		2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedStatCard.swift; sourceTree = "<group>"; };
@@ -148,6 +152,8 @@
 				2749FA0E2F045D97004D2E1D /* MiniSparklineView.swift */,
 				2749FA0F2F045D97004D2E1D /* PerformanceBadgeView.swift */,
 				2749FA102F045D97004D2E1D /* PerformanceComparisonCard.swift */,
+				2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */,
+				2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */,
 				2749FA112F045D97004D2E1D /* ProgressBarView.swift */,
 			);
 			path = Components;
@@ -375,6 +381,8 @@
 				2749FA142F045D97004D2E1D /* ProgressBarView.swift in Sources */,
 				2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */,
 				2749FA152F045D97004D2E1D /* PerformanceComparisonCard.swift in Sources */,
+				2749FA192F045E00004D2E1D /* PerformanceDualComparisonCard.swift in Sources */,
+				2749FA1B2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift in Sources */,
 				2749FA162F045D97004D2E1D /* MiniSparklineView.swift in Sources */,
 				0000000000000001 /* BF6StatsTrackerApp.swift in Sources */,
 				0000000000000002 /* ContentView.swift in Sources */,

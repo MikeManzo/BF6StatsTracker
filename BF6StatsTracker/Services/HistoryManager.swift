@@ -87,7 +87,10 @@ class HistoryManager: ObservableObject {
 
     // MARK: - Snapshots
 
-    /// Save a stats snapshot only if it differs from the most recent snapshot
+    /// Save a stats snapshot only when a match has been completed
+    /// A match is considered completed when BOTH conditions are met:
+    /// 1. matchesPlayed has increased by at least 1
+    /// 2. timePlayed has increased (any amount)
     func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil) {
         guard let context = modelContext else { return }
 
@@ -96,16 +99,28 @@ class HistoryManager: ObservableObject {
         // Get the most recent snapshot for comparison
         let recentSnapshots = getRecentSnapshots(limit: 1)
         if let mostRecent = recentSnapshots.first {
-            // Check if the new snapshot is identical to the most recent one
-            if newSnapshot.isIdentical(to: mostRecent) {
-                print("⏭️ Skipping snapshot save - identical to previous snapshot")
+            // Calculate deltas to detect match completion
+            let matchDelta = newSnapshot.matchesPlayed - mostRecent.matchesPlayed
+            let timeDelta = newSnapshot.timePlayed - mostRecent.timePlayed
+
+            // Match completion criteria:
+            // - At least 1 match completed (handles multiple matches between refreshes)
+            // - Time has increased (confirms actual play time, regardless of duration)
+            let matchCompleted = matchDelta >= 1 && timeDelta > 0
+
+            if !matchCompleted {
+                print("⏭️ Skipping snapshot - no completed match detected (matches: +\(matchDelta), time: +\(timeDelta)s)")
                 return
             }
+
+            print("✅ Match completed - saving snapshot (matches: +\(matchDelta), time: +\(timeDelta)s)")
+        } else {
+            // First snapshot ever - always save
+            print("💾 Saving first snapshot for player")
         }
 
-        // Snapshot differs from previous, save it
+        // Match completed or first snapshot, save it
         context.insert(newSnapshot)
-        print("💾 Saving new snapshot - stats have changed")
 
         if let session = currentSession {
             session.snapshots.append(newSnapshot)
