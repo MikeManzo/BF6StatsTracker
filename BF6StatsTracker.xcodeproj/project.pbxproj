@@ -26,6 +26,7 @@
 		0000000000000017 /* PlayerSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000017 /* PlayerSearchView.swift */; };
 		0000000000000018 /* OverviewStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000018 /* OverviewStatsView.swift */; };
 		0000000000000019 /* LastMatchStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000021 /* LastMatchStatsView.swift */; };
+		0000000000000020 /* LastCompletedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000022 /* LastCompletedMatchView.swift */; };
 		2719F33C2EF8819400C42191 /* DailyPerformanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */; };
 		2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33D2EF881AA00C42191 /* DailyPerformance.swift */; };
 		274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */; };
@@ -38,6 +39,7 @@
 		2749FA162F045D97004D2E1D /* MiniSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA0E2F045D97004D2E1D /* MiniSparklineView.swift */; };
 		2749FA192F045E00004D2E1D /* PerformanceDualComparisonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */; };
 		2749FA1B2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */; };
+		2749FA1C2F045E20004D2E1D /* EnhancedClassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1B2F045E20004D2E1D /* EnhancedClassCard.swift */; };
 		2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */; };
 		2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA192F05DD55004D2E1D /* SearchableListView.swift */; };
 		2749FA1C2F05DD5C004D2E1D /* UnifiedStatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */; };
@@ -88,6 +90,7 @@
 		1000000000000019 /* BF6StatsTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BF6StatsTracker.entitlements; sourceTree = "<group>"; };
 		1000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1000000000000021 /* LastMatchStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastMatchStatsView.swift; sourceTree = "<group>"; };
+		1000000000000022 /* LastCompletedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastCompletedMatchView.swift; sourceTree = "<group>"; };
 		2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformanceView.swift; sourceTree = "<group>"; };
 		2719F33D2EF881AA00C42191 /* DailyPerformance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformance.swift; sourceTree = "<group>"; };
 		274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatsViewModel+Logout.swift"; sourceTree = "<group>"; };
@@ -100,6 +103,7 @@
 		2749FA112F045D97004D2E1D /* ProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBarView.swift; sourceTree = "<group>"; };
 		2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceDualComparisonCard.swift; sourceTree = "<group>"; };
 		2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceDualComparisonCardDouble.swift; sourceTree = "<group>"; };
+		2749FA1B2F045E20004D2E1D /* EnhancedClassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedClassCard.swift; sourceTree = "<group>"; };
 		2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayVsYesterdayView.swift; sourceTree = "<group>"; };
 		2749FA192F05DD55004D2E1D /* SearchableListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableListView.swift; sourceTree = "<group>"; };
 		2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedStatCard.swift; sourceTree = "<group>"; };
@@ -154,6 +158,7 @@
 				2749FA102F045D97004D2E1D /* PerformanceComparisonCard.swift */,
 				2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */,
 				2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */,
+				2749FA1B2F045E20004D2E1D /* EnhancedClassCard.swift */,
 				2749FA112F045D97004D2E1D /* ProgressBarView.swift */,
 			);
 			path = Components;
@@ -250,6 +255,7 @@
 				1000000000000017 /* PlayerSearchView.swift */,
 				1000000000000018 /* OverviewStatsView.swift */,
 				1000000000000021 /* LastMatchStatsView.swift */,
+				1000000000000022 /* LastCompletedMatchView.swift */,
 				27E798082EE646350002311A /* EALoginView.swift */,
 				27E5437E2EE98E2C00B01618 /* MapStatsView.swift */,
 				27E543802EE98E4100B01618 /* LoadoutAnalyzerView.swift */,
@@ -383,6 +389,7 @@
 				2749FA152F045D97004D2E1D /* PerformanceComparisonCard.swift in Sources */,
 				2749FA192F045E00004D2E1D /* PerformanceDualComparisonCard.swift in Sources */,
 				2749FA1B2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift in Sources */,
+				2749FA1C2F045E20004D2E1D /* EnhancedClassCard.swift in Sources */,
 				2749FA162F045D97004D2E1D /* MiniSparklineView.swift in Sources */,
 				0000000000000001 /* BF6StatsTrackerApp.swift in Sources */,
 				0000000000000002 /* ContentView.swift in Sources */,
@@ -428,6 +435,7 @@
 				0000000000000018 /* OverviewStatsView.swift in Sources */,
 				27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */,
 				0000000000000019 /* LastMatchStatsView.swift in Sources */,
+				0000000000000020 /* LastCompletedMatchView.swift in Sources */,
 				27E543832EE98F1D00B01618 /* SessionHistoryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

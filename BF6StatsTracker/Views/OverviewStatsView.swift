@@ -114,14 +114,11 @@ struct OverviewStatsView: View {
             }
             .frame(height: 160)
 
-            // Last Match Stats with Progression Badge
-            if let stats = viewModel.playerStats, let lastMatch = stats.lastMatch, lastMatch.hasData {
-                LastMatchStatsView(
-                    lastMatch: lastMatch,
-                    lastUpdated: viewModel.lastUpdated,
-                    progressionMode: viewModel.currentProgressionMode
-                )
-            }
+            // Last Completed Match - Computed from Snapshots
+            LastCompletedMatchView(
+                currentSnapshot: historyManager.getRecentSnapshots(limit: 1).first,
+                previousSnapshot: historyManager.getRecentSnapshots(limit: 2).dropFirst().first
+            )
 
             HStack(spacing: 16) {
                 // Combat Stats
@@ -204,53 +201,24 @@ struct OverviewStatsView: View {
             }
 
             HStack(spacing: 16) {
-                // Top Class
-                VStack(alignment: .leading, spacing: 16) {
-                    SectionHeader(title: "Most Played Class", icon: "person.fill")
-
-                    if let topClass = viewModel.topClass {
-                        HStack(spacing: 16) {
-                            // Class Icon
-                            ClassIconView(
-                                className: BF6Class(rawValue: topClass.className) ?? .assault,
-                                size: 60,
-                                imageURL: topClass.image
-                            )
-
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(topClass.className)
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(Theme.textPrimary)
-
-                                HStack(spacing: 16) {
-                                    Label("\(topClass.kills) kills", systemImage: "target")
-                                    Label("\(topClass.timePlayed / 3600)h played", systemImage: "clock.fill")
-                                }
-                                .font(.caption)
-                                .foregroundColor(Theme.textSecondary)
-                            }
-
-                            Spacer()
-
-                            VStack(alignment: .trailing) {
-                                Text(String(format: "%.2f", topClass.kdRatio))
-                                    .font(.title)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(Theme.bf6Green)
-
-                                Text("K/D Ratio")
-                                    .font(.caption)
-                                    .foregroundColor(Theme.textSecondary)
-                            }
-                        }
-                    } else {
+                // Enhanced Class Card
+                if let topClass = viewModel.topClass, let stats = viewModel.playerStats {
+                    EnhancedClassCard(
+                        classStats: topClass,
+                        overallSPM: stats.scorePerMinute,
+                        overallWinRate: stats.wlRatio,
+                        totalTimePlayed: stats.timePlayed
+                    )
+                    .frame(maxWidth: .infinity)
+                } else {
+                    VStack(alignment: .leading, spacing: 16) {
+                        SectionHeader(title: "Most Played Class", icon: "person.fill")
                         Text("No class data available")
                             .foregroundColor(Theme.textSecondary)
                     }
+                    .cardStyle()
+                    .frame(maxWidth: .infinity)
                 }
-                .cardStyle()
-                .frame(maxWidth: .infinity)
 
                 // Top Weapons
                 VStack(alignment: .leading, spacing: 16) {
