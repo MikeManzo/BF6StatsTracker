@@ -65,11 +65,16 @@ struct ContentView: View {
             // Tab Bar
             tabBarView
             
+            // Sub-menu navigation (if applicable)
+            if let subTabs = viewModel.selectedMainTab.subTabs {
+                subMenuView(subTabs: subTabs)
+            }
+
             // Content
             ScrollView {
                 VStack(spacing: 20) {
                     Group {
-                        switch viewModel.selectedTab {
+                        switch viewModel.activeTab {
                         case .overview:
                             OverviewStatsView()
                         case .history:
@@ -88,7 +93,7 @@ struct ContentView: View {
                             GadgetStatsView()
                         case .utility:
                             UtilityEffectivenessView()
-                        case .vehicles:
+                        case .vehicleStats:
                             VehicleStatsView()
                         case .vehicleSpec:
                             VehicleSpecialistView()
@@ -110,10 +115,10 @@ struct ContentView: View {
                         insertion: .opacity.combined(with: .move(edge: .trailing)),
                         removal: .opacity.combined(with: .move(edge: .leading))
                     ))
-                    .id(viewModel.selectedTab)
+                    .id(viewModel.activeTab)
                 }
                 .padding()
-                .animation(.easeInOut(duration: 0.25), value: viewModel.selectedTab)
+                .animation(.easeInOut(duration: 0.25), value: viewModel.activeTab)
             }
         }
     }
@@ -295,10 +300,12 @@ struct ContentView: View {
 
     private var tabBarView: some View {
         HStack(spacing: 0) {
-            ForEach(Array(StatTab.allCases.enumerated()), id: \.element) { index, tab in
+            ForEach(Array(MainTab.allCases.enumerated()), id: \.element) { index, tab in
                 Button {
                     withAnimation(.spring(response: 0.3)) {
-                        viewModel.selectedTab = tab
+                        viewModel.selectedMainTab = tab
+                        // Set default sub-tab if applicable
+                        viewModel.selectedSubTab = tab.defaultSubTab
                     }
                 } label: {
                     VStack(spacing: 4) {
@@ -308,11 +315,11 @@ struct ContentView: View {
                         Text(tab.rawValue)
                             .font(.caption)
                     }
-                    .foregroundColor(viewModel.selectedTab == tab ? Theme.textPrimary : .secondary)
+                    .foregroundColor(viewModel.selectedMainTab == tab ? Theme.textPrimary : .secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(
-                        viewModel.selectedTab == tab ?
+                        viewModel.selectedMainTab == tab ?
                         Theme.bf6Blue.opacity(0.3) :
                         Color.clear
                     )
@@ -328,12 +335,54 @@ struct ContentView: View {
                     view.help(tab.rawValue)
                 }
                 .accessibilityLabel("\(tab.rawValue) tab")
-                .accessibilityAddTraits(viewModel.selectedTab == tab ? [.isSelected] : [])
+                .accessibilityAddTraits(viewModel.selectedMainTab == tab ? [.isSelected] : [])
             }
         }
         .background(Theme.overlayColor)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Navigation tabs")
+    }
+
+    // MARK: - Sub-Menu View
+
+    private func subMenuView(subTabs: [StatTab]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(subTabs, id: \.self) { subTab in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectedSubTab = subTab
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: subTab.icon)
+                                .font(.body)
+
+                            Text(subTab.rawValue)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(viewModel.selectedSubTab == subTab ? Theme.textPrimary : .secondary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(
+                            viewModel.selectedSubTab == subTab ?
+                            Theme.bf6Orange.opacity(0.3) :
+                            Color.clear
+                        )
+                        .cornerRadius(8)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(subTab.rawValue) sub-tab")
+                    .accessibilityAddTraits(viewModel.selectedSubTab == subTab ? [.isSelected] : [])
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background(Theme.overlayColor.opacity(0.5))
+        .frame(height: 52)
     }
     
     // MARK: - Loading View

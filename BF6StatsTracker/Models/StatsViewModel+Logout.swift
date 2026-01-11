@@ -27,7 +27,8 @@ extension StatsViewModel {
         selectedVehicleCategory = nil
 
         // Reset UI state
-        selectedTab = .overview
+        selectedMainTab = .overview
+        selectedSubTab = nil
 
         // Clear EA authentication and all web data (cookies, cache, etc.)
         Task {

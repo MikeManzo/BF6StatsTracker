@@ -30,10 +30,24 @@ class StatsViewModel: ObservableObject {
     @Published var settings: AppSettings = AppSettings()
     @Published var tilePositions: [String: TilePosition] = [:]
 
-    @Published var selectedTab: StatTab = .overview
+    @Published var selectedMainTab: MainTab = .overview
+    @Published var selectedSubTab: StatTab? = nil
     @Published var selectedClass: BF6Class?
     @Published var selectedWeaponCategory: WeaponCategory?
     @Published var selectedVehicleCategory: VehicleCategory?
+
+    // Computed property for current active tab
+    var activeTab: StatTab {
+        if let subTab = selectedSubTab {
+            return subTab
+        }
+        // For tabs without sub-tabs, map MainTab to StatTab
+        switch selectedMainTab {
+        case .overview: return .overview
+        case .history: return .history
+        default: return selectedMainTab.defaultSubTab ?? .overview
+        }
+    }
 
     // EA Authentication state
     @Published var isEAAuthenticated = false
@@ -671,24 +685,16 @@ class StatsViewModel: ObservableObject {
 
 // MARK: - Tab Enum
 
-enum StatTab: String, CaseIterable, Identifiable {
+// MARK: - Main Tab Categories
+
+enum MainTab: String, CaseIterable, Identifiable {
     case overview = "Overview"
-    case maps = "Maps"
-    case charts = "Charts"
-    case classes = "Classes"
-    case weapons = "Weapons"
-    case weaponMastery = "W.Mastery"
-    case gadgets = "Gadgets"
-    case utility = "Utility"
-    case vehicles = "Vehicles"
-    case vehicleSpec = "V.Specialist"
-    case support = "Support"
-    case intel = "Intel"
-    case loadout = "Loadout"
-    case xpCalculator = "XP Calc"
-    case modeEfficiency = "Modes"
-    case servers = "Servers"
     case history = "History"
+    case combat = "Combat"
+    case vehicles = "Vehicles"
+    case analysis = "Analysis"
+    case teamplay = "Teamplay"
+    case tools = "Tools"
 
     var id: String { rawValue }
 
@@ -696,20 +702,88 @@ enum StatTab: String, CaseIterable, Identifiable {
         switch self {
         case .overview: return "chart.bar.fill"
         case .history: return "clock.arrow.circlepath"
-        case .maps: return "map.fill"
-        case .charts: return "chart.xyaxis.line"
-        case .classes: return "person.3.fill"
+        case .combat: return "scope"
+        case .vehicles: return "car.fill"
+        case .analysis: return "chart.xyaxis.line"
+        case .teamplay: return "person.3.fill"
+        case .tools: return "wrench.and.screwdriver.fill"
+        }
+    }
+
+    var subTabs: [StatTab]? {
+        switch self {
+        case .overview, .history:
+            return nil // No sub-tabs for these
+        case .combat:
+            return [.weapons, .weaponMastery, .gadgets, .utility]
+        case .vehicles:
+            return [.vehicleStats, .vehicleSpec]
+        case .analysis:
+            return [.charts, .maps, .modeEfficiency]
+        case .teamplay:
+            return [.classes, .support, .intel, .loadout]
+        case .tools:
+            return [.xpCalculator, .servers]
+        }
+    }
+
+    var defaultSubTab: StatTab? {
+        subTabs?.first
+    }
+}
+
+// MARK: - Sub Tabs (Individual Views)
+
+enum StatTab: String, CaseIterable, Identifiable {
+    // Top-level tabs (no parent)
+    case overview = "Overview"
+    case history = "History"
+
+    // Combat sub-tabs
+    case weapons = "Weapons"
+    case weaponMastery = "W.Mastery"
+    case gadgets = "Gadgets"
+    case utility = "Utility"
+
+    // Vehicles sub-tabs
+    case vehicleStats = "V.Stats"
+    case vehicleSpec = "V.Specialist"
+
+    // Analysis sub-tabs
+    case charts = "Charts"
+    case maps = "Maps"
+    case modeEfficiency = "Modes"
+
+    // Teamplay sub-tabs
+    case classes = "Classes"
+    case support = "Support"
+    case intel = "Intel"
+    case loadout = "Loadout"
+
+    // Tools sub-tabs
+    case xpCalculator = "XP Calc"
+    case servers = "Servers"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .overview: return "chart.bar.fill"
+        case .history: return "clock.arrow.circlepath"
         case .weapons: return "scope"
         case .weaponMastery: return "target"
         case .gadgets: return "wrench.and.screwdriver.fill"
         case .utility: return "circlebadge.fill"
-        case .vehicles: return "car.fill"
+        case .vehicleStats: return "car.fill"
         case .vehicleSpec: return "steeringwheel"
+        case .charts: return "chart.xyaxis.line"
+        case .maps: return "map.fill"
+        case .modeEfficiency: return "chart.bar.xaxis"
+        case .classes: return "person.3.fill"
         case .support: return "heart.text.square.fill"
         case .intel: return "eye.fill"
         case .loadout: return "chart.bar.doc.horizontal"
-        case .xpCalculator: return "chart.bar.doc.horizontal"
-        case .modeEfficiency: return "chart.bar.xaxis"
+        case .xpCalculator: return "function"
         case .servers: return "server.rack"
         }
     }
