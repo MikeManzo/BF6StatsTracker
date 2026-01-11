@@ -60,6 +60,6 @@ extension StatsViewModel {
             await saveSettings()
         }
 
-        print("🚪 User logged out - EA credentials and all web data cleared")
+        LoggerService.shared.info("User logged out - EA credentials and all web data cleared", category: .auth)
     }
 }

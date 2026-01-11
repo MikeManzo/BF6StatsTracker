@@ -496,7 +496,7 @@ struct ServerBrowserView: View {
         do {
             servers = try await APIService.shared.fetchServers(filters: filters, limit: 100)
         } catch {
-            print("Error loading servers: \(error)")
+            logError("Error loading servers: \(error)", category: .error)
         }
     }
 

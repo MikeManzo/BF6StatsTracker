@@ -31,6 +31,8 @@ struct BF6StatsTrackerApp: App {
     let modelContainer: ModelContainer
 
     init() {
+        logInfo("BF6 Stats Tracker starting up...", category: .general)
+
         do {
             // Configure the schema with all our models
             let schema = Schema([
@@ -43,8 +45,9 @@ struct BF6StatsTrackerApp: App {
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
 
-            print("✅ SwiftData initialized successfully")
+            logSuccess("SwiftData initialized successfully", category: .success)
         } catch {
+            logError("Could not initialize ModelContainer: \(error)", category: .error)
             fatalError("Could not initialize ModelContainer: \(error)")
         }
     }
@@ -62,7 +65,7 @@ struct BF6StatsTrackerApp: App {
                     let context = modelContainer.mainContext
                     HistoryManager.shared.setup(modelContext: context)
                     MapTracker.shared.setup(modelContext: context)
-                    print("✅ SwiftData managers initialized")
+                    logSuccess("SwiftData managers initialized", category: .success)
                 }
         }
         .windowStyle(.hiddenTitleBar)

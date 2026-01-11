@@ -427,7 +427,7 @@ struct SessionHistoryView: View {
         } catch {
             // If we can't fetch (likely due to corrupt data), reset the cleanup flag
             // so it runs again on next app launch
-            print("⚠️ Error fetching DailyPerformance objects: \(error)")
+            logWarning("Error fetching DailyPerformance objects: \(error)", category: .general)
             UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
         }
     }

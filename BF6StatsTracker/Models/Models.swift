@@ -288,14 +288,18 @@ struct PlayerStats: Codable, Identifiable {
         let xp = xpData?.first?.total ?? 0
 
         // Debug logging
-        print("🎖️ Rank Calculation - Total XP: \(xp)")
+        Task { @MainActor in
+            LoggerService.shared.info("Rank Calculation - Total XP: \(xp)", category: .calculation)
+        }
 
         // Calibrated XP curve for BF2042
         // Based on actual data: 7,774,370 XP = Rank 131
         // Each rank requires approximately: 7,774,370 / 131 ≈ 59,346 XP per rank
 
         let calculatedRank = min(199, max(1, xp / 59_346))
-        print("🎖️ Calculated Rank: \(calculatedRank)")
+        Task { @MainActor in
+            LoggerService.shared.info("Calculated Rank: \(calculatedRank)", category: .calculation)
+        }
         return calculatedRank
     }
 

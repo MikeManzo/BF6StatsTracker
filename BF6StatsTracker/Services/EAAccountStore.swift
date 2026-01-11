@@ -38,7 +38,7 @@ class EAAccountStore: ObservableObject {
     ///   - identity: The EA player identity from authentication
     ///   - displayName: Optional custom display name for this account
     func saveCurrentAccount(from identity: EAPlayerIdentity, displayName: String? = nil) {
-        print("💾 EAAccountStore: Saving account for \(identity.eaId)")
+        logInfo("EAAccountStore: Saving account for \(identity.eaId)", category: .cache)
 
         // Check if account already exists (by nucleusId or personaId)
         if let existingIndex = accounts.firstIndex(where: { $0.nucleusId == identity.nucleusId || $0.personaId == identity.personaId }) {
@@ -49,42 +49,42 @@ class EAAccountStore: ObservableObject {
                 updated = updated.withDisplayName(displayName)
             }
             accounts[existingIndex] = updated
-            print("💾 Updated existing account at index \(existingIndex)")
+            logInfo("Updated existing account at index \(existingIndex)", category: .cache)
         } else {
             // Add new account
             let newAccount = StoredEAAccount(from: identity, displayName: displayName)
             accounts.append(newAccount)
-            print("💾 Added new account. Total accounts: \(accounts.count)")
+            logInfo("Added new account. Total accounts: \(accounts.count)", category: .cache)
         }
 
         // Sort by last used (most recent first)
         accounts.sort { $0.lastUsed > $1.lastUsed }
 
         persistAccounts()
-        print("💾 Persisted \(accounts.count) account(s) to UserDefaults with key: \(storageKey)")
+        logInfo("Persisted \(accounts.count) account(s) to UserDefaults with key: \(storageKey)", category: .cache)
     }
 
     /// Save an account directly to the store
     /// - Parameter account: The StoredEAAccount to save
     func saveAccount(_ account: StoredEAAccount) {
-        print("💾 EAAccountStore: Saving account for \(account.eaId)")
+        logInfo("EAAccountStore: Saving account for \(account.eaId)", category: .cache)
 
         // Check if account already exists (by nucleusId or personaId)
         if let existingIndex = accounts.firstIndex(where: { $0.nucleusId == account.nucleusId || $0.personaId == account.personaId }) {
             // Update existing account's last used time
             accounts[existingIndex] = account.withUpdatedLastUsed()
-            print("💾 Updated existing account at index \(existingIndex)")
+            logInfo("Updated existing account at index \(existingIndex)", category: .cache)
         } else {
             // Add new account
             accounts.append(account)
-            print("💾 Added new account. Total accounts: \(accounts.count)")
+            logInfo("Added new account. Total accounts: \(accounts.count)", category: .cache)
         }
 
         // Sort by last used (most recent first)
         accounts.sort { $0.lastUsed > $1.lastUsed }
 
         persistAccounts()
-        print("💾 Persisted \(accounts.count) account(s) to UserDefaults with key: \(storageKey)")
+        logInfo("Persisted \(accounts.count) account(s) to UserDefaults with key: \(storageKey)", category: .cache)
     }
 
     /// Select an account and return its identity for use
@@ -165,7 +165,7 @@ class EAAccountStore: ObservableObject {
             // Sort by last used
             accounts.sort { $0.lastUsed > $1.lastUsed }
         } catch {
-            print("Failed to load stored accounts: \(error)")
+            logInfo("Failed to load stored accounts: \(error)", category: .general)
             accounts = []
         }
     }
@@ -176,16 +176,16 @@ class EAAccountStore: ObservableObject {
             let data = try encoder.encode(accounts)
             userDefaults.set(data, forKey: storageKey)
             userDefaults.synchronize()
-            print("✅ Successfully persisted accounts to UserDefaults")
+            logSuccess("Successfully persisted accounts to UserDefaults", category: .success)
 
             // Verify it was saved
             if let verifyData = userDefaults.data(forKey: storageKey) {
-                print("✅ Verified: Data exists in UserDefaults (\(verifyData.count) bytes)")
+                logSuccess("Verified: Data exists in UserDefaults (\(verifyData.count) bytes)", category: .success)
             } else {
-                print("❌ Warning: Data not found in UserDefaults after save")
+                logError("Warning: Data not found in UserDefaults after save", category: .error)
             }
         } catch {
-            print("❌ Failed to persist accounts: \(error)")
+            logError("Failed to persist accounts: \(error)", category: .error)
         }
     }
 }

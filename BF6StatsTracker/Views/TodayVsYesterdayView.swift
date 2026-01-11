@@ -192,7 +192,7 @@ struct TodayVsYesterdayView: View {
 
         if let lastBeforeToday = beforeTodaySnapshots.first {
             let matches = lastToday.matchesPlayed - lastBeforeToday.matchesPlayed
-            print("📊 Total matches today: \(matches) (today: \(lastToday.matchesPlayed), yesterday: \(lastBeforeToday.matchesPlayed))")
+            logInfo("Total matches today: \(matches) (today: \(lastToday.matchesPlayed), yesterday: \(lastBeforeToday.matchesPlayed))", category: .api)
             return matches
         } else {
             // No baseline from before today - first snapshot represents 1 match, then add deltas
@@ -201,7 +201,7 @@ struct TodayVsYesterdayView: View {
                 let delta = sorted[i + 1].matchesPlayed - sorted[i].matchesPlayed
                 totalMatches += delta
             }
-            print("📊 Total matches today: \(totalMatches) (no baseline, from \(sorted.count) snapshots)")
+            logInfo("Total matches today: \(totalMatches) (no baseline, from \(sorted.count) snapshots)", category: .api)
             return totalMatches
         }
     }
@@ -293,8 +293,8 @@ struct TodayVsYesterdayView: View {
 
     private var last7Days: [DailyPerformance] {
         let performances = Array(historyManager.recentDailyPerformances.prefix(7).reversed())
-        print("📊 last7Days: \(performances.count) daily performance records")
-        print("📊 recentDailyPerformances total: \(historyManager.recentDailyPerformances.count)")
+        logInfo("last7Days: \(performances.count) daily performance records", category: .api)
+        logInfo("recentDailyPerformances total: \(historyManager.recentDailyPerformances.count)", category: .api)
         return performances
     }
 

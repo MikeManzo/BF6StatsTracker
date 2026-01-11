@@ -235,9 +235,9 @@ struct VehicleSpecialistView: View {
 
         // Debug: Print all vehicle types
         if selectedCategory != nil {
-            print("📋 All vehicle types available:")
+            logInfo("All vehicle types available:", category: .general)
             for vehicle in vehicles {
-                print("  - \(vehicle.vehicleName): '\(vehicle.type)'")
+                logInfo("  - \(vehicle.vehicleName): '\(vehicle.type)'", category: .general)
             }
         }
 
@@ -245,7 +245,7 @@ struct VehicleSpecialistView: View {
             ? vehicles
             : vehicles.filter { matchesCategory($0, category: selectedCategory!) }
 
-        print("✅ Filtered \(filtered.count) vehicles for category: \(selectedCategory?.rawValue ?? "All")")
+        logSuccess("Filtered \(filtered.count) vehicles for category: \(selectedCategory?.rawValue ?? "All")", category: .success)
 
         return filtered.sorted { $0.kills > $1.kills }
     }
@@ -258,7 +258,7 @@ struct VehicleSpecialistView: View {
         let name = vehicle.vehicleName.lowercased()
 
         // Debug: Print vehicle type when filtering
-        print("🔍 Checking vehicle '\(vehicle.vehicleName)' with type '\(vehicle.type)' against category '\(category.rawValue)'")
+        logInfo("Checking vehicle '\(vehicle.vehicleName)' with type '\(vehicle.type)' against category '\(category.rawValue)'", category: .general)
 
         switch category {
         case .mainBattleTank:

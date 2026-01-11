@@ -119,6 +119,8 @@ struct ContentView: View {
                             ModeEfficiencyView()
                         case .servers:
                             ServerBrowserView()
+                        case .logViewer:
+                            LogViewerView()
                         }
                     }
                     .transition(.asymmetric(
@@ -696,7 +698,7 @@ struct PlayerAvatarView: View {
                 }
             }
         } catch {
-            print("Failed to load avatar: \(error.localizedDescription)")
+            logError("Failed to load avatar: \(error.localizedDescription)", category: .error)
         }
 
         isLoading = false

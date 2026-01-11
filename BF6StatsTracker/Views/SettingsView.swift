@@ -422,7 +422,7 @@ struct SettingsView: View {
                 let allSnapshots = try context.fetch(snapshotDescriptor)
                 allSnapshots.forEach { context.delete($0) }
             } catch {
-                print("⚠️ Error clearing historical data: \(error)")
+                logWarning("Error clearing historical data: \(error)", category: .general)
                 // Reset the cleanup flag so it runs again on next launch
                 UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
             }
@@ -437,12 +437,12 @@ struct SettingsView: View {
         // Clear map statistics
         MapTracker.shared.clearMapStats(playerName: playerName, platform: platform.rawValue)
 
-        print("🗑️ Historical data cleared successfully")
+        logInfo("Historical data cleared successfully", category: .cleanup)
 
         // Immediately refresh stats to create a new snapshot
         Task {
             await viewModel.forceRefreshStats()
-            print("🔄 Stats refreshed after clearing history")
+            logInfo("Stats refreshed after clearing history", category: .retry)
         }
     }
 

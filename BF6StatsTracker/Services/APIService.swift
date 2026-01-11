@@ -91,20 +91,20 @@ actor APIService {
         if let personaId = identifier.personaId, !personaId.isEmpty {
             urlString += "&playerid=\(personaId)"
         } else {
-            print ("🚨 Warning: No persona ID found for \(identifier.name). Some statistics may be incomplete.")
+            logWarning("No persona ID found for \(identifier.name). Some statistics may be incomplete.", category: .auth)
         }
 
         // Add nucleus_id if available (master account identifier)
         if let nucleusId = identifier.nucleusId, !nucleusId.isEmpty {
             urlString += "&nucleus_id=\(nucleusId)"
         } else {
-            print("🚨 Warning: No nucleus ID found for \(identifier.name). Some statistics may be incomplete.")
+            logWarning("No nucleus ID found for \(identifier.name). Some statistics may be incomplete.", category: .auth)
         }
 
         // Add skip_battlelog parameter to improve API performance
         urlString += "&skip_battlelog=true"
 
-        print("📊 Fetching player stats from: \(urlString)")
+        logInfo("Fetching player stats from: \(urlString)", category: .api)
 
         guard let url = URL(string: urlString) else {
             throw BF6TrackerError.invalidURL
@@ -133,9 +133,9 @@ actor APIService {
                     let stats = try decoder.decode(PlayerStats.self, from: data)
                     return stats
                 } catch {
-                    print("❌ Decoding error: \(error)")
+                    logError("Decoding error: \(error)", category: .api)
                     if let jsonString = String(data: data, encoding: .utf8) {
-                        print("📋 API Response (first 500 chars): \(jsonString.prefix(500))...")
+                        logDebug("API Response (first 500 chars): \(jsonString.prefix(500))...", category: .api)
                     }
                     throw BF6TrackerError.decodingError(error)
                 }
@@ -182,7 +182,7 @@ actor APIService {
         let encodedName = playerName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? playerName
         let urlString = "\(baseURL)/bf6/weapons/?name=\(encodedName)&platform=\(platform.rawValue)"
 
-        print("🔫 Fetching weapon stats from: \(urlString)")
+        logInfo("Fetching weapon stats from: \(urlString)", category: .api)
 
         guard let url = URL(string: urlString) else {
             throw BF6TrackerError.invalidURL
@@ -195,7 +195,7 @@ actor APIService {
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            print("❌ Weapon stats request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+            logError("Weapon stats request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)", category: .api)
             throw BF6TrackerError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
@@ -203,18 +203,18 @@ actor APIService {
 
         // Try decoding as array first
         if let weapons = try? decoder.decode([WeaponStats].self, from: data) {
-            print("✅ Decoded \(weapons.count) weapons as array")
+            logSuccess("Decoded \(weapons.count) weapons as array", category: .api)
             return weapons
         }
 
         // Try decoding as dictionary with weapons key
         if let wrapper = try? decoder.decode([String: [WeaponStats]].self, from: data),
            let weapons = wrapper["weapons"] {
-            print("✅ Decoded \(weapons.count) weapons from wrapper")
+            logSuccess("Decoded \(weapons.count) weapons from wrapper", category: .api)
             return weapons
         }
 
-        print("⚠️ No weapons decoded - returning empty array")
+        logWarning("No weapons decoded - returning empty array", category: .api)
         return []
     }
     
@@ -228,7 +228,7 @@ actor APIService {
         let encodedName = playerName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? playerName
         let urlString = "\(baseURL)/bf6/vehicles/?name=\(encodedName)&platform=\(platform.rawValue)"
 
-        print("🚗 Fetching vehicle stats from: \(urlString)")
+        logInfo("Fetching vehicle stats from: \(urlString)", category: .api)
 
         guard let url = URL(string: urlString) else {
             throw BF6TrackerError.invalidURL
@@ -241,24 +241,24 @@ actor APIService {
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            print("❌ Vehicle stats request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+            logError("Vehicle stats request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)", category: .api)
             throw BF6TrackerError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
         let decoder = JSONDecoder()
 
         if let vehicles = try? decoder.decode([VehicleStats].self, from: data) {
-            print("✅ Decoded \(vehicles.count) vehicles as array")
+            logSuccess("Decoded \(vehicles.count) vehicles as array", category: .api)
             return vehicles
         }
 
         if let wrapper = try? decoder.decode([String: [VehicleStats]].self, from: data),
            let vehicles = wrapper["vehicles"] {
-            print("✅ Decoded \(vehicles.count) vehicles from wrapper")
+            logSuccess("Decoded \(vehicles.count) vehicles from wrapper", category: .api)
             return vehicles
         }
 
-        print("⚠️ No vehicles decoded - returning empty array")
+        logWarning("No vehicles decoded - returning empty array", category: .api)
         return []
     }
 
@@ -275,7 +275,7 @@ actor APIService {
         let encodedName = playerName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? playerName
         let urlString = "\(baseURL)/bf6/classes/?name=\(encodedName)&platform=\(platform.rawValue)"
 
-        print("👤 Fetching class stats from: \(urlString)")
+        logInfo("Fetching class stats from: \(urlString)", category: .api)
 
         guard let url = URL(string: urlString) else {
             throw BF6TrackerError.invalidURL
@@ -288,24 +288,24 @@ actor APIService {
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            print("❌ Class stats request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+            logError("Class stats request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)", category: .api)
             throw BF6TrackerError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
         let decoder = JSONDecoder()
 
         if let classes = try? decoder.decode([ClassStats].self, from: data) {
-            print("✅ Decoded \(classes.count) classes")
+            logSuccess("Decoded \(classes.count) classes", category: .api)
             return classes
         }
 
         if let wrapper = try? decoder.decode([String: [ClassStats]].self, from: data),
            let classes = wrapper["classes"] {
-            print("✅ Decoded \(classes.count) classes from wrapper")
+            logSuccess("Decoded \(classes.count) classes from wrapper", category: .api)
             return classes
         }
 
-        print("⚠️ No classes decoded - returning empty array")
+        logWarning("No classes decoded - returning empty array", category: .api)
         return []
     }
     
@@ -347,7 +347,7 @@ actor APIService {
     func fetchProgressionTypes() async throws -> [ProgressionMode] {
         let urlString = "\(baseURL)/bf6/progressiontypes/"
 
-        print("🎯 Fetching progression types from: \(urlString)")
+        logInfo("Fetching progression types from: \(urlString)", category: .api)
 
         guard let url = URL(string: urlString) else {
             throw BF6TrackerError.invalidURL
@@ -360,7 +360,7 @@ actor APIService {
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            print("❌ Progression types request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+            logError("Progression types request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)", category: .api)
             throw BF6TrackerError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
@@ -368,12 +368,12 @@ actor APIService {
 
         do {
             let progressionResponse = try decoder.decode(ProgressionTypeResponse.self, from: data)
-            print("✅ Decoded \(progressionResponse.entries.count) progression modes")
+            logSuccess("Decoded \(progressionResponse.entries.count) progression modes", category: .api)
             return progressionResponse.entries
         } catch {
-            print("❌ Decoding error for progression types: \(error)")
+            logError("Decoding error for progression types: \(error)", category: .api)
             if let jsonString = String(data: data, encoding: .utf8) {
-                print("📋 Raw response: \(jsonString.prefix(500))...")
+                logDebug("Raw response: \(jsonString.prefix(500))...", category: .api)
             }
             throw BF6TrackerError.decodingError(error)
         }
@@ -391,7 +391,7 @@ actor APIService {
             throw BF6TrackerError.invalidURL
         }
 
-        print("🌐 Fetching servers from: \(url.absoluteString)")
+        logInfo("Fetching servers from: \(url.absoluteString)", category: .network)
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -400,7 +400,7 @@ actor APIService {
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            print("❌ Server request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+            logError("Server request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)", category: .network)
             throw BF6TrackerError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
@@ -408,19 +408,19 @@ actor APIService {
 
         // Try decoding as ServerListResponse first
         if let serverResponse = try? decoder.decode(ServerListResponse.self, from: data) {
-            print("✅ Fetched \(serverResponse.servers.count) servers")
+            logSuccess("Fetched \(serverResponse.servers.count) servers", category: .network)
             return serverResponse.servers
         }
 
         // Try decoding as array directly
         if let servers = try? decoder.decode([BF6Server].self, from: data) {
-            print("✅ Fetched \(servers.count) servers (direct array)")
+            logSuccess("Fetched \(servers.count) servers (direct array)", category: .network)
             return servers
         }
 
         // Log response for debugging
         if let jsonString = String(data: data, encoding: .utf8) {
-            print("⚠️ Could not decode server response. Raw response: \(jsonString)")
+            logWarning("Could not decode server response. Raw response: \(jsonString)", category: .network)
         }
 
         return []

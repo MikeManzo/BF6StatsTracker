@@ -19,7 +19,6 @@
 		0000000000000010 /* VehicleStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000010 /* VehicleStatsView.swift */; };
 		0000000000000011 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000011 /* MenuBarView.swift */; };
 		0000000000000012 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000012 /* SettingsView.swift */; };
-		0000000000000013 /* StatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000013 /* StatsViewModel.swift */; };
 		0000000000000014 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000014 /* Extensions.swift */; };
 		0000000000000015 /* DraggableTileContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000015 /* DraggableTileContainer.swift */; };
 		0000000000000016 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000016 /* ImageLoader.swift */; };
@@ -37,13 +36,18 @@
 		2749FA142F045D97004D2E1D /* ProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA112F045D97004D2E1D /* ProgressBarView.swift */; };
 		2749FA152F045D97004D2E1D /* PerformanceComparisonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA102F045D97004D2E1D /* PerformanceComparisonCard.swift */; };
 		2749FA162F045D97004D2E1D /* MiniSparklineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA0E2F045D97004D2E1D /* MiniSparklineView.swift */; };
+		2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */; };
 		2749FA192F045E00004D2E1D /* PerformanceDualComparisonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */; };
+		2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA192F05DD55004D2E1D /* SearchableListView.swift */; };
 		2749FA1B2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */; };
 		2749FA1C2F045E20004D2E1D /* EnhancedClassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1B2F045E20004D2E1D /* EnhancedClassCard.swift */; };
-		2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */; };
-		2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA192F05DD55004D2E1D /* SearchableListView.swift */; };
 		2749FA1C2F05DD5C004D2E1D /* UnifiedStatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */; };
 		2749FA1E2F080A96004D2E1D /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2749FA1D2F080A96004D2E1D /* AboutView.swift */; };
+		274F85502F141A87000B1B90 /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F854F2F141A87000B1B90 /* LogEntry.swift */; };
+		274F85522F141A9B000B1B90 /* LoggerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85512F141A9B000B1B90 /* LoggerService.swift */; };
+		274F85542F141AD4000B1B90 /* StatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85532F141AD4000B1B90 /* StatsViewModel.swift */; };
+		274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85552F141AF0000B1B90 /* LogViewerView.swift */; };
+		274F85592F141B32000B1B90 /* LogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85572F141B32000B1B90 /* LogViewModel.swift */; };
 		276C746B2F0D94F4002674A4 /* ProgressionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */; };
 		276C746E2F0D9502002674A4 /* XPCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746D2F0D9502002674A4 /* XPCalculatorView.swift */; };
 		276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */; };
@@ -81,7 +85,6 @@
 		1000000000000010 /* VehicleStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatsView.swift; sourceTree = "<group>"; };
 		1000000000000011 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		1000000000000012 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		1000000000000013 /* StatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsViewModel.swift; sourceTree = "<group>"; };
 		1000000000000014 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		1000000000000015 /* DraggableTileContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableTileContainer.swift; sourceTree = "<group>"; };
 		1000000000000016 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
@@ -101,14 +104,19 @@
 		2749FA0F2F045D97004D2E1D /* PerformanceBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceBadgeView.swift; sourceTree = "<group>"; };
 		2749FA102F045D97004D2E1D /* PerformanceComparisonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceComparisonCard.swift; sourceTree = "<group>"; };
 		2749FA112F045D97004D2E1D /* ProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBarView.swift; sourceTree = "<group>"; };
+		2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayVsYesterdayView.swift; sourceTree = "<group>"; };
 		2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceDualComparisonCard.swift; sourceTree = "<group>"; };
+		2749FA192F05DD55004D2E1D /* SearchableListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableListView.swift; sourceTree = "<group>"; };
 		2749FA1A2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceDualComparisonCardDouble.swift; sourceTree = "<group>"; };
 		2749FA1B2F045E20004D2E1D /* EnhancedClassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedClassCard.swift; sourceTree = "<group>"; };
-		2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayVsYesterdayView.swift; sourceTree = "<group>"; };
-		2749FA192F05DD55004D2E1D /* SearchableListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableListView.swift; sourceTree = "<group>"; };
 		2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedStatCard.swift; sourceTree = "<group>"; };
 		2749FA1D2F080A96004D2E1D /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		2749FA772F0A26EF004D2E1D /* increment_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = increment_build.sh; sourceTree = "<group>"; };
+		274F854F2F141A87000B1B90 /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntry.swift; sourceTree = "<group>"; };
+		274F85512F141A9B000B1B90 /* LoggerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggerService.swift; sourceTree = "<group>"; };
+		274F85532F141AD4000B1B90 /* StatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsViewModel.swift; sourceTree = "<group>"; };
+		274F85552F141AF0000B1B90 /* LogViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerView.swift; sourceTree = "<group>"; };
+		274F85572F141B32000B1B90 /* LogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewModel.swift; sourceTree = "<group>"; };
 		276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionBadge.swift; sourceTree = "<group>"; };
 		276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeEfficiencyView.swift; sourceTree = "<group>"; };
 		276C746D2F0D9502002674A4 /* XPCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCalculatorView.swift; sourceTree = "<group>"; };
@@ -210,6 +218,7 @@
 		3000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				274F854F2F141A87000B1B90 /* LogEntry.swift */,
 				2719F33D2EF881AA00C42191 /* DailyPerformance.swift */,
 				2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */,
 				1000000000000004 /* Models.swift */,
@@ -230,6 +239,7 @@
 				27E798062EE645F80002311A /* EAIdentityManager.swift */,
 				27E5437C2EE98E0800B01618 /* HistoryManager.swift */,
 				27C267BB2EEF35AF006168AA /* MapTracker.swift */,
+				274F85512F141A9B000B1B90 /* LoggerService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -237,6 +247,7 @@
 		3000000000000006 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				274F85552F141AF0000B1B90 /* LogViewerView.swift */,
 				276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */,
 				276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */,
 				276C746D2F0D9502002674A4 /* XPCalculatorView.swift */,
@@ -274,7 +285,8 @@
 		3000000000000007 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				1000000000000013 /* StatsViewModel.swift */,
+				274F85532F141AD4000B1B90 /* StatsViewModel.swift */,
+				274F85572F141B32000B1B90 /* LogViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -382,10 +394,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */,
+				274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */,
 				2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */,
 				2749FA132F045D97004D2E1D /* PerformanceBadgeView.swift in Sources */,
 				2749FA142F045D97004D2E1D /* ProgressBarView.swift in Sources */,
 				2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */,
+				274F85522F141A9B000B1B90 /* LoggerService.swift in Sources */,
 				2749FA152F045D97004D2E1D /* PerformanceComparisonCard.swift in Sources */,
 				2749FA192F045E00004D2E1D /* PerformanceDualComparisonCard.swift in Sources */,
 				2749FA1B2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift in Sources */,
@@ -404,6 +418,7 @@
 				276C74712F0EDC88002674A4 /* MapsPlayedCard.swift in Sources */,
 				276C746B2F0D94F4002674A4 /* ProgressionBadge.swift in Sources */,
 				27C4B89A2F0ADCA400B07E9D /* UtilityEffectivenessView.swift in Sources */,
+				274F85542F141AD4000B1B90 /* StatsViewModel.swift in Sources */,
 				27C4B89B2F0ADCA400B07E9D /* WeaponMasteryView.swift in Sources */,
 				2747A7A02F037BB8001CF709 /* AccountSelectionView.swift in Sources */,
 				0000000000000007 /* ClassTileView.swift in Sources */,
@@ -414,14 +429,15 @@
 				0000000000000011 /* MenuBarView.swift in Sources */,
 				0000000000000012 /* SettingsView.swift in Sources */,
 				27E5437D2EE98E0800B01618 /* HistoryManager.swift in Sources */,
-				0000000000000013 /* StatsViewModel.swift in Sources */,
 				27E543852EE98F2D00B01618 /* PerformanceChartsView.swift in Sources */,
 				2719F33C2EF8819400C42191 /* DailyPerformanceView.swift in Sources */,
 				276C746E2F0D9502002674A4 /* XPCalculatorView.swift in Sources */,
 				276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */,
 				27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */,
+				274F85592F141B32000B1B90 /* LogViewModel.swift in Sources */,
 				27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */,
 				27E798092EE646350002311A /* EALoginView.swift in Sources */,
+				274F85502F141A87000B1B90 /* LogEntry.swift in Sources */,
 				2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */,
 				2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */,
 				0000000000000014 /* Extensions.swift in Sources */,

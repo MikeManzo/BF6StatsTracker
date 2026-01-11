@@ -90,7 +90,7 @@ actor EAIdentityManager {
         saveIdentity(identity)
         saveToken(token)
 
-        print("✅ EA Identity retrieved - EA ID: \(identity.eaId), Nucleus ID: \(identity.nucleusId)")
+        logSuccess("EA Identity retrieved - EA ID: \(identity.eaId), Nucleus ID: \(identity.nucleusId)", category: .success)
 
         return identity
     }
@@ -153,7 +153,7 @@ actor EAIdentityManager {
         saveIdentity(identity)
         clearToken() // Don't persist old tokens when using stored accounts
 
-        print("✅ Loaded stored account - EA ID: \(identity.eaId), Nucleus ID: \(identity.nucleusId)")
+        logSuccess("Loaded stored account - EA ID: \(identity.eaId), Nucleus ID: \(identity.nucleusId)", category: .success)
 
         return identity
     }
@@ -164,7 +164,7 @@ actor EAIdentityManager {
         currentToken = nil
         clearPersistedIdentity()
         clearToken()
-        print("🚪 EA Identity cleared")
+        logInfo("EA Identity cleared", category: .auth)
     }
 
     /// Clear all EA-related web cookies and website data
@@ -188,7 +188,7 @@ actor EAIdentityManager {
         // Delete EA-related data
         if !eaRecords.isEmpty {
             await dataStore.removeData(ofTypes: dataTypes, for: eaRecords)
-            print("🧹 Cleared EA web data for \(eaRecords.count) domains")
+            logInfo("Cleared EA web data for \(eaRecords.count) domains", category: .cleanup)
         }
 
         // Also clear all cookies to be thorough
@@ -197,11 +197,11 @@ actor EAIdentityManager {
         for cookie in cookies {
             if eaDomains.contains(where: { cookie.domain.contains($0) }) {
                 await cookieStore.deleteCookie(cookie)
-                print("🍪 Deleted cookie: \(cookie.name) for \(cookie.domain)")
+                logInfo("Deleted cookie: \(cookie.name) for \(cookie.domain)", category: .cleanup)
             }
         }
 
-        print("✅ All EA web data cleared")
+        logSuccess("All EA web data cleared", category: .success)
     }
 
     /// Test if the current token is still valid

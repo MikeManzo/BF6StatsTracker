@@ -62,11 +62,11 @@ actor CacheManager {
         
         // Store in memory
         memoryCache[key] = cachedStats
-        
+
         // Store on disk
         await saveToDisk(cachedStats, key: key)
-        
-        print("📦 Cached stats for \(playerName) on \(platform.displayName)")
+
+        logInfo("Cached stats for \(playerName) on \(platform.displayName)", category: .cache)
     }
     
     /// Retrieve cached stats if available and not expired
@@ -76,20 +76,20 @@ actor CacheManager {
         // Check memory cache first
         if let cached = memoryCache[key] {
             if !cached.isExpired {
-                print("💾 Using memory cached stats for \(playerName)")
+                logInfo("Using memory cached stats for \(playerName)", category: .cache)
                 return cached.stats
             } else {
                 // Remove expired cache
                 memoryCache.removeValue(forKey: key)
             }
         }
-        
+
         // Check disk cache
         if let cached = await loadFromDisk(key: key) {
             if !cached.isExpired {
                 // Restore to memory cache
                 memoryCache[key] = cached
-                print("💿 Using disk cached stats for \(playerName)")
+                logInfo("Using disk cached stats for \(playerName)", category: .cache)
                 return cached.stats
             } else {
                 // Remove expired cache file
@@ -123,55 +123,55 @@ actor CacheManager {
     /// Clear all cached data
     func clearCache() async {
         memoryCache.removeAll()
-        
+
         let fileManager = FileManager.default
         if let files = try? fileManager.contentsOfDirectory(at: cacheDirectory, includingPropertiesForKeys: nil) {
             for file in files {
                 try? fileManager.removeItem(at: file)
             }
         }
-        
-        print("🗑️ Cache cleared")
+
+        logInfo("Cache cleared", category: .cleanup)
     }
-    
+
     /// Clear cached data for a specific player
     func clearCache(for playerName: String, platform: Platform) async {
         let key = cacheKey(for: playerName, platform: platform)
         memoryCache.removeValue(forKey: key)
         await removeFromDisk(key: key)
-        
-        print("🗑️ Cache cleared for \(playerName)")
+
+        logInfo("Cache cleared for \(playerName)", category: .cleanup)
     }
     
     // MARK: - Disk Operations
     
     private func saveToDisk(_ cachedStats: CachedPlayerStats, key: String) async {
         let fileURL = cacheFileURL(for: key)
-        
+
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             let data = try encoder.encode(cachedStats)
             try data.write(to: fileURL)
         } catch {
-            print("⚠️ Failed to save cache to disk: \(error)")
+            logWarning("Failed to save cache to disk: \(error)", category: .cache)
         }
     }
-    
+
     private func loadFromDisk(key: String) async -> CachedPlayerStats? {
         let fileURL = cacheFileURL(for: key)
-        
+
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             return nil
         }
-        
+
         do {
             let data = try Data(contentsOf: fileURL)
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             return try decoder.decode(CachedPlayerStats.self, from: data)
         } catch {
-            print("⚠️ Failed to load cache from disk: \(error)")
+            logWarning("Failed to load cache from disk: \(error)", category: .cache)
             return nil
         }
     }
@@ -194,8 +194,8 @@ actor CacheManager {
                 memoryCache[key] = cached
             }
         }
-        
-        print("📂 Loaded \(memoryCache.count) cached entries from disk")
+
+        logInfo("Loaded \(memoryCache.count) cached entries from disk", category: .cache)
     }
     
     // MARK: - Cache Statistics
@@ -224,19 +224,19 @@ actor SettingsManager {
             let data = try JSONEncoder().encode(settings)
             userDefaults.set(data, forKey: settingsKey)
         } catch {
-            print("⚠️ Failed to save settings: \(error)")
+            logWarning("Failed to save settings: \(error)", category: .storage)
         }
     }
-    
+
     func loadSettings() async -> AppSettings {
         guard let data = userDefaults.data(forKey: settingsKey) else {
             return AppSettings()
         }
-        
+
         do {
             return try JSONDecoder().decode(AppSettings.self, from: data)
         } catch {
-            print("⚠️ Failed to load settings: \(error)")
+            logWarning("Failed to load settings: \(error)", category: .storage)
             return AppSettings()
         }
     }

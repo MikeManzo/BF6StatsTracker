@@ -153,8 +153,8 @@ struct SevenDayTrendView: View {
             // Sparkline
             MiniSparklineView(data: chartData, color: metric.color, showLabels: true)
                 .onAppear {
-                    print("📊 SevenDayTrendView - Daily performances count: \(dailyPerformances.count)")
-                    print("📊 Chart data points: \(chartData.count), values: \(chartData)")
+                    logInfo("SevenDayTrendView - Daily performances count: \(dailyPerformances.count)", category: .api)
+                    logInfo("Chart data points: \(chartData.count), values: \(chartData)", category: .api)
                 }
 
             // Best day
