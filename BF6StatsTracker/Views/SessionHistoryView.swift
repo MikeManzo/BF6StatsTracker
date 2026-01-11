@@ -29,6 +29,7 @@ struct SessionHistoryView: View {
     @State private var selectedEAID: String = ""
     @State private var showingExportSheet = false
     @State private var exportFormat: ExportFormat = .csv
+    @State private var collapsedSections: Set<Date> = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -225,21 +226,55 @@ struct SessionHistoryView: View {
 
     private var snapshotsList: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(filteredSnapshots, id: \.id) { snapshot in
-                    SnapshotRow(snapshot: snapshot) {
-                        snapshotToDelete = snapshot
-                        showingDeleteAlert = true
+            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                ForEach(groupedSnapshots.keys.sorted(by: >), id: \.self) { date in
+                    Section {
+                        if !collapsedSections.contains(date) {
+                            ForEach(groupedSnapshots[date] ?? [], id: \.id) { snapshot in
+                                SnapshotRow(snapshot: snapshot) {
+                                    snapshotToDelete = snapshot
+                                    showingDeleteAlert = true
+                                }
+                                .padding(.horizontal)
+                                .padding(.bottom, 12)
+                            }
+                        }
+                    } header: {
+                        DaySectionHeader(
+                            date: date,
+                            snapshotCount: groupedSnapshots[date]?.count ?? 0,
+                            isCollapsed: collapsedSections.contains(date)
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                if collapsedSections.contains(date) {
+                                    collapsedSections.remove(date)
+                                } else {
+                                    collapsedSections.insert(date)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                        .background(Theme.backgroundPrimary)
                     }
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .scale.combined(with: .opacity)
-                    ))
                 }
             }
-            .padding()
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: filteredSnapshots.count)
         }
+        .background(Theme.backgroundPrimary)
+    }
+
+    /// Group snapshots by day
+    private var groupedSnapshots: [Date: [StatsSnapshot]] {
+        let calendar = Calendar.current
+        var grouped: [Date: [StatsSnapshot]] = [:]
+
+        for snapshot in filteredSnapshots {
+            let startOfDay = calendar.startOfDay(for: snapshot.timestamp)
+            grouped[startOfDay, default: []].append(snapshot)
+        }
+
+        return grouped
     }
 
     private var emptyStateView: some View {
@@ -389,6 +424,67 @@ struct SessionHistoryView: View {
 }
 
 // MARK: - Supporting Views
+
+struct DaySectionHeader: View {
+    let date: Date
+    let snapshotCount: Int
+    let isCollapsed: Bool
+    let onToggle: () -> Void
+
+    private var dateText: String {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)
+
+        if calendar.isDate(date, inSameDayAs: today) {
+            return "Today"
+        } else if let yesterday = yesterday, calendar.isDate(date, inSameDayAs: yesterday) {
+            return "Yesterday"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .none
+            return formatter.string(from: date)
+        }
+    }
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack {
+                Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                    .foregroundColor(Theme.bf6Orange)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .frame(width: 12)
+
+                Image(systemName: "calendar")
+                    .foregroundColor(Theme.bf6Orange)
+                    .font(.headline)
+
+                Text(dateText)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+
+                Text("•")
+                    .foregroundColor(Theme.textSecondary)
+                    .font(.caption)
+
+                Text("\(snapshotCount) snapshot\(snapshotCount == 1 ? "" : "s")")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textSecondary)
+
+                Spacer()
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(Theme.overlayColor.opacity(0.5))
+            .cornerRadius(8)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+    }
+}
 
 struct SnapshotRow: View {
     let snapshot: StatsSnapshot
