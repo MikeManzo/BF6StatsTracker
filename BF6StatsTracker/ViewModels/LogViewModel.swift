@@ -24,6 +24,7 @@ class LogViewModel: ObservableObject {
     @Published var selectedLevels: Set<LogLevel> = Set(LogLevel.allCases)
     @Published var selectedCategories: Set<LogCategory> = Set(LogCategory.allCases)
     @Published var autoScroll: Bool = true
+    @Published var reverseOrder: Bool = false
     @Published var selectedEntry: LogEntry?
     @Published private var logEntriesCache: [LogEntry] = []
     @Published private(set) var filteredLogs: [LogEntry] = []
@@ -44,7 +45,7 @@ class LogViewModel: ObservableObject {
             .store(in: &cancellables)
 
         // Observe filter changes
-        Publishers.CombineLatest3($searchText, $selectedLevels, $selectedCategories)
+        Publishers.CombineLatest4($searchText, $selectedLevels, $selectedCategories, $reverseOrder)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateFilteredLogs()
@@ -57,7 +58,7 @@ class LogViewModel: ObservableObject {
 
     /// Update filtered log entries based on current filters
     private func updateFilteredLogs() {
-        filteredLogs = logEntriesCache.filter { entry in
+        var logs = logEntriesCache.filter { entry in
             // Filter by level
             guard selectedLevels.contains(entry.level) else { return false }
 
@@ -74,6 +75,13 @@ class LogViewModel: ObservableObject {
 
             return true
         }
+
+        // Apply sort order
+        if reverseOrder {
+            logs.reverse()
+        }
+
+        filteredLogs = logs
     }
 
     /// Toggle a log level filter

@@ -95,6 +95,17 @@ struct LogViewerView: View {
 
                 Spacer()
 
+                // Sort order toggle
+                Toggle(isOn: $viewModel.reverseOrder) {
+                    HStack(spacing: 4) {
+                        Image(systemName: viewModel.reverseOrder ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                        Text(viewModel.reverseOrder ? "Newest First" : "Oldest First")
+                            .font(.caption)
+                    }
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+
                 // Auto-scroll toggle
                 Toggle(isOn: $viewModel.autoScroll) {
                     HStack(spacing: 4) {
@@ -105,23 +116,6 @@ struct LogViewerView: View {
                 }
                 .toggleStyle(.switch)
                 .controlSize(.small)
-
-                // Test log button
-                Button(action: {
-                    logInfo("Test log entry", category: .general)
-                    logSuccess("Test success", category: .success)
-                    logWarning("Test warning", category: .general)
-                    logError("Test error", category: .error)
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "testtube.2")
-                        Text("Test")
-                    }
-                    .font(.caption)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                }
-                .buttonStyle(.bordered)
 
                 // Clear logs
                 Button(action: { viewModel.clearLogs() }) {
