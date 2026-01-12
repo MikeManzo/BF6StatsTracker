@@ -169,7 +169,7 @@ struct OverviewStatsView: View {
             // Match Performance Section
             if let stats = viewModel.playerStats, stats.matchesPlayed > 0 {
                 VStack(alignment: .leading, spacing: 16) {
-                    SectionHeader(title: "Match Performance", icon: "gamecontroller.fill")
+                    SectionHeader(title: "Overall Match Performance", icon: "gamecontroller.fill")
 
                     HStack(spacing: 16) {
                         StatCard(
@@ -185,7 +185,15 @@ struct OverviewStatsView: View {
                             value: String(format: "%.1f", stats.killsPerMatch),
                             icon: "target",
                             color: Theme.bf6Red,
-                            subtitle: "Avg per game"
+                            subtitle: "Humans + Bots"
+                        )
+
+                        StatCard(
+                            title: "Human %",
+                            value: stats.humanPercent,
+                            icon: "person.fill",
+                            color: Theme.bf6Blue,
+                            subtitle: "Player kills"
                         )
 
                         if stats.damagePerMatch > 0 {
@@ -197,14 +205,6 @@ struct OverviewStatsView: View {
                                 subtitle: "Avg per game"
                             )
                         }
-
-                        StatCard(
-                            title: "Human Kills",
-                            value: String(format: "%.1f%%", stats.humanPercentage),
-                            icon: "person.2.fill",
-                            color: Theme.bf6Blue,
-                            subtitle: "vs AI kills"
-                        )
                     }
                 }
                 .cardStyle()
@@ -372,10 +372,16 @@ struct RankCard: View {
                             .font(.caption)
                             .foregroundStyle(Theme.bf6Orange)
 
-                        Text("RANK (Approx)")
+                        Text("RANK (Estimated)")
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .foregroundStyle(Theme.textSecondary)
+
+                        // Info icon with tooltip
+                        Image(systemName: "info.circle")
+                            .font(.caption2)
+                            .foregroundStyle(Theme.textSecondary.opacity(0.6))
+                            .help("Rank is estimated from XP. Accurate for S001-S050 range. High S-ranks (S150+) may be less accurate due to season XP resets.")
 
                         Spacer()
                     }

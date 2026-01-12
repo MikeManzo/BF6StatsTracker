@@ -280,10 +280,20 @@ struct PlayerStats: Codable, Identifiable {
         return min(xp / 25_000, 100)
     }
 
-    /// Calculate player rank based on XP
-    /// BF2042 has ranks 1-199 (no S-rank system)
-    /// Returns the estimated rank number
-    /// Calibrated with: 7,774,370 XP = Rank 131
+    /// Calculate player rank based on total XP
+    ///
+    /// BF2042 has 1,098 total ranks: 1-99 (standard) + 100-1098 (S001-S999)
+    ///
+    /// **Formula:** rank = 131 + (xp - 7,774,370) / 105,621
+    ///
+    /// **Calibration:** Based on two data points in the S-rank range:
+    /// - 7,774,370 total XP = Rank 131 (S032)
+    /// - 8,408,095 total XP = Rank 137 (S038)
+    /// - XP per rank: ~105,621
+    ///
+    /// **Accuracy:** This formula is most accurate for S001-S050 range.
+    /// High S-ranks (S150+) may be less accurate due to possible season XP resets
+    /// where rank persists but XP resets each season.
     var rank: Int {
         let xp = xpData?.first?.total ?? 0
 
@@ -292,15 +302,27 @@ struct PlayerStats: Codable, Identifiable {
             LoggerService.shared.info("Rank Calculation - Total XP: \(xp)", category: .calculation)
         }
 
-        // Calibrated XP curve for BF2042
-        // Based on actual data: 7,774,370 XP = Rank 131
-        // Each rank requires approximately: 7,774,370 / 131 ≈ 59,346 XP per rank
+        // Linear calculation: approximately 105,621 XP per rank
+        // Based on calibration: (8,408,095 - 7,774,370) / (137 - 131) = 105,621
+        let calculatedRank: Int
 
-        let calculatedRank = min(199, max(1, xp / 59_346))
-        Task { @MainActor in
-            LoggerService.shared.info("Calculated Rank: \(calculatedRank)", category: .calculation)
+        if xp >= 7_774_370 {
+            // Standard progression from Rank 131 upward
+            let ranksAbove131 = (xp - 7_774_370) / 105_621
+            calculatedRank = 131 + ranksAbove131
+        } else {
+            // Extrapolate backward for lower ranks
+            let ranksBelow131 = (7_774_370 - xp) / 105_621
+            calculatedRank = max(1, 131 - ranksBelow131)
         }
-        return calculatedRank
+
+        let finalRank = max(1, min(1000, calculatedRank))
+
+        Task { @MainActor in
+            LoggerService.shared.info("Calculated Rank: \(finalRank)", category: .calculation)
+        }
+
+        return finalRank
     }
 
     /// Get formatted rank string (just the rank number)

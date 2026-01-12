@@ -118,7 +118,7 @@ struct XPCalculatorView: View {
 
     private var inputSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Match Performance")
+            Text("Overall Match Performance")
                 .font(.headline)
                 .foregroundColor(Theme.textPrimary)
 
