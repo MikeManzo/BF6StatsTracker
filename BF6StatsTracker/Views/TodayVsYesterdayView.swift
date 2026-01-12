@@ -359,7 +359,7 @@ struct TodayVsYesterdayView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("📊 Last Played")
+                Text("📊 Most Recent Performance")
                     .font(.title2)
                     .fontWeight(.bold)
 

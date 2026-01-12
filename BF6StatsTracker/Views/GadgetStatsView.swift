@@ -19,18 +19,23 @@ import SwiftUI
 
 struct GadgetStatsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
-    @State private var selectedClass: BF6Class?
+    @State private var selectedGadgetType: GadgetType?
     @State private var sortOption: GadgetSortOption = .kills
     @State private var searchText = ""
-    
+
     private var filteredGadgets: [GadgetStats] {
         var gadgets = viewModel.gadgetStats
-        
+
+        // Filter by gadget type
+        if let selectedGadgetType = selectedGadgetType {
+            gadgets = gadgets.filter { $0.type == selectedGadgetType.rawValue }
+        }
+
         // Filter by search
         if !searchText.isEmpty {
             gadgets = gadgets.filter { $0.gadgetName.localizedCaseInsensitiveContains(searchText) }
         }
-        
+
         // Sort
         switch sortOption {
         case .kills:
@@ -44,7 +49,7 @@ struct GadgetStatsView: View {
         case .name:
             gadgets.sort { $0.gadgetName < $1.gadgetName }
         }
-        
+
         return gadgets
     }
     
@@ -119,27 +124,27 @@ struct GadgetStatsView: View {
         }
     }
     
-    // MARK: - Class Filter View
-    
+    // MARK: - Gadget Type Filter View
+
     private var classFilterView: some View {
         HStack(spacing: 12) {
-            ClassFilterButton(
-                title: "All Classes",
+            GadgetTypeFilterButton(
+                title: "All Types",
                 icon: "square.grid.2x2.fill",
-                isSelected: selectedClass == nil,
+                isSelected: selectedGadgetType == nil,
                 color: Theme.bf6Orange
             ) {
-                selectedClass = nil
+                selectedGadgetType = nil
             }
-            
-            ForEach(BF6Class.allCases) { bf6Class in
-                ClassFilterButton(
-                    title: bf6Class.rawValue,
-                    icon: bf6Class.iconName,
-                    isSelected: selectedClass == bf6Class,
-                    color: bf6Class.color
+
+            ForEach(GadgetType.allCases) { gadgetType in
+                GadgetTypeFilterButton(
+                    title: gadgetType.displayName,
+                    icon: gadgetType.iconName,
+                    isSelected: selectedGadgetType == gadgetType,
+                    color: gadgetType.color
                 ) {
-                    selectedClass = bf6Class
+                    selectedGadgetType = gadgetType
                 }
             }
         }
@@ -171,21 +176,21 @@ struct GadgetStatsView: View {
     }
 }
 
-// MARK: - Class Filter Button
+// MARK: - Gadget Type Filter Button
 
-struct ClassFilterButton: View {
+struct GadgetTypeFilterButton: View {
     let title: String
     let icon: String
     let isSelected: Bool
     let color: Color
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.caption)
-                
+
                 Text(title)
                     .font(.caption)
                     .fontWeight(.medium)
@@ -392,6 +397,40 @@ struct DetailRow: View {
     }
 }
 
+// MARK: - Gadget Type Enum
+
+enum GadgetType: String, CaseIterable, Identifiable {
+    case explosives = "Explosives"
+    case deployable = "Deployable Gadgets"
+    case strikePackages = "Strike Packages"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .explosives: return "Explosives"
+        case .deployable: return "Deployable"
+        case .strikePackages: return "Strike Packages"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .explosives: return "flame.fill"
+        case .deployable: return "cube.box.fill"
+        case .strikePackages: return "airplane"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .explosives: return Theme.bf6Red
+        case .deployable: return Theme.bf6Green
+        case .strikePackages: return Theme.bf6Blue
+        }
+    }
+}
+
 // MARK: - Sort Options
 
 enum GadgetSortOption: String, CaseIterable, Identifiable {
@@ -400,7 +439,7 @@ enum GadgetSortOption: String, CaseIterable, Identifiable {
     case damage = "Damage"
     case vehicles = "Vehicles Destroyed"
     case name = "Name"
-    
+
     var id: String { rawValue }
 }
 

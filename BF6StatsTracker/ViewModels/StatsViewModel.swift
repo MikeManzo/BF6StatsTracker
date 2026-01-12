@@ -751,13 +751,13 @@ enum StatTab: String, CaseIterable, Identifiable {
 
     // Combat sub-tabs
     case weapons = "Weapons"
-    case weaponMastery = "W.Mastery"
+    case weaponMastery = "Weapons Mastery"
     case gadgets = "Gadgets"
     case utility = "Utility"
 
     // Vehicles sub-tabs
-    case vehicleStats = "V.Stats"
-    case vehicleSpec = "V.Specialist"
+    case vehicleStats = "Vehicle Stats"
+    case vehicleSpec = "Vehicle Specialist"
 
     // Analysis sub-tabs
     case charts = "Charts"

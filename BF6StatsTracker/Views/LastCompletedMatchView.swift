@@ -38,7 +38,7 @@ struct LastCompletedMatchView: View {
                     .foregroundColor(.green)
                     .font(.title3)
 
-                Text("Last Completed Match")
+                Text("Most Recent Performance")
                     .font(.headline)
                     .fontWeight(.bold)
 

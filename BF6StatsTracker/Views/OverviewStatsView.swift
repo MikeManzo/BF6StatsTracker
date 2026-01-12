@@ -276,31 +276,6 @@ struct OverviewStatsView: View {
                 .cardStyle()
                 .frame(maxWidth: .infinity)
             }
-
-            // All Classes Preview
-            VStack(alignment: .leading, spacing: 16) {
-                SectionHeader(title: "Class Performance", icon: "person.3.sequence.fill")
-
-                if viewModel.classStats.isEmpty {
-                    Text("No class data available")
-                        .foregroundColor(Theme.textSecondary)
-                } else {
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible()),
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 16) {
-                        ForEach(Array(viewModel.classStats.enumerated()), id: \.element.id) { index, classStats in
-                            AnimatedClassPreviewCard(
-                                classStats: classStats,
-                                delay: Double(index) * 0.1
-                            )
-                        }
-                    }
-                }
-            }
-            .cardStyle()
         }
     }
 
@@ -373,84 +348,6 @@ struct StatRow: View {
                 .foregroundColor(Theme.textPrimary)
         }
         .font(.subheadline)
-    }
-}
-
-// MARK: - Animated Class Preview Card Wrapper
-
-struct AnimatedClassPreviewCard: View {
-    let classStats: ClassStats
-    let delay: Double
-
-    @State private var isVisible = false
-
-    var body: some View {
-        ClassPreviewCard(classStats: classStats)
-            .opacity(isVisible ? 1 : 0)
-            .offset(y: isVisible ? 0 : 20)
-            .onAppear {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(delay)) {
-                    isVisible = true
-                }
-            }
-    }
-}
-
-// MARK: - Class Preview Card
-
-struct ClassPreviewCard: View {
-    let classStats: ClassStats
-
-    private var bf6Class: BF6Class {
-        BF6Class(rawValue: classStats.className) ?? .assault
-    }
-
-    var body: some View {
-        VStack(spacing: 12) {
-            ClassIconView(className: bf6Class, size: 50, imageURL: classStats.image)
-
-            Text(classStats.className)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(Theme.textPrimary)
-
-            VStack(spacing: 4) {
-                HStack {
-                    Text("Kills")
-                        .foregroundColor(Theme.textSecondary)
-                    Spacer()
-                    Text("\(classStats.kills)")
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textPrimary)
-                }
-
-                HStack {
-                    Text("K/D")
-                        .foregroundColor(Theme.textSecondary)
-                    Spacer()
-                    Text(String(format: "%.2f", classStats.kdRatio))
-                        .fontWeight(.semibold)
-                        .foregroundColor(classStats.kdRatio >= 1.0 ? Theme.bf6Green : Theme.bf6Red)
-                }
-
-                HStack {
-                    Text("Time")
-                        .foregroundColor(Theme.textSecondary)
-                    Spacer()
-                    Text("\(classStats.timePlayed / 3600)h")
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textPrimary)
-                }
-            }
-            .font(.caption)
-        }
-        .padding()
-        .background(bf6Class.color.opacity(0.1))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(bf6Class.color.opacity(0.3), lineWidth: 1)
-        )
     }
 }
 
