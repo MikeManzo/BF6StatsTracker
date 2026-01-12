@@ -379,7 +379,7 @@ class StatsViewModel: ObservableObject {
                 // Try to get EA ID from settings first, then fall back to most recent account
                 let eaId = settings.eaId ?? EAAccountStore.shared.mostRecentAccount?.eaId
                 let progressionModeId = self.currentProgressionMode?.progressionMode
-                HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId)
+                HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId, playSoundNotification: settings.showNotifications)
                 MapTracker.shared.updateMapStats(from: stats)
                 logInfo("Saved stats snapshot and updated map stats in SwiftData (EA ID: \(eaId ?? "N/A"), Mode: \(progressionModeId ?? "N/A"))", category: .storage)
 

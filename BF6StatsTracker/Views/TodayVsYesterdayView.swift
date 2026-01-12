@@ -78,20 +78,66 @@ struct TodayVsYesterdayView: View {
 
     private var deltaMatches: Int {
         guard let current = currentSnapshot else { return 0 }
-        guard let previous = previousSnapshot else { return current.matchesPlayed }
-        return current.matchesPlayed - previous.matchesPlayed
+
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+
+        let snapshots = historyManager.getAllSnapshots()
+
+        // Get last snapshot from before today (previous day)
+        let beforeTodaySnapshots = snapshots.filter { snapshot in
+            snapshot.timestamp < today
+        }.sorted { $0.timestamp > $1.timestamp }
+
+        if let lastBeforeToday = beforeTodaySnapshots.first {
+            // Compare current to last snapshot from previous day
+            return current.matchesPlayed - lastBeforeToday.matchesPlayed
+        } else {
+            // No previous day snapshot - get the first snapshot ever saved
+            if let firstSnapshot = snapshots.last {
+                return current.matchesPlayed - firstSnapshot.matchesPlayed
+            }
+            // Only one snapshot exists
+            return current.matchesPlayed
+        }
     }
 
     private var deltaWinRate: Int {
         guard let current = currentSnapshot else { return 0 }
-        guard let previous = previousSnapshot else {
-            // If only one snapshot, calculate win rate from absolute values
-            let matches = current.matchesPlayed
-            return matches > 0 ? Int(round((Double(current.wins) / Double(matches)) * 100.0)) : 0
+
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+
+        let snapshots = historyManager.getAllSnapshots()
+
+        // Get last snapshot from before today (previous day)
+        let beforeTodaySnapshots = snapshots.filter { snapshot in
+            snapshot.timestamp < today
+        }.sorted { $0.timestamp > $1.timestamp }
+
+        let todayWins: Int
+        let todayLosses: Int
+
+        if let lastBeforeToday = beforeTodaySnapshots.first {
+            // Calculate today's wins and losses
+            todayWins = current.wins - lastBeforeToday.wins
+            todayLosses = current.losses - lastBeforeToday.losses
+        } else {
+            // No previous day snapshot - get the first snapshot ever saved
+            if let firstSnapshot = snapshots.last {
+                todayWins = current.wins - firstSnapshot.wins
+                todayLosses = current.losses - firstSnapshot.losses
+            } else {
+                // Only one snapshot exists
+                todayWins = current.wins
+                todayLosses = current.losses
+            }
         }
-        let wins = current.wins - previous.wins
-        let matches = current.matchesPlayed - previous.matchesPlayed
-        return matches > 0 ? Int(round((Double(wins) / Double(matches)) * 100.0)) : 0
+
+        let totalGames = todayWins + todayLosses
+        return totalGames > 0 ? Int(round((Double(todayWins) / Double(totalGames)) * 100.0)) : 0
     }
 
     private var deltaHeadshots: Int {
@@ -483,7 +529,8 @@ struct TodayVsYesterdayView: View {
                 icon: "trophy.fill",
                 accentColor: .blue,
                 leftYesterdaySummary: yesterdayMatches,
-                rightYesterdaySummary: yesterdayWinRate
+                rightYesterdaySummary: yesterdayWinRate,
+                rightSuffix: "%"
             )
         }
         .padding(.horizontal)

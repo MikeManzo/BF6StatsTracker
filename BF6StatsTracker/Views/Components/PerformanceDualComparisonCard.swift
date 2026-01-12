@@ -31,6 +31,8 @@ struct PerformanceDualComparisonCard: View {
     var rightYesterdaySummary: Int = 0
     var leftLowerIsBetter: Bool = false  // Set to true for stats like Deaths where lower is better
     var rightLowerIsBetter: Bool = false
+    var leftSuffix: String = ""  // Optional suffix like "%" for left value
+    var rightSuffix: String = ""  // Optional suffix like "%" for right value
 
     @State private var leftDisplayValue: Double = 0
     @State private var rightDisplayValue: Double = 0
@@ -94,7 +96,7 @@ struct PerformanceDualComparisonCard: View {
                         .fontWeight(.medium)
 
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text("\(Int(leftDisplayValue))")
+                        Text("\(Int(leftDisplayValue))\(leftSuffix)")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                             .contentTransition(.numericText(value: leftDisplayValue))
@@ -127,7 +129,7 @@ struct PerformanceDualComparisonCard: View {
                         .fontWeight(.medium)
 
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text("\(Int(rightDisplayValue))")
+                        Text("\(Int(rightDisplayValue))\(rightSuffix)")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                             .contentTransition(.numericText(value: rightDisplayValue))

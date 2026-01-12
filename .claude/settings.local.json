@@ -36,7 +36,8 @@
       "Bash(for url in \"https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/131.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf2042/ranks/32.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf2042/ranks/131.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/s032.png\" \"https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/S032.png\")",
       "Bash(wc:*)",
       "Bash(git add:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(ruby -e:*)"
     ],
     "deny": [],
     "ask": []

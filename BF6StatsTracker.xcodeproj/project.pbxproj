@@ -52,6 +52,7 @@
 		276C746E2F0D9502002674A4 /* XPCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746D2F0D9502002674A4 /* XPCalculatorView.swift */; };
 		276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */; };
 		276C74712F0EDC88002674A4 /* MapsPlayedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */; };
+		27B6F3F52F1483BC007E5393 /* SoundNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */; };
 		27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C267BB2EEF35AF006168AA /* MapTracker.swift */; };
 		27C4B8972F0ADCA400B07E9D /* VehicleSpecialistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C4B8952F0ADCA400B07E9D /* VehicleSpecialistView.swift */; };
 		27C4B8982F0ADCA400B07E9D /* IntelligenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C4B8922F0ADCA400B07E9D /* IntelligenceView.swift */; };
@@ -69,6 +70,7 @@
 		27E798052EE645220002311A /* EAIdentityKit in Frameworks */ = {isa = PBXBuildFile; productRef = 27E798042EE645220002311A /* EAIdentityKit */; };
 		27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798062EE645F80002311A /* EAIdentityManager.swift */; };
 		27E798092EE646350002311A /* EALoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798082EE646350002311A /* EALoginView.swift */; };
+		999999982F141AAB000B1B90 /* SoundNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999992F141AAA000B1B90 /* SoundNotificationService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -121,6 +123,7 @@
 		276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeEfficiencyView.swift; sourceTree = "<group>"; };
 		276C746D2F0D9502002674A4 /* XPCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCalculatorView.swift; sourceTree = "<group>"; };
 		276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapsPlayedCard.swift; sourceTree = "<group>"; };
+		27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundNotificationService.swift; sourceTree = "<group>"; };
 		27C267BB2EEF35AF006168AA /* MapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTracker.swift; sourceTree = "<group>"; };
 		27C4B8922F0ADCA400B07E9D /* IntelligenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceView.swift; sourceTree = "<group>"; };
 		27C4B8932F0ADCA400B07E9D /* TeamSupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamSupportView.swift; sourceTree = "<group>"; };
@@ -137,6 +140,7 @@
 		27E543862EE98F4000B01618 /* ServerBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerBrowserView.swift; sourceTree = "<group>"; };
 		27E798062EE645F80002311A /* EAIdentityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAIdentityManager.swift; sourceTree = "<group>"; };
 		27E798082EE646350002311A /* EALoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALoginView.swift; sourceTree = "<group>"; };
+		999999992F141AAA000B1B90 /* SoundNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundNotificationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -180,6 +184,13 @@
 			path = Scripts;
 			sourceTree = "<group>";
 		};
+		27B6F3F32F14838D007E5393 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		3000000000000001 = {
 			isa = PBXGroup;
 			children = (
@@ -187,6 +198,7 @@
 				2749FA752F0997CC004D2E1D /* Images */,
 				3000000000000002 /* BF6StatsTracker */,
 				3000000000000003 /* Products */,
+				27B6F3F32F14838D007E5393 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -232,6 +244,7 @@
 		3000000000000005 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */,
 				1000000000000005 /* APIService.swift */,
 				2747A79D2F037BA5001CF709 /* EAAccountStore.swift */,
 				1000000000000006 /* CacheManager.swift */,
@@ -418,6 +431,7 @@
 				276C74712F0EDC88002674A4 /* MapsPlayedCard.swift in Sources */,
 				276C746B2F0D94F4002674A4 /* ProgressionBadge.swift in Sources */,
 				27C4B89A2F0ADCA400B07E9D /* UtilityEffectivenessView.swift in Sources */,
+				27B6F3F52F1483BC007E5393 /* SoundNotificationService.swift in Sources */,
 				274F85542F141AD4000B1B90 /* StatsViewModel.swift in Sources */,
 				27C4B89B2F0ADCA400B07E9D /* WeaponMasteryView.swift in Sources */,
 				2747A7A02F037BB8001CF709 /* AccountSelectionView.swift in Sources */,
