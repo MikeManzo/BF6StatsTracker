@@ -23,8 +23,16 @@ class LogViewModel: ObservableObject {
     @Published var searchText: String = ""
     @Published var selectedLevels: Set<LogLevel> = Set(LogLevel.allCases)
     @Published var selectedCategories: Set<LogCategory> = Set(LogCategory.allCases)
-    @Published var autoScroll: Bool = true
-    @Published var reverseOrder: Bool = false
+    @Published var autoScroll: Bool {
+        didSet {
+            UserDefaults.standard.set(autoScroll, forKey: "LogViewer_AutoScroll")
+        }
+    }
+    @Published var reverseOrder: Bool {
+        didSet {
+            UserDefaults.standard.set(reverseOrder, forKey: "LogViewer_ReverseOrder")
+        }
+    }
     @Published var selectedEntry: LogEntry?
     @Published private var logEntriesCache: [LogEntry] = []
     @Published private(set) var filteredLogs: [LogEntry] = []
@@ -32,6 +40,10 @@ class LogViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        // Load persisted preferences
+        self.autoScroll = UserDefaults.standard.object(forKey: "LogViewer_AutoScroll") as? Bool ?? true
+        self.reverseOrder = UserDefaults.standard.object(forKey: "LogViewer_ReverseOrder") as? Bool ?? false
+
         // Initial load - must happen first
         logEntriesCache = LoggerService.shared.logEntries
 

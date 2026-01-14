@@ -40,6 +40,8 @@ struct SessionHistoryView: View {
     @State private var showingExportSheet = false
     @State private var exportFormat: ExportFormat = .csv
     @State private var collapsedSections: Set<Date> = []
+    @State private var shimmerOpacity: Double = 0.1
+    @State private var isInitialLoad: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,7 +52,9 @@ struct SessionHistoryView: View {
             searchBar
 
             // Snapshots list
-            if filteredSnapshots.isEmpty {
+            if isInitialLoad && allSnapshots.isEmpty {
+                skeletonLoader
+            } else if filteredSnapshots.isEmpty {
                 emptyStateView
             } else {
                 snapshotsList
@@ -285,6 +289,62 @@ struct SessionHistoryView: View {
         }
 
         return grouped
+    }
+
+    private var skeletonLoader: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                ForEach(0..<5) { _ in
+                    HStack(spacing: 16) {
+                        // Time placeholder
+                        VStack(alignment: .leading, spacing: 8) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.secondary.opacity(shimmerOpacity))
+                                .frame(width: 100, height: 16)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.secondary.opacity(shimmerOpacity))
+                                .frame(width: 80, height: 12)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.secondary.opacity(shimmerOpacity))
+                                .frame(width: 90, height: 10)
+                        }
+                        .frame(width: 120, alignment: .leading)
+
+                        Divider()
+
+                        // Stats placeholders
+                        HStack(spacing: 8) {
+                            ForEach(0..<8) { _ in
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.secondary.opacity(shimmerOpacity))
+                                    .frame(width: 60, height: 32)
+                            }
+                        }
+
+                        Spacer()
+
+                        // Delete button placeholder
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.secondary.opacity(shimmerOpacity))
+                            .frame(width: 32, height: 32)
+                    }
+                    .padding()
+                    .background(Theme.overlayColor)
+                    .cornerRadius(12)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 12)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                shimmerOpacity = 0.3
+            }
+            // Mark initial load as complete after a brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isInitialLoad = false
+            }
+        }
     }
 
     private var emptyStateView: some View {

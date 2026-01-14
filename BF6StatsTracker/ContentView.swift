@@ -399,16 +399,64 @@ struct ContentView: View {
     
     // MARK: - Loading View
 
-    private var loadingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
-                .progressViewStyle(CircularProgressViewStyle(tint: Theme.bf6Orange))
+    @State private var rotationAngle: Double = 0
+    @State private var isPulsing: Bool = false
 
-            Text("Loading...")
-                .font(.title3)
-                .foregroundColor(Theme.textPrimary)
+    private var loadingView: some View {
+        VStack(spacing: 32) {
+            ZStack {
+                // Background pulse circles
+                ForEach(0..<3) { index in
+                    Circle()
+                        .stroke(Theme.bf6Orange.opacity(0.3), lineWidth: 3)
+                        .frame(width: 140, height: 140)
+                        .scaleEffect(pulseScale(for: index))
+                        .opacity(pulseOpacity(for: index))
+                }
+
+                // Center icon
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 64, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Theme.bf6Orange, Theme.bf6Red],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .rotationEffect(.degrees(rotationAngle))
+            }
+            .frame(height: 200)
+
+            VStack(spacing: 12) {
+                Text("Loading Stats")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+
+                Text("Preparing your battlefield data...")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            }
         }
+        .onAppear {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                rotationAngle = 360
+            }
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                isPulsing = true
+            }
+        }
+    }
+
+    private func pulseScale(for index: Int) -> CGFloat {
+        let baseScale: CGFloat = 1.0 + (CGFloat(index) * 0.3)
+        return isPulsing ? baseScale + 0.2 : baseScale
+    }
+
+    private func pulseOpacity(for index: Int) -> Double {
+        let delay = Double(index) * 0.2
+        return isPulsing ? 0.0 : 0.6
     }
 
     // MARK: - Welcome View
