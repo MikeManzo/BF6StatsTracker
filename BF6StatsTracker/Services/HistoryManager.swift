@@ -800,6 +800,152 @@ class HistoryManager: ObservableObject {
         return totalKD / Double(performances.count)
     }
 
+    /// Get standard deviation of daily K/D
+    func getDailyKDStandardDeviation(days: Int = 30) -> Double {
+        let performances = getRecentDailyPerformances(days: days)
+        guard performances.count > 1 else { return 0.0 }
+
+        let avg = getAverageDailyKD(days: days)
+        let squaredDiffs = performances.map { pow($0.dailyKD - avg, 2) }
+        let variance = squaredDiffs.reduce(0.0, +) / Double(performances.count)
+        return sqrt(variance)
+    }
+
+    /// Get snapshots within a date range
+    func getSnapshotsInRange(days: Int) -> [StatsSnapshot] {
+        guard let context = modelContext else { return [] }
+
+        let descriptor: FetchDescriptor<StatsSnapshot>
+        if days >= 365 {
+            descriptor = FetchDescriptor<StatsSnapshot>(
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+        } else {
+            let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+            let predicate = #Predicate<StatsSnapshot> { snapshot in
+                snapshot.timestamp >= startDate
+            }
+            descriptor = FetchDescriptor<StatsSnapshot>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+            )
+        }
+
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    /// Calculate rolling average K/D for snapshots
+    func getRollingKDAverage(days: Int, windowSize: Int) -> [(Date, Double)] {
+        let snapshots = getSnapshotsInRange(days: days)
+        guard snapshots.count >= windowSize else { return [] }
+
+        var result: [(Date, Double)] = []
+
+        for i in (windowSize - 1)..<snapshots.count {
+            let window = Array(snapshots[(i - windowSize + 1)...i])
+            let avgKD = window.reduce(0.0) { $0 + $1.kdRatio } / Double(windowSize)
+            result.append((window.last!.timestamp, avgKD))
+        }
+
+        return result
+    }
+
+    /// Detect gaming sessions (groups of snapshots within sessionGapMinutes of each other)
+    func detectSessions(days: Int, sessionGapMinutes: Int = 120) -> [[StatsSnapshot]] {
+        let snapshots = getSnapshotsInRange(days: days)
+        guard !snapshots.isEmpty else { return [] }
+
+        var sessions: [[StatsSnapshot]] = []
+        var currentSession: [StatsSnapshot] = [snapshots[0]]
+
+        for i in 1..<snapshots.count {
+            let timeDiff = snapshots[i].timestamp.timeIntervalSince(snapshots[i-1].timestamp)
+            if timeDiff <= Double(sessionGapMinutes * 60) {
+                currentSession.append(snapshots[i])
+            } else {
+                sessions.append(currentSession)
+                currentSession = [snapshots[i]]
+            }
+        }
+
+        if !currentSession.isEmpty {
+            sessions.append(currentSession)
+        }
+
+        return sessions
+    }
+
+    /// Get best and worst snapshots by K/D
+    func getBestAndWorstSnapshots(days: Int) -> (best: StatsSnapshot?, worst: StatsSnapshot?) {
+        let snapshots = getSnapshotsInRange(days: days)
+        guard !snapshots.isEmpty else { return (nil, nil) }
+
+        let best = snapshots.max(by: { $0.kdRatio < $1.kdRatio })
+        let worst = snapshots.min(by: { $0.kdRatio < $1.kdRatio })
+        return (best, worst)
+    }
+
+    /// Calculate weekend vs weekday statistics
+    func getWeekendVsWeekdayStats(days: Int) -> (weekendAvgKD: Double, weekdayAvgKD: Double) {
+        let snapshots = getSnapshotsInRange(days: days)
+        let calendar = Calendar.current
+
+        var weekendKDs: [Double] = []
+        var weekdayKDs: [Double] = []
+
+        for snapshot in snapshots {
+            let weekday = calendar.component(.weekday, from: snapshot.timestamp)
+            if weekday == 1 || weekday == 7 { // Sunday = 1, Saturday = 7
+                weekendKDs.append(snapshot.kdRatio)
+            } else {
+                weekdayKDs.append(snapshot.kdRatio)
+            }
+        }
+
+        let weekendAvg = weekendKDs.isEmpty ? 0.0 : weekendKDs.reduce(0.0, +) / Double(weekendKDs.count)
+        let weekdayAvg = weekdayKDs.isEmpty ? 0.0 : weekdayKDs.reduce(0.0, +) / Double(weekdayKDs.count)
+
+        return (weekendAvg, weekdayAvg)
+    }
+
+    /// Get hourly performance data with multiple metrics
+    func getHourlyStats(snapshots: [StatsSnapshot]) -> [HourlyPerformanceData] {
+        let calendar = Calendar.current
+        var hourlyData: [Int: (kdSum: Double, snapshots: [StatsSnapshot])] = [:]
+
+        // Group snapshots by hour
+        for snapshot in snapshots {
+            let hour = calendar.component(.hour, from: snapshot.timestamp)
+            let current = hourlyData[hour] ?? (0, [])
+            hourlyData[hour] = (current.kdSum + snapshot.kdRatio, current.snapshots + [snapshot])
+        }
+
+        // Calculate delta kills for each hour
+        return (0..<24).map { hour in
+            if let data = hourlyData[hour], !data.snapshots.isEmpty {
+                let sortedSnapshots = data.snapshots.sorted(by: { $0.timestamp < $1.timestamp })
+
+                // Calculate delta kills (difference between first and last snapshot in the hour)
+                let deltaKills: Int
+                if sortedSnapshots.count > 1 {
+                    deltaKills = sortedSnapshots.last!.kills - sortedSnapshots.first!.kills
+                } else {
+                    // For a single snapshot, we can't calculate delta, so use 0
+                    deltaKills = 0
+                }
+
+                return HourlyPerformanceData(
+                    hour: hour,
+                    avgKD: data.kdSum / Double(data.snapshots.count),
+                    totalKills: max(0, deltaKills), // Ensure non-negative
+                    sessionCount: data.snapshots.count
+                )
+            } else {
+                return HourlyPerformanceData(hour: hour, avgKD: 0, totalKills: 0, sessionCount: 0)
+            }
+        }
+    }
+
     /// Rebuild DailyPerformance records from existing snapshots
     /// Call this to regenerate daily performance data from snapshot history
     func rebuildDailyPerformances(playerName: String) {

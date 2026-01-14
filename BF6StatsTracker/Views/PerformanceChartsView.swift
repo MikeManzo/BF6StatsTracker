@@ -29,6 +29,8 @@ struct PerformanceChartsView: View {
 
     @State private var selectedPeriod: ChartPeriod = .week
     @State private var selectedMetric: ChartMetric = .kd
+    @State private var selectedSnapshot: StatsSnapshot?
+    @State private var showingSessionView = false
 
     var body: some View {
         ScrollView {
@@ -39,19 +41,29 @@ struct PerformanceChartsView: View {
                 // Period selector
                 periodSelector
 
-                // Daily Performance Charts
-                dailyKDChart
+                // Summary Statistics Card
+                summaryStatsCard
 
-                dailyKillsChart
+                // Combined K/D View (Snapshot + Daily)
+                combinedKDView
 
-                // K/D Trend Chart
-                kdTrendChart
+                // Rolling Average Chart
+                rollingAverageChart
+
+                // Daily Performance Dashboard with Statistical Context
+                enhancedDailyKillsChart
+
+                // Snapshot Kills & Deaths
+                snapshotKillsDeathsSection
+
+                // Enhanced Time of Day Heatmap
+                enhancedTimeOfDayHeatmap
+
+                // Comparison Metrics
+                comparisonMetricsSection
 
                 // Weapon Usage Pie Chart
                 weaponUsageChart
-
-                // Performance Heatmap (Time of day)
-                timeOfDayHeatmap
 
                 // Stat comparison radar (if we have snapshots)
                 if !allSnapshots.isEmpty {
@@ -61,6 +73,7 @@ struct PerformanceChartsView: View {
             .padding()
         }
         .background(Theme.backgroundPrimary)
+        .animation(.easeInOut(duration: 0.3), value: selectedPeriod)
     }
 
     // MARK: - Header
@@ -98,67 +111,288 @@ struct PerformanceChartsView: View {
         }
     }
 
-    // MARK: - Daily Performance Charts
+    // MARK: - Summary Statistics Card
 
-    private var dailyKDChart: some View {
+    private var summaryStatsCard: some View {
+        let dailyData = historyManager.getDailyKDTrend(days: selectedPeriod.days)
+        let avgKD = historyManager.getAverageDailyKD(days: selectedPeriod.days)
+        let stdDev = historyManager.getDailyKDStandardDeviation(days: selectedPeriod.days)
+        let bestDay = dailyData.max(by: { $0.1 < $1.1 })
+        let worstDay = dailyData.min(by: { $0.1 < $1.1 })
+        let trend = calculateTrend(dailyData)
+
+        return VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "chart.bar.doc.horizontal")
+                    .foregroundColor(.purple)
+                Text("Period Summary")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+            }
+
+            HStack(spacing: 20) {
+                // Average K/D
+                StatBox(
+                    title: "Avg K/D",
+                    value: String(format: "%.2f", avgKD),
+                    subtitle: "±\(String(format: "%.2f", stdDev))",
+                    color: Theme.bf6Green
+                )
+
+                // Trend
+                StatBox(
+                    title: "Trend",
+                    value: trend.icon,
+                    subtitle: trend.description,
+                    color: trend.color
+                )
+
+                // Best Day
+                if let best = bestDay {
+                    StatBox(
+                        title: "Best Day",
+                        value: String(format: "%.2f", best.1),
+                        subtitle: formatDate(best.0),
+                        color: Theme.bf6Green
+                    )
+                }
+
+                // Worst Day
+                if let worst = worstDay {
+                    StatBox(
+                        title: "Worst Day",
+                        value: String(format: "%.2f", worst.1),
+                        subtitle: formatDate(worst.0),
+                        color: Theme.bf6Red
+                    )
+                }
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+
+    // MARK: - Combined K/D View (Snapshot + Daily)
+
+    private var combinedKDView: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .foregroundColor(Theme.bf6Green)
-
-                Text("Daily K/D Ratio")
+                Text("K/D Performance Overview")
                     .font(.headline)
                     .foregroundColor(Theme.textPrimary)
-
                 Spacer()
             }
 
+            let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
             let dailyData = historyManager.getDailyKDTrend(days: selectedPeriod.days)
+            let (bestSnapshot, worstSnapshot) = historyManager.getBestAndWorstSnapshots(days: selectedPeriod.days)
+            let avgKD = historyManager.getAverageDailyKD(days: selectedPeriod.days)
 
-            if dailyData.isEmpty {
-                Text("No daily performance data available yet")
+            if snapshots.isEmpty {
+                noDataView
+            } else {
+                VStack(spacing: 16) {
+                    // Snapshot-level K/D (Top Panel)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Snapshot History")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Chart {
+                            ForEach(snapshots, id: \.id) { snapshot in
+                                LineMark(
+                                    x: .value("Time", snapshot.timestamp),
+                                    y: .value("K/D", snapshot.kdRatio)
+                                )
+                                .foregroundStyle(Theme.bf6Green.gradient)
+                                .lineStyle(StrokeStyle(lineWidth: 2))
+
+                                PointMark(
+                                    x: .value("Time", snapshot.timestamp),
+                                    y: .value("K/D", snapshot.kdRatio)
+                                )
+                                .foregroundStyle(
+                                    snapshot.id == bestSnapshot?.id ? .green :
+                                    snapshot.id == worstSnapshot?.id ? .red :
+                                    colorForKD(snapshot.kdRatio, avg: avgKD)
+                                )
+                                .symbolSize(snapshot.id == bestSnapshot?.id || snapshot.id == worstSnapshot?.id ? 100 : 40)
+                            }
+
+                            // Average line
+                            if avgKD > 0 {
+                                RuleMark(y: .value("Average", avgKD))
+                                    .foregroundStyle(Theme.bf6Orange)
+                                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                            }
+                        }
+                        .chartYScale(domain: 0...(snapshots.map { $0.kdRatio }.max() ?? 3.0) * 1.1)
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { _ in
+                                AxisGridLine()
+                                AxisValueLabel()
+                            }
+                        }
+                        .chartXAxis {
+                            AxisMarks(values: .automatic) { value in
+                                AxisGridLine()
+                                if let date = value.as(Date.self) {
+                                    AxisValueLabel {
+                                        Text(formatDateForChart(date))
+                                            .font(.caption2)
+                                            .foregroundColor(Theme.textSecondary)
+                                    }
+                                }
+                            }
+                        }
+                        .chartXAxisLabel("Time", alignment: .center)
+                        .chartYAxisLabel("K/D Ratio", alignment: .center)
+                        .frame(height: 180)
+
+                        // Legend
+                        HStack(spacing: 16) {
+                            LegendItem(color: .green, text: "Best")
+                            LegendItem(color: .red, text: "Worst")
+                            LegendItem(color: Theme.bf6Orange, text: "Average", isDashed: true)
+                        }
+                        .font(.caption2)
+                    }
+
+                    Divider()
+
+                    // Daily Aggregated K/D (Bottom Panel)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Daily Aggregated Performance")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.textSecondary)
+
+                        if dailyData.isEmpty {
+                            Text("No daily performance data available yet")
+                                .font(.caption)
+                                .foregroundColor(Theme.textSecondary)
+                                .frame(height: 150)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        } else {
+                            Chart {
+                                ForEach(Array(dailyData.enumerated()), id: \.offset) { _, data in
+                                    BarMark(
+                                        x: .value("Date", data.0),
+                                        y: .value("K/D", data.1)
+                                    )
+                                    .foregroundStyle(gradientForKD(data.1, avg: avgKD))
+                                    .cornerRadius(4)
+                                }
+
+                                // Average line
+                                if avgKD > 0 {
+                                    RuleMark(y: .value("Average", avgKD))
+                                        .foregroundStyle(Theme.bf6Orange)
+                                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                                }
+                            }
+                            .chartYAxis {
+                                AxisMarks(position: .leading) { _ in
+                                    AxisGridLine()
+                                    AxisValueLabel()
+                                }
+                            }
+                            .chartXAxis {
+                                AxisMarks(values: .automatic) { value in
+                                    AxisGridLine()
+                                    if let date = value.as(Date.self) {
+                                        AxisValueLabel {
+                                            Text(formatDateForChart(date))
+                                                .font(.caption2)
+                                                .foregroundColor(Theme.textSecondary)
+                                        }
+                                    }
+                                }
+                            }
+                            .chartXAxisLabel("Date", alignment: .center)
+                            .chartYAxisLabel("K/D Ratio", alignment: .center)
+                            .frame(height: 150)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+
+    // MARK: - Rolling Average Chart
+
+    private var rollingAverageChart: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "waveform.path.ecg")
+                    .foregroundColor(.blue)
+                Text("Rolling Averages & Trend")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+            }
+
+            let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
+            let rolling7 = historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(7, snapshots.count))
+            let rolling30 = selectedPeriod.days >= 30 ? historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(30, snapshots.count)) : []
+
+            if snapshots.isEmpty {
+                noDataView
+            } else if snapshots.count < 3 {
+                Text("Need at least 3 data points for rolling average")
                     .font(.caption)
                     .foregroundColor(Theme.textSecondary)
-                    .frame(height: 200)
+                    .frame(height: 180)
                     .frame(maxWidth: .infinity, alignment: .center)
             } else {
                 Chart {
-                    ForEach(Array(dailyData.enumerated()), id: \.offset) { _, data in
-                        LineMark(
-                            x: .value("Date", data.0),
-                            y: .value("K/D", data.1)
+                    // Individual snapshots (light background)
+                    ForEach(snapshots, id: \.id) { snapshot in
+                        PointMark(
+                            x: .value("Time", snapshot.timestamp),
+                            y: .value("K/D", snapshot.kdRatio)
                         )
-                        .foregroundStyle(Theme.bf6Green.gradient)
-                        .lineStyle(StrokeStyle(lineWidth: 3))
-
-                        AreaMark(
-                            x: .value("Date", data.0),
-                            y: .value("K/D", data.1)
-                        )
-                        .foregroundStyle(Theme.bf6Green.opacity(0.2).gradient)
+                        .foregroundStyle(Color.gray.opacity(0.3))
+                        .symbolSize(20)
                     }
 
-                    // Average line
-                    let avgKD = historyManager.getAverageDailyKD(days: selectedPeriod.days)
-                    if avgKD > 0 {
-                        RuleMark(y: .value("Average", avgKD))
-                            .foregroundStyle(Theme.bf6Orange)
-                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
-                            .annotation(position: .top, alignment: .trailing) {
-                                Text("Avg: \(String(format: "%.2f", avgKD))")
-                                    .font(.caption2)
-                                    .foregroundColor(Theme.bf6Orange)
-                                    .padding(4)
-                                    .background(Theme.cardBackground)
-                                    .cornerRadius(4)
-                            }
+                    // 7-day rolling average
+                    ForEach(Array(rolling7.enumerated()), id: \.offset) { _, data in
+                        LineMark(
+                            x: .value("Date", data.0),
+                            y: .value("7-Day Avg", data.1)
+                        )
+                        .foregroundStyle(Color.blue.gradient)
+                        .lineStyle(StrokeStyle(lineWidth: 3))
+                    }
+
+                    // 30-day rolling average (if applicable)
+                    if !rolling30.isEmpty {
+                        ForEach(Array(rolling30.enumerated()), id: \.offset) { _, data in
+                            LineMark(
+                                x: .value("Date", data.0),
+                                y: .value("30-Day Avg", data.1)
+                            )
+                            .foregroundStyle(Color.purple.gradient)
+                            .lineStyle(StrokeStyle(lineWidth: 3, dash: [5, 3]))
+                        }
                     }
                 }
                 .chartYAxis {
-                    AxisMarks(position: .leading)
+                    AxisMarks(position: .leading) { _ in
+                        AxisGridLine()
+                        AxisValueLabel()
+                    }
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { value in
+                        AxisGridLine()
                         if let date = value.as(Date.self) {
                             AxisValueLabel {
                                 Text(formatDateForChart(date))
@@ -168,7 +402,19 @@ struct PerformanceChartsView: View {
                         }
                     }
                 }
-                .frame(height: 200)
+                .chartXAxisLabel("Date", alignment: .center)
+                .chartYAxisLabel("K/D Ratio", alignment: .center)
+                .frame(height: 180)
+
+                // Legend
+                HStack(spacing: 16) {
+                    LegendItem(color: .gray.opacity(0.3), text: "Individual")
+                    LegendItem(color: .blue, text: "7-Day Avg")
+                    if !rolling30.isEmpty {
+                        LegendItem(color: .purple, text: "30-Day Avg", isDashed: true)
+                    }
+                }
+                .font(.caption2)
             }
         }
         .padding()
@@ -176,43 +422,59 @@ struct PerformanceChartsView: View {
         .cornerRadius(12)
     }
 
-    private var dailyKillsChart: some View {
+    // MARK: - Enhanced Daily Kills Chart
+
+    private var enhancedDailyKillsChart: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "target")
                     .foregroundColor(Theme.bf6Red)
-
-                Text("Daily Kills")
+                Text("Daily Kills Performance")
                     .font(.headline)
                     .foregroundColor(Theme.textPrimary)
-
                 Spacer()
             }
 
             let dailyData = historyManager.getDailyKillsTrend(days: selectedPeriod.days)
 
             if dailyData.isEmpty {
-                Text("No daily performance data available yet")
-                    .font(.caption)
-                    .foregroundColor(Theme.textSecondary)
-                    .frame(height: 200)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                noDataView
             } else {
+                let avgKills = Double(dailyData.reduce(0) { $0 + $1.1 }) / Double(dailyData.count)
+                let maxKills = dailyData.map { $1 }.max() ?? 0
+
                 Chart {
                     ForEach(Array(dailyData.enumerated()), id: \.offset) { _, data in
                         BarMark(
                             x: .value("Date", data.0),
                             y: .value("Kills", data.1)
                         )
-                        .foregroundStyle(Theme.bf6Red.gradient)
+                        .foregroundStyle(gradientForKills(data.1, avg: avgKills, max: maxKills))
                         .cornerRadius(4)
                     }
+
+                    // Average line
+                    RuleMark(y: .value("Average", avgKills))
+                        .foregroundStyle(Theme.bf6Orange)
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                        .annotation(position: .top, alignment: .trailing) {
+                            Text("Avg: \(Int(avgKills))")
+                                .font(.caption2)
+                                .foregroundColor(Theme.bf6Orange)
+                                .padding(4)
+                                .background(Theme.cardBackground)
+                                .cornerRadius(4)
+                        }
                 }
                 .chartYAxis {
-                    AxisMarks(position: .leading)
+                    AxisMarks(position: .leading) { _ in
+                        AxisGridLine()
+                        AxisValueLabel()
+                    }
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { value in
+                        AxisGridLine()
                         if let date = value.as(Date.self) {
                             AxisValueLabel {
                                 Text(formatDateForChart(date))
@@ -222,7 +484,31 @@ struct PerformanceChartsView: View {
                         }
                     }
                 }
-                .frame(height: 200)
+                .chartXAxisLabel("Date", alignment: .center)
+                .chartYAxisLabel("Kills", alignment: .center)
+                .frame(height: 180)
+
+                // Performance indicators
+                HStack(spacing: 12) {
+                    SmallStatCard(
+                        icon: "arrow.up.circle.fill",
+                        label: "Best",
+                        value: "\(maxKills)",
+                        color: .green
+                    )
+                    SmallStatCard(
+                        icon: "chart.line.flattrend.xyaxis",
+                        label: "Average",
+                        value: String(format: "%.0f", avgKills),
+                        color: .orange
+                    )
+                    SmallStatCard(
+                        icon: "sum",
+                        label: "Total",
+                        value: "\(dailyData.reduce(0) { $0 + $1.1 })",
+                        color: .blue
+                    )
+                }
             }
         }
         .padding()
@@ -230,50 +516,408 @@ struct PerformanceChartsView: View {
         .cornerRadius(12)
     }
 
-    // MARK: - K/D Trend Chart
+    // MARK: - Snapshot Kills & Deaths Section
 
-    private var kdTrendChart: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("K/D Trend")
-                .font(.headline)
+    private var snapshotKillsDeathsSection: some View {
+        let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
 
-            if allSnapshots.isEmpty {
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "camera.aperture")
+                    .foregroundColor(.cyan)
+                Text("Snapshot Delta: Kills vs Deaths")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+                Text("\(snapshots.count) snapshots")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+
+            if snapshots.isEmpty {
                 noDataView
             } else {
-                Chart {
-                    ForEach(allSnapshots.prefix(10).reversed(), id: \.id) { snapshot in
-                        LineMark(
-                            x: .value("Time", snapshot.timestamp),
-                            y: .value("K/D", snapshot.kdRatio)
-                        )
-                        .foregroundStyle(Color.purple.gradient)
+                // Calculate deltas for each snapshot
+                let snapshotDeltas = calculateSnapshotDeltas(snapshots)
 
-                        PointMark(
-                            x: .value("Time", snapshot.timestamp),
-                            y: .value("K/D", snapshot.kdRatio)
+                Chart {
+                    // Kills series
+                    ForEach(snapshotDeltas, id: \.timestamp) { delta in
+                        LineMark(
+                            x: .value("Time", delta.timestamp),
+                            y: .value("Count", delta.deltaKills),
+                            series: .value("Type", "Kills")
                         )
-                        .foregroundStyle(Color.purple)
+                        .foregroundStyle(.green)
+                        .lineStyle(StrokeStyle(lineWidth: 3))
+                        .symbol {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 8, height: 8)
+                        }
+                    }
+
+                    // Deaths series
+                    ForEach(snapshotDeltas, id: \.timestamp) { delta in
+                        LineMark(
+                            x: .value("Time", delta.timestamp),
+                            y: .value("Count", delta.deltaDeaths),
+                            series: .value("Type", "Deaths")
+                        )
+                        .foregroundStyle(.red)
+                        .lineStyle(StrokeStyle(lineWidth: 3, dash: [5, 5]))
+                        .symbol {
+                            Rectangle()
+                                .fill(.red)
+                                .frame(width: 8, height: 8)
+                        }
                     }
                 }
-                .frame(height: 200)
+                .chartYAxis {
+                    AxisMarks(position: .leading) { _ in
+                        AxisGridLine()
+                        AxisValueLabel()
+                    }
+                }
                 .chartXAxis {
-                    AxisMarks(values: .automatic) { _ in
-                        AxisValueLabel(format: .dateTime.month().day())
+                    AxisMarks(values: .automatic) { value in
+                        AxisGridLine()
+                        if let date = value.as(Date.self) {
+                            AxisValueLabel {
+                                Text(formatDateForChart(date))
+                                    .font(.caption2)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                        }
+                    }
+                }
+                .chartXAxisLabel("Time", alignment: .center)
+                .chartYAxisLabel("Count", alignment: .center)
+                .chartLegend(position: .top, alignment: .leading) {
+                    HStack(spacing: 16) {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 8, height: 8)
+                            Text("Kills")
+                                .font(.caption)
+                                .foregroundColor(Theme.textPrimary)
+                        }
+                        HStack(spacing: 4) {
+                            Rectangle()
+                                .fill(.red)
+                                .frame(width: 8, height: 8)
+                            Text("Deaths")
+                                .font(.caption)
+                                .foregroundColor(Theme.textPrimary)
+                        }
+                    }
+                }
+                .frame(height: 220)
+
+                // Summary stats
+                let totalDeltaKills = snapshotDeltas.reduce(0) { $0 + $1.deltaKills }
+                let totalDeltaDeaths = snapshotDeltas.reduce(0) { $0 + $1.deltaDeaths }
+                let overallKD = totalDeltaDeaths > 0 ? Double(totalDeltaKills) / Double(totalDeltaDeaths) : Double(totalDeltaKills)
+
+                HStack(spacing: 12) {
+                    SmallStatCard(
+                        icon: "target",
+                        label: "Total Kills",
+                        value: "\(totalDeltaKills)",
+                        color: .green
+                    )
+                    SmallStatCard(
+                        icon: "xmark.circle",
+                        label: "Total Deaths",
+                        value: "\(totalDeltaDeaths)",
+                        color: .red
+                    )
+                    SmallStatCard(
+                        icon: "chart.bar",
+                        label: "K/D Ratio",
+                        value: String(format: "%.2f", overallKD),
+                        color: overallKD >= 1.0 ? .green : .red
+                    )
+                }
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+
+    private func calculateSnapshotDeltas(_ snapshots: [StatsSnapshot]) -> [(timestamp: Date, deltaKills: Int, deltaDeaths: Int)] {
+        guard !snapshots.isEmpty else { return [] }
+
+        let sorted = snapshots.sorted(by: { $0.timestamp < $1.timestamp })
+        var deltas: [(Date, Int, Int)] = []
+
+        // First snapshot has 0 delta
+        deltas.append((sorted[0].timestamp, 0, 0))
+
+        // Calculate deltas from previous snapshot
+        for i in 1..<sorted.count {
+            let current = sorted[i]
+            let previous = sorted[i - 1]
+
+            let deltaKills = max(0, current.kills - previous.kills)
+            let deltaDeaths = max(0, current.deaths - previous.deaths)
+
+            deltas.append((current.timestamp, deltaKills, deltaDeaths))
+        }
+
+        return deltas
+    }
+
+    // MARK: - Enhanced Time of Day Heatmap
+
+    private var enhancedTimeOfDayHeatmap: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "clock.fill")
+                    .foregroundColor(.orange)
+                Text("Performance by Time of Day")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+            }
+
+            let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
+
+            if snapshots.isEmpty {
+                noDataView
+            } else {
+                let hourlyData = historyManager.getHourlyStats(snapshots: snapshots)
+
+                // K/D by Hour
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Average K/D by Hour")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textSecondary)
+
+                    Chart(hourlyData.filter { $0.sessionCount > 0 }, id: \.hour) { data in
+                        BarMark(
+                            x: .value("Hour", data.hour),
+                            y: .value("Avg K/D", data.avgKD)
+                        )
+                        .foregroundStyle(by: .value("Performance", performanceLevel(data.avgKD)))
+                    }
+                    .chartYAxis {
+                        AxisMarks(position: .leading) { _ in
+                            AxisGridLine()
+                            AxisValueLabel()
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks { _ in
+                            AxisGridLine()
+                            AxisValueLabel()
+                        }
+                    }
+                    .chartXAxisLabel("Hour of Day", alignment: .center)
+                    .chartYAxisLabel("Avg K/D", alignment: .center)
+                    .frame(height: 120)
+                }
+
+                Divider()
+
+                // Kills by Hour
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Kills Earned by Hour")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textSecondary)
+
+                    Chart(hourlyData.filter { $0.sessionCount > 0 }, id: \.hour) { data in
+                        BarMark(
+                            x: .value("Hour", data.hour),
+                            y: .value("Kills", data.totalKills)
+                        )
+                        .foregroundStyle(Theme.bf6Green.gradient)
+                    }
+                    .chartYAxis {
+                        AxisMarks(position: .leading) { _ in
+                            AxisGridLine()
+                            AxisValueLabel()
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks { _ in
+                            AxisGridLine()
+                            AxisValueLabel()
+                        }
+                    }
+                    .chartXAxisLabel("Hour of Day", alignment: .center)
+                    .chartYAxisLabel("Kills Earned", alignment: .center)
+                    .frame(height: 100)
+                }
+
+                Divider()
+
+                // Session Count by Hour
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Session Activity by Hour")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textSecondary)
+
+                    Chart(hourlyData.filter { $0.sessionCount > 0 }, id: \.hour) { data in
+                        BarMark(
+                            x: .value("Hour", data.hour),
+                            y: .value("Sessions", data.sessionCount)
+                        )
+                        .foregroundStyle(Color.blue.gradient)
+                    }
+                    .chartYAxis {
+                        AxisMarks(position: .leading) { _ in
+                            AxisGridLine()
+                            AxisValueLabel()
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks { _ in
+                            AxisGridLine()
+                            AxisValueLabel()
+                        }
+                    }
+                    .chartXAxisLabel("Hour of Day", alignment: .center)
+                    .chartYAxisLabel("Sessions", alignment: .center)
+                    .frame(height: 100)
+                }
+
+                // Best time of day
+                if let bestHour = hourlyData.filter({ $0.sessionCount > 0 }).max(by: { $0.avgKD < $1.avgKD }) {
+                    HStack {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.yellow)
+                        Text("Peak Performance: \(bestHour.hour):00 - \(bestHour.hour + 1):00 (K/D: \(String(format: "%.2f", bestHour.avgKD)))")
+                            .font(.caption)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                    .padding(.top, 8)
+                }
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+
+    // MARK: - Comparison Metrics Section
+
+    private var comparisonMetricsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "arrow.left.arrow.right")
+                    .foregroundColor(.purple)
+                Text("Performance Comparisons")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+            }
+
+            // Weekend vs Weekday
+            let (weekendKD, weekdayKD) = historyManager.getWeekendVsWeekdayStats(days: selectedPeriod.days)
+
+            if weekendKD > 0 || weekdayKD > 0 {
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Weekend vs Weekday")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.textSecondary)
+                        Spacer()
+                    }
+
+                    HStack(spacing: 16) {
+                        ComparisonCard(
+                            label: "Weekend",
+                            value: String(format: "%.2f", weekendKD),
+                            color: .purple,
+                            isWinner: weekendKD > weekdayKD
+                        )
+
+                        Image(systemName: "arrow.left.and.right")
+                            .foregroundColor(Theme.textSecondary)
+
+                        ComparisonCard(
+                            label: "Weekday",
+                            value: String(format: "%.2f", weekdayKD),
+                            color: .blue,
+                            isWinner: weekdayKD > weekendKD
+                        )
+                    }
+
+                    let difference = abs(weekendKD - weekdayKD)
+                    let percentDiff = weekdayKD > 0 ? (difference / weekdayKD) * 100 : 0
+                    Text("\(weekendKD > weekdayKD ? "Weekends" : "Weekdays") perform \(String(format: "%.1f%%", percentDiff)) better")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                }
+            }
+
+            // Week over week (if enough data)
+            if selectedPeriod.days >= 14 {
+                let thisWeekKD = historyManager.getAverageDailyKD(days: 7)
+                let lastWeekKD = calculateLastWeekKD()
+
+                if thisWeekKD > 0 && lastWeekKD > 0 {
+                    Divider()
+
+                    VStack(spacing: 12) {
+                        HStack {
+                            Text("This Week vs Last Week")
+                                .font(.subheadline)
+                                .foregroundColor(Theme.textSecondary)
+                            Spacer()
+                        }
+
+                        HStack(spacing: 16) {
+                            ComparisonCard(
+                                label: "This Week",
+                                value: String(format: "%.2f", thisWeekKD),
+                                color: .green,
+                                isWinner: thisWeekKD > lastWeekKD
+                            )
+
+                            Image(systemName: "arrow.left.and.right")
+                                .foregroundColor(Theme.textSecondary)
+
+                            ComparisonCard(
+                                label: "Last Week",
+                                value: String(format: "%.2f", lastWeekKD),
+                                color: .orange,
+                                isWinner: lastWeekKD > thisWeekKD
+                            )
+                        }
+
+                        let change = thisWeekKD - lastWeekKD
+                        let percentChange = lastWeekKD > 0 ? (change / lastWeekKD) * 100 : 0
+                        HStack {
+                            Image(systemName: change >= 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                                .foregroundColor(change >= 0 ? .green : .red)
+                            Text("\(change >= 0 ? "+" : "")\(String(format: "%.2f", change)) (\(String(format: "%.1f%%", percentChange)))")
+                                .font(.caption)
+                                .foregroundColor(Theme.textSecondary)
+                        }
                     }
                 }
             }
         }
         .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(16)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
     }
 
     // MARK: - Weapon Usage Chart
 
     private var weaponUsageChart: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Weapon Usage")
-                .font(.headline)
+            HStack {
+                Image(systemName: "hammer.fill")
+                    .foregroundColor(.orange)
+                Text("Weapon Usage")
+                    .font(.headline)
+                Spacer()
+            }
 
             if !viewModel.topWeapons.isEmpty {
                 Chart(viewModel.topWeapons.prefix(5)) { weapon in
@@ -290,46 +934,23 @@ struct PerformanceChartsView: View {
             }
         }
         .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(16)
-    }
-
-    // MARK: - Time of Day Heatmap
-
-    private var timeOfDayHeatmap: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Performance by Time")
-                .font(.headline)
-
-            if allSnapshots.isEmpty {
-                noDataView
-            } else {
-                let hourlyData = calculateHourlyPerformance()
-
-                Chart(hourlyData, id: \.hour) { data in
-                    BarMark(
-                        x: .value("Hour", data.hour),
-                        y: .value("Avg K/D", data.avgKD)
-                    )
-                    .foregroundStyle(by: .value("Performance", performanceLevel(data.avgKD)))
-                }
-                .frame(height: 150)
-            }
-        }
-        .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(16)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
     }
 
     // MARK: - Performance Radar
 
     private var performanceRadar: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Multi-Stat Comparison")
-                .font(.headline)
+            HStack {
+                Image(systemName: "chart.bar.xaxis")
+                    .foregroundColor(.purple)
+                Text("Multi-Stat Comparison")
+                    .font(.headline)
+                Spacer()
+            }
 
             if let stats = viewModel.playerStats {
-                // Simplified radar chart representation
                 VStack(spacing: 8) {
                     RadarStatRow(label: "K/D", value: stats.kdRatio, maxValue: 3.0)
                     RadarStatRow(label: "Accuracy", value: stats.accuracy, maxValue: 100)
@@ -339,8 +960,8 @@ struct PerformanceChartsView: View {
             }
         }
         .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(16)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
     }
 
     private var noDataView: some View {
@@ -353,21 +974,48 @@ struct PerformanceChartsView: View {
 
     // MARK: - Helper Functions
 
-    private func calculateHourlyPerformance() -> [HourlyData] {
-        let calendar = Calendar.current
-        var hourlyStats: [Int: (totalKD: Double, count: Int)] = [:]
+    private func calculateTrend(_ data: [(Date, Double)]) -> (icon: String, description: String, color: Color) {
+        guard data.count >= 2 else { return ("→", "Stable", .gray) }
 
-        for snapshot in allSnapshots {
-            let hour = calendar.component(.hour, from: snapshot.timestamp)
-            let current = hourlyStats[hour] ?? (0, 0)
-            hourlyStats[hour] = (current.totalKD + snapshot.kdRatio, current.count + 1)
-        }
+        let firstHalf = data.prefix(data.count / 2).map { $0.1 }
+        let secondHalf = data.suffix(data.count - data.count / 2).map { $0.1 }
 
-        return (0..<24).map { hour in
-            let stats = hourlyStats[hour]
-            let avgKD = stats != nil ? stats!.totalKD / Double(stats!.count) : 0
-            return HourlyData(hour: hour, avgKD: avgKD)
+        let firstAvg = firstHalf.reduce(0, +) / Double(firstHalf.count)
+        let secondAvg = secondHalf.reduce(0, +) / Double(secondHalf.count)
+
+        let change = ((secondAvg - firstAvg) / firstAvg) * 100
+
+        if change > 5 {
+            return ("↑", "Improving", .green)
+        } else if change < -5 {
+            return ("↓", "Declining", .red)
+        } else {
+            return ("→", "Stable", .orange)
         }
+    }
+
+    private func colorForKD(_ kd: Double, avg: Double) -> Color {
+        if kd >= avg * 1.2 { return .green }
+        if kd >= avg * 0.8 { return .yellow }
+        return .red
+    }
+
+    private func gradientForKD(_ kd: Double, avg: Double) -> LinearGradient {
+        let color: Color
+        if kd >= avg * 1.2 { color = .green }
+        else if kd >= avg * 0.8 { color = .orange }
+        else { color = .red }
+
+        return LinearGradient(colors: [color, color.opacity(0.6)], startPoint: .top, endPoint: .bottom)
+    }
+
+    private func gradientForKills(_ kills: Int, avg: Double, max: Int) -> LinearGradient {
+        let color: Color
+        if Double(kills) >= avg * 1.2 { color = Theme.bf6Green }
+        else if Double(kills) >= avg * 0.8 { color = Theme.bf6Orange }
+        else { color = Theme.bf6Red }
+
+        return LinearGradient(colors: [color, color.opacity(0.6)], startPoint: .top, endPoint: .bottom)
     }
 
     private func performanceLevel(_ kd: Double) -> String {
@@ -382,11 +1030,223 @@ struct PerformanceChartsView: View {
         if selectedPeriod == .day {
             formatter.timeStyle = .short
         } else if selectedPeriod == .week {
-            formatter.dateFormat = "E"  // Mon, Tue, etc.
+            formatter.dateFormat = "E"
         } else {
-            formatter.dateFormat = "M/d"  // 12/21
+            formatter.dateFormat = "M/d"
         }
         return formatter.string(from: date)
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d"
+        return formatter.string(from: date)
+    }
+
+    private func calculateLastWeekKD() -> Double {
+        // Get snapshots from 8-14 days ago
+        guard let context = historyManager.modelContext else { return 0.0 }
+        let startDate = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
+        let endDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+
+        let predicate = #Predicate<StatsSnapshot> { snapshot in
+            snapshot.timestamp >= startDate && snapshot.timestamp < endDate
+        }
+
+        let descriptor = FetchDescriptor<StatsSnapshot>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+
+        guard let snapshots = try? context.fetch(descriptor), !snapshots.isEmpty else { return 0.0 }
+
+        return snapshots.map { $0.kdRatio }.reduce(0.0, +) / Double(snapshots.count)
+    }
+}
+
+// MARK: - Supporting Views
+
+struct StatBox: View {
+    let title: String
+    let value: String
+    let subtitle: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundColor(Theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Theme.overlayColor)
+        .cornerRadius(8)
+    }
+}
+
+struct SmallStatCard: View {
+    let icon: String
+    let label: String
+    let value: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundColor(color)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+                Text(value)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(Theme.overlayColor)
+        .cornerRadius(6)
+    }
+}
+
+struct SessionCard: View {
+    let session: [StatsSnapshot]
+    let index: Int
+
+    var body: some View {
+        let sessionKD = session.isEmpty ? 0.0 : session.map { $0.kdRatio }.reduce(0, +) / Double(session.count)
+        let duration = session.count > 1 ? session.last!.timestamp.timeIntervalSince(session.first!.timestamp) : 0
+        let kills = session.isEmpty ? 0 : (session.last!.kills - session.first!.kills)
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Session \(index)")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                Spacer()
+                Circle()
+                    .fill(sessionKD >= 1.0 ? Color.green : Color.red)
+                    .frame(width: 8, height: 8)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.caption2)
+                    Text("K/D: \(String(format: "%.2f", sessionKD))")
+                        .font(.caption2)
+                }
+
+                HStack {
+                    Image(systemName: "target")
+                        .font(.caption2)
+                    Text("\(kills) kills")
+                        .font(.caption2)
+                }
+
+                HStack {
+                    Image(systemName: "clock")
+                        .font(.caption2)
+                    Text(formatDuration(duration))
+                        .font(.caption2)
+                }
+
+                HStack {
+                    Image(systemName: "camera.aperture")
+                        .font(.caption2)
+                    Text("\(session.count) snapshots")
+                        .font(.caption2)
+                }
+            }
+            .foregroundColor(Theme.textSecondary)
+        }
+        .padding(12)
+        .frame(width: 160)
+        .background(Theme.overlayColor)
+        .cornerRadius(10)
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = (Int(duration) % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+}
+
+struct ComparisonCard: View {
+    let label: String
+    let value: String
+    let color: Color
+    let isWinner: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            if isWinner {
+                Image(systemName: "crown.fill")
+                    .foregroundColor(.yellow)
+                    .font(.caption)
+            } else {
+                Spacer()
+                    .frame(height: 16)
+            }
+
+            Text(label)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Theme.overlayColor)
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isWinner ? color : Color.clear, lineWidth: 2)
+        )
+    }
+}
+
+struct LegendItem: View {
+    let color: Color
+    let text: String
+    var isDashed: Bool = false
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if isDashed {
+                Rectangle()
+                    .fill(color)
+                    .frame(width: 16, height: 2)
+                    .overlay(
+                        Rectangle()
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [3, 2]))
+                            .foregroundColor(color)
+                    )
+            } else {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+            }
+            Text(text)
+                .foregroundColor(Theme.textSecondary)
+        }
     }
 }
 
@@ -463,6 +1323,13 @@ enum ChartMetric: String, CaseIterable, Identifiable {
 struct HourlyData {
     let hour: Int
     let avgKD: Double
+}
+
+struct HourlyPerformanceData {
+    let hour: Int
+    let avgKD: Double
+    let totalKills: Int
+    let sessionCount: Int
 }
 
 // MARK: - Preview
