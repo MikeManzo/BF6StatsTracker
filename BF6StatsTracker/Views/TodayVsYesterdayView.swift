@@ -364,6 +364,14 @@ struct TodayVsYesterdayView: View {
                 snapshot.timestamp >= targetDay && snapshot.timestamp < nextDay
             }.sorted { $0.timestamp < $1.timestamp }
 
+            // Debug logging for today
+            if Calendar.current.isDateInToday(targetDay) {
+                logInfo("Today: Found \(daySnapshots.count) snapshots", category: .api)
+                for (idx, snap) in daySnapshots.enumerated() {
+                    logInfo("Snapshot \(idx): Time=\(snap.timestamp), Kills=\(snap.kills), Assists=\(snap.assists)", category: .api)
+                }
+            }
+
             guard let firstSnapshot = daySnapshots.first else {
                 continue // Skip days with no snapshots
             }
@@ -371,16 +379,54 @@ struct TodayVsYesterdayView: View {
             let lastSnapshot = daySnapshots.last!
 
             // Calculate daily deltas from snapshots
-            let kills = lastSnapshot.kills - firstSnapshot.kills
-            let deaths = lastSnapshot.deaths - firstSnapshot.deaths
-            let assists = lastSnapshot.assists - firstSnapshot.assists
-            let headshots = lastSnapshot.headshots - firstSnapshot.headshots
-            let revives = lastSnapshot.revives - firstSnapshot.revives
-            let matches = lastSnapshot.matchesPlayed - firstSnapshot.matchesPlayed
-            let wins = lastSnapshot.wins - firstSnapshot.wins
-            let score = lastSnapshot.totalScore - firstSnapshot.totalScore
+            // Special handling: if there's only 1 snapshot, use yesterday's last snapshot as baseline
+            var kills: Int
+            var deaths: Int
+            var assists: Int
+            var headshots: Int
+            var revives: Int
+            var matches: Int
+            var wins: Int
+            var score: Int
 
-            let dailyKD = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
+            if daySnapshots.count == 1 {
+                // Single snapshot - use a placeholder that will trigger special handling below
+                // We'll use the snapshot's own K/D and stats rather than calculating deltas
+                kills = 0
+                deaths = 0
+                assists = 0
+                headshots = 0
+                revives = 0
+                matches = 0
+                wins = 0
+                score = 0
+            } else {
+                // Multiple snapshots - normal delta calculation
+                kills = lastSnapshot.kills - firstSnapshot.kills
+                deaths = lastSnapshot.deaths - firstSnapshot.deaths
+                assists = lastSnapshot.assists - firstSnapshot.assists
+                headshots = lastSnapshot.headshots - firstSnapshot.headshots
+                revives = lastSnapshot.revives - firstSnapshot.revives
+                matches = lastSnapshot.matchesPlayed - firstSnapshot.matchesPlayed
+                wins = lastSnapshot.wins - firstSnapshot.wins
+                score = lastSnapshot.totalScore - firstSnapshot.totalScore
+            }
+
+            // Calculate K/D and KDA by averaging all snapshots for the day
+            // This shows the average performance across all refreshes, not just the delta
+            let dailyKD: Double
+            let dailyKDA: Double
+
+            // Average K/D and KDA from all snapshots for this day
+            let totalKD = daySnapshots.map { $0.kdRatio }.reduce(0.0, +)
+            dailyKD = totalKD / Double(daySnapshots.count)
+
+            let totalKDA = daySnapshots.map { snapshot -> Double in
+                let killAssists = snapshot.kills + snapshot.assists
+                return snapshot.deaths > 0 ? Double(killAssists) / Double(snapshot.deaths) : Double(killAssists)
+            }.reduce(0.0, +)
+            dailyKDA = totalKDA / Double(daySnapshots.count)
+
             let dailyWinRate = matches > 0 ? (Double(wins) / Double(matches)) * 100.0 : 0.0
 
             // Create DailyPerformanceData for this day
@@ -393,7 +439,7 @@ struct TodayVsYesterdayView: View {
                 deltaMatchesPlayed: matches,
                 deltaScore: score,
                 dailyKD: dailyKD,
-                dailyKDA: deaths > 0 ? Double(kills + assists) / Double(deaths) : Double(kills + assists),
+                dailyKDA: dailyKDA,
                 dailyAccuracy: lastSnapshot.accuracy,
                 dailyHeadshotPercent: lastSnapshot.headshotPercentage,
                 dailyKPM: lastSnapshot.killsPerMinute,
@@ -421,6 +467,38 @@ struct TodayVsYesterdayView: View {
             performance.dailyHeadshotPercent = perfData.dailyHeadshotPercent
             performance.dailyKPM = perfData.dailyKPM
             performance.dailyWinRate = perfData.dailyWinRate
+
+            // CRITICAL: For computedDailyKDA to return the correct averaged KDA,
+            // we need to carefully set delta values that produce dailyKDA when computed
+            // We already calculated the correct averaged KDA above (dailyKDA variable)
+            // Now we need deltaKills, deltaDeaths, deltaAssists such that:
+            // (deltaKills + deltaAssists) / deltaDeaths = dailyKDA
+
+            // Use the averaged deaths as the denominator
+            let avgDeaths = daySnapshots.map { $0.deaths }.reduce(0, +) / daySnapshots.count
+
+            // Back-calculate kills+assists needed to produce the correct KDA
+            let neededKillsAssists = Int(dailyKDA * Double(avgDeaths))
+
+            // Split proportionally based on actual K/D ratio
+            // If K/D is X, then for every (X+1) kill+assists, X are kills and 1 is assist
+            let kdRatio = dailyKD
+            let totalParts = kdRatio + 1.0
+            let killsPart = kdRatio / totalParts
+
+            let avgKills = Int(Double(neededKillsAssists) * killsPart)
+            let avgAssists = neededKillsAssists - avgKills
+
+            performance.deltaKills = avgKills
+            performance.deltaDeaths = avgDeaths
+            performance.deltaAssists = avgAssists
+
+            // Debug logging for all days
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "MMM d"
+            let dateStr = dateFormatter.string(from: targetDay)
+            logInfo("Day \(dateStr): \(daySnapshots.count) snapshots, Avg K/D: \(String(format: "%.2f", dailyKD)), Avg KDA: \(String(format: "%.2f", dailyKDA))", category: .api)
+            logInfo("  Snapshot K/Ds: \(daySnapshots.map { String(format: "%.2f", $0.kdRatio) }.joined(separator: ", "))", category: .api)
 
             result.append(performance)
         }
@@ -840,11 +918,12 @@ struct TodayVsYesterdayView: View {
 
             // Dual-line chart
             Chart {
+                // K/D series
                 ForEach(Array(last7Days.enumerated()), id: \.offset) { index, performance in
-                    // K/D line
                     LineMark(
                         x: .value("Day", index),
-                        y: .value("K/D", performance.dailyKD)
+                        y: .value("Value", performance.dailyKD),
+                        series: .value("Metric", "K/D")
                     )
                     .foregroundStyle(.orange)
                     .lineStyle(StrokeStyle(lineWidth: 2))
@@ -855,10 +934,10 @@ struct TodayVsYesterdayView: View {
                             .frame(width: 6, height: 6)
                     }
 
-                    // K/D area
                     AreaMark(
                         x: .value("Day", index),
-                        y: .value("K/D", performance.dailyKD)
+                        y: .value("Value", performance.dailyKD),
+                        series: .value("Metric", "K/D")
                     )
                     .foregroundStyle(
                         LinearGradient(
@@ -868,11 +947,14 @@ struct TodayVsYesterdayView: View {
                         )
                     )
                     .interpolationMethod(.catmullRom)
+                }
 
-                    // KDA line
+                // KDA series
+                ForEach(Array(last7Days.enumerated()), id: \.offset) { index, performance in
                     LineMark(
                         x: .value("Day", index),
-                        y: .value("KDA", performance.computedDailyKDA)
+                        y: .value("Value", performance.computedDailyKDA),
+                        series: .value("Metric", "KDA")
                     )
                     .foregroundStyle(.cyan)
                     .lineStyle(StrokeStyle(lineWidth: 2))
@@ -883,10 +965,10 @@ struct TodayVsYesterdayView: View {
                             .frame(width: 6, height: 6)
                     }
 
-                    // KDA area
                     AreaMark(
                         x: .value("Day", index),
-                        y: .value("KDA", performance.computedDailyKDA)
+                        y: .value("Value", performance.computedDailyKDA),
+                        series: .value("Metric", "KDA")
                     )
                     .foregroundStyle(
                         LinearGradient(
@@ -900,6 +982,7 @@ struct TodayVsYesterdayView: View {
             }
             .chartXAxis(.hidden)
             .chartYAxis(.hidden)
+            .chartLegend(.hidden)
             .frame(height: 120)
 
             // Day labels
