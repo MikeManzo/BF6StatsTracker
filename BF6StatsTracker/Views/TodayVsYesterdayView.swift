@@ -16,6 +16,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct TodayVsYesterdayView: View {
     @EnvironmentObject var historyManager: HistoryManager
@@ -430,6 +431,12 @@ struct TodayVsYesterdayView: View {
         return result
     }
 
+    private func dayLabel(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: date)
+    }
+
     private func calculateStreakDays() -> Int {
         let performances = historyManager.recentDailyPerformances
         guard performances.count >= 2 else { return 0 }
@@ -466,10 +473,7 @@ struct TodayVsYesterdayView: View {
 
                     // 7-day trend (full width) - show if we have at least 2 days of data
                     if last7Days.count >= 2 {
-                        SevenDayTrendView(
-                            dailyPerformances: last7Days,
-                            metric: .kd
-                        )
+                        kdKdaTrendView
                         .padding(.horizontal)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -780,6 +784,208 @@ struct TodayVsYesterdayView: View {
                     .padding(.top, 4)
             }
         }
+    }
+
+    // MARK: - K/D & KDA Trend View
+
+    private var kdKdaTrendView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header with both metrics
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("📈 K/D & KDA Trend")
+                        .font(.headline)
+                        .fontWeight(.bold)
+
+                    Spacer()
+
+                    HStack(spacing: 12) {
+                        // K/D value
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(.orange)
+                                .frame(width: 8, height: 8)
+                            Text(String(format: "%.2f", last7Days.last?.dailyKD ?? 0))
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.orange)
+                        }
+
+                        Text("|")
+                            .foregroundStyle(.secondary)
+
+                        // KDA value
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(.cyan)
+                                .frame(width: 8, height: 8)
+                            Text(String(format: "%.2f", last7Days.last?.computedDailyKDA ?? 0))
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.cyan)
+                        }
+                    }
+                }
+
+                // Description
+                HStack(spacing: 4) {
+                    Image(systemName: "info.circle")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text("Shaded areas show relative performance magnitude. KDA includes assists (K+A)/D.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Dual-line chart
+            Chart {
+                ForEach(Array(last7Days.enumerated()), id: \.offset) { index, performance in
+                    // K/D line
+                    LineMark(
+                        x: .value("Day", index),
+                        y: .value("K/D", performance.dailyKD)
+                    )
+                    .foregroundStyle(.orange)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .interpolationMethod(.catmullRom)
+                    .symbol {
+                        Circle()
+                            .fill(.orange)
+                            .frame(width: 6, height: 6)
+                    }
+
+                    // K/D area
+                    AreaMark(
+                        x: .value("Day", index),
+                        y: .value("K/D", performance.dailyKD)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.orange.opacity(0.2), .orange.opacity(0.05)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+
+                    // KDA line
+                    LineMark(
+                        x: .value("Day", index),
+                        y: .value("KDA", performance.computedDailyKDA)
+                    )
+                    .foregroundStyle(.cyan)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .interpolationMethod(.catmullRom)
+                    .symbol {
+                        Circle()
+                            .fill(.cyan)
+                            .frame(width: 6, height: 6)
+                    }
+
+                    // KDA area
+                    AreaMark(
+                        x: .value("Day", index),
+                        y: .value("KDA", performance.computedDailyKDA)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.cyan.opacity(0.2), .cyan.opacity(0.05)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+                }
+            }
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .frame(height: 120)
+
+            // Day labels
+            HStack {
+                ForEach(last7Days.indices, id: \.self) { index in
+                    Text(dayLabel(for: last7Days[index].date))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            // Legend
+            HStack(spacing: 16) {
+                // K/D legend
+                HStack(spacing: 6) {
+                    Rectangle()
+                        .fill(.orange)
+                        .frame(width: 20, height: 3)
+                        .cornerRadius(1.5)
+                    Text("K/D")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // KDA legend
+                HStack(spacing: 6) {
+                    Rectangle()
+                        .fill(.cyan)
+                        .frame(width: 20, height: 3)
+                        .cornerRadius(1.5)
+                    Text("KDA")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Best days for both metrics
+            HStack(spacing: 16) {
+                // Best K/D day
+                HStack(spacing: 4) {
+                    Text("Best K/D:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if let best = last7Days.max(by: { $0.dailyKD < $1.dailyKD }) {
+                        Text(best.formattedDate)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.orange)
+                    }
+                }
+
+                Spacer()
+
+                // Best KDA day
+                HStack(spacing: 4) {
+                    Text("Best KDA:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if let best = last7Days.max(by: { $0.computedDailyKDA < $1.computedDailyKDA }) {
+                        Text(best.formattedDate)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.cyan)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [.orange.opacity(0.3), .cyan.opacity(0.3)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 1
+                )
+        )
     }
 
     // MARK: - Combat Breakdown

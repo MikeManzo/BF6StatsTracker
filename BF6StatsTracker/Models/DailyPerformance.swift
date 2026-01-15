@@ -232,4 +232,11 @@ final class DailyPerformance {
             return formatter.string(from: date)
         }
     }
+
+    /// Computed KDA (Kills + Assists / Deaths) calculated from existing properties
+    /// This doesn't modify SwiftData storage - calculated on-the-fly
+    var computedDailyKDA: Double {
+        let killAssists = deltaKills + deltaAssists
+        return deltaDeaths > 0 ? Double(killAssists) / Double(deltaDeaths) : Double(killAssists)
+    }
 }
