@@ -22,10 +22,11 @@ struct OverviewStatsView: View {
     @EnvironmentObject var historyManager: HistoryManager
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             // Daily Performance (Today's stats) - Always show enhanced view
             TodayVsYesterdayView()
                 .environmentObject(historyManager)
+                .frame(alignment: .leading)
 
             // Data Completeness Warning Banner
             if viewModel.hasPlayerData && !viewModel.hasCompleteData {
@@ -81,7 +82,7 @@ struct OverviewStatsView: View {
             // Top Stats Cards - Responsive Grid
             GeometryReader { geometry in
                 let breakpoint = ResponsiveBreakpoint(width: geometry.size.width)
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: breakpoint.columns), spacing: breakpoint.spacing) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: breakpoint.columns), alignment: .leading, spacing: breakpoint.spacing) {
                     if let stats = viewModel.playerStats {
                         StatCard(
                             title: "Kills",
@@ -121,8 +122,11 @@ struct OverviewStatsView: View {
                         RankCard(stats: stats)
                     }
                 }
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(height: 160)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Last Completed Match - Computed from Snapshots
             LastCompletedMatchView(
@@ -277,6 +281,7 @@ struct OverviewStatsView: View {
                 .frame(maxWidth: .infinity)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Helper Methods

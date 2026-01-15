@@ -361,19 +361,22 @@ struct TodayVsYesterdayView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 20) {
                 if currentSnapshot != nil {
                     // Header
                     header
 
                     // Main comparison cards
                     mainStatsGrid
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     // Maps Played
                     mapsPlayedSection
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     // Combat performance breakdown
                     combatBreakdown
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     // 7-day trend (full width) - show if we have at least 2 days of data
                     if last7Days.count >= 2 {
@@ -381,12 +384,15 @@ struct TodayVsYesterdayView: View {
                             dailyPerformances: last7Days,
                             metric: .kd
                         )
+                        .padding(.horizontal)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 } else {
                     // No data state
                     emptyState
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
         }
         .onDisappear {
@@ -504,7 +510,7 @@ struct TodayVsYesterdayView: View {
             )
 
             PerformanceDualComparisonCardDouble(
-                title: "Ratios",
+                title: "Effectiveness",
                 leftLabel: "K/D",
                 leftTodayValue: deltaKD,
                 leftYesterdayValue: previousDeltaKD,

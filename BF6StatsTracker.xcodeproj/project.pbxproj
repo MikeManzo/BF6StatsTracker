@@ -70,7 +70,6 @@
 		27E798052EE645220002311A /* EAIdentityKit in Frameworks */ = {isa = PBXBuildFile; productRef = 27E798042EE645220002311A /* EAIdentityKit */; };
 		27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798062EE645F80002311A /* EAIdentityManager.swift */; };
 		27E798092EE646350002311A /* EALoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798082EE646350002311A /* EALoginView.swift */; };
-		999999982F141AAB000B1B90 /* SoundNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999992F141AAA000B1B90 /* SoundNotificationService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -140,7 +139,6 @@
 		27E543862EE98F4000B01618 /* ServerBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerBrowserView.swift; sourceTree = "<group>"; };
 		27E798062EE645F80002311A /* EAIdentityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAIdentityManager.swift; sourceTree = "<group>"; };
 		27E798082EE646350002311A /* EALoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALoginView.swift; sourceTree = "<group>"; };
-		999999992F141AAA000B1B90 /* SoundNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundNotificationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -206,7 +204,6 @@
 			isa = PBXGroup;
 			children = (
 				1000000000000001 /* BF6StatsTrackerApp.swift */,
-				1000000000000002 /* ContentView.swift */,
 				3000000000000004 /* Models */,
 				3000000000000005 /* Services */,
 				3000000000000006 /* Views */,
@@ -230,13 +227,13 @@
 		3000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				274F854F2F141A87000B1B90 /* LogEntry.swift */,
 				2719F33D2EF881AA00C42191 /* DailyPerformance.swift */,
-				2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */,
+				274F854F2F141A87000B1B90 /* LogEntry.swift */,
 				1000000000000004 /* Models.swift */,
-				274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */,
 				27E543782EE98DF300B01618 /* ServerModels.swift */,
 				27E543792EE98DF300B01618 /* StatsSnapshot.swift */,
+				274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */,
+				2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -244,15 +241,15 @@
 		3000000000000005 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */,
 				1000000000000005 /* APIService.swift */,
-				2747A79D2F037BA5001CF709 /* EAAccountStore.swift */,
 				1000000000000006 /* CacheManager.swift */,
-				1000000000000016 /* ImageLoader.swift */,
+				2747A79D2F037BA5001CF709 /* EAAccountStore.swift */,
 				27E798062EE645F80002311A /* EAIdentityManager.swift */,
 				27E5437C2EE98E0800B01618 /* HistoryManager.swift */,
-				27C267BB2EEF35AF006168AA /* MapTracker.swift */,
+				1000000000000016 /* ImageLoader.swift */,
 				274F85512F141A9B000B1B90 /* LoggerService.swift */,
+				27C267BB2EEF35AF006168AA /* MapTracker.swift */,
+				27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -260,37 +257,38 @@
 		3000000000000006 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				2749FA1D2F080A96004D2E1D /* AboutView.swift */,
+				2747A79F2F037BB8001CF709 /* AccountSelectionView.swift */,
+				1000000000000007 /* ClassTileView.swift */,
+				1000000000000002 /* ContentView.swift */,
+				2749FA122F045D97004D2E1D /* Components */,
+				2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */,
+				1000000000000015 /* DraggableTileContainer.swift */,
+				27E798082EE646350002311A /* EALoginView.swift */,
+				1000000000000009 /* GadgetStatsView.swift */,
+				27C4B8922F0ADCA400B07E9D /* IntelligenceView.swift */,
+				1000000000000022 /* LastCompletedMatchView.swift */,
+				1000000000000021 /* LastMatchStatsView.swift */,
+				27E543802EE98E4100B01618 /* LoadoutAnalyzerView.swift */,
 				274F85552F141AF0000B1B90 /* LogViewerView.swift */,
 				276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */,
-				276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */,
-				276C746D2F0D9502002674A4 /* XPCalculatorView.swift */,
-				2749FA1D2F080A96004D2E1D /* AboutView.swift */,
-				2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */,
-				2749FA122F045D97004D2E1D /* Components */,
-				2747A79F2F037BB8001CF709 /* AccountSelectionView.swift */,
-				2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */,
-				1000000000000007 /* ClassTileView.swift */,
-				1000000000000008 /* WeaponStatsView.swift */,
-				1000000000000009 /* GadgetStatsView.swift */,
-				1000000000000010 /* VehicleStatsView.swift */,
-				1000000000000011 /* MenuBarView.swift */,
-				1000000000000012 /* SettingsView.swift */,
-				1000000000000015 /* DraggableTileContainer.swift */,
-				1000000000000017 /* PlayerSearchView.swift */,
-				1000000000000018 /* OverviewStatsView.swift */,
-				1000000000000021 /* LastMatchStatsView.swift */,
-				1000000000000022 /* LastCompletedMatchView.swift */,
-				27E798082EE646350002311A /* EALoginView.swift */,
 				27E5437E2EE98E2C00B01618 /* MapStatsView.swift */,
-				27E543802EE98E4100B01618 /* LoadoutAnalyzerView.swift */,
-				27E543822EE98F1D00B01618 /* SessionHistoryView.swift */,
+				1000000000000011 /* MenuBarView.swift */,
+				276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */,
+				1000000000000018 /* OverviewStatsView.swift */,
 				27E543842EE98F2D00B01618 /* PerformanceChartsView.swift */,
+				1000000000000017 /* PlayerSearchView.swift */,
 				27E543862EE98F4000B01618 /* ServerBrowserView.swift */,
-				27C4B8922F0ADCA400B07E9D /* IntelligenceView.swift */,
+				27E543822EE98F1D00B01618 /* SessionHistoryView.swift */,
+				1000000000000012 /* SettingsView.swift */,
 				27C4B8932F0ADCA400B07E9D /* TeamSupportView.swift */,
+				2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */,
 				27C4B8942F0ADCA400B07E9D /* UtilityEffectivenessView.swift */,
 				27C4B8952F0ADCA400B07E9D /* VehicleSpecialistView.swift */,
+				1000000000000010 /* VehicleStatsView.swift */,
 				27C4B8962F0ADCA400B07E9D /* WeaponMasteryView.swift */,
+				1000000000000008 /* WeaponStatsView.swift */,
+				276C746D2F0D9502002674A4 /* XPCalculatorView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
