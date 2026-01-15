@@ -22,14 +22,19 @@ struct MiniSparklineView: View {
     let data: [Double]
     let color: Color
     let showLabels: Bool
+    let customLabels: [String]?
 
-    init(data: [Double], color: Color = .blue, showLabels: Bool = false) {
+    init(data: [Double], color: Color = .blue, showLabels: Bool = false, customLabels: [String]? = nil) {
         self.data = data
         self.color = color
         self.showLabels = showLabels
+        self.customLabels = customLabels
     }
 
     private var labels: [String] {
+        if let customLabels = customLabels {
+            return customLabels
+        }
         let days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         let endIndex = min(data.count, days.count)
         return Array(days.suffix(endIndex))
@@ -122,8 +127,14 @@ struct SevenDayTrendView: View {
         dailyPerformances.suffix(7).map { metric.value(from: $0) }
     }
 
+    private var dayLabels: [String] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE" // Short day name (Mon, Tue, etc.)
+        return dailyPerformances.suffix(7).map { formatter.string(from: $0.date) }
+    }
+
     private var todayValue: Double {
-        guard let today = dailyPerformances.first else { return 0 }
+        guard let today = dailyPerformances.last else { return 0 }
         return metric.value(from: today)
     }
 
@@ -151,10 +162,11 @@ struct SevenDayTrendView: View {
             }
 
             // Sparkline
-            MiniSparklineView(data: chartData, color: metric.color, showLabels: true)
+            MiniSparklineView(data: chartData, color: metric.color, showLabels: true, customLabels: dayLabels)
                 .onAppear {
                     logInfo("SevenDayTrendView - Daily performances count: \(dailyPerformances.count)", category: .api)
                     logInfo("Chart data points: \(chartData.count), values: \(chartData)", category: .api)
+                    logInfo("Day labels: \(dayLabels.joined(separator: ", "))", category: .api)
                 }
 
             // Best day

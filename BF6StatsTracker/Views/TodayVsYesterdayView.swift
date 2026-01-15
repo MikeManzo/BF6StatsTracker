@@ -338,10 +338,96 @@ struct TodayVsYesterdayView: View {
     }
 
     private var last7Days: [DailyPerformance] {
-        let performances = Array(historyManager.recentDailyPerformances.prefix(7).reversed())
-        logInfo("last7Days: \(performances.count) daily performance records", category: .api)
-        logInfo("recentDailyPerformances total: \(historyManager.recentDailyPerformances.count)", category: .api)
-        return performances
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Get all snapshots
+        let allSnapshots = historyManager.getAllSnapshots()
+        guard !allSnapshots.isEmpty else {
+            logInfo("last7Days: No snapshots available", category: .api)
+            return []
+        }
+
+        // Build daily performance from snapshots for up to the last 7 days
+        var result: [DailyPerformance] = []
+
+        for dayOffset in (0..<7).reversed() {
+            guard let targetDay = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            let nextDay = calendar.date(byAdding: .day, value: 1, to: targetDay)!
+
+            // Get all snapshots for this specific day
+            let daySnapshots = allSnapshots.filter { snapshot in
+                snapshot.timestamp >= targetDay && snapshot.timestamp < nextDay
+            }.sorted { $0.timestamp < $1.timestamp }
+
+            guard let firstSnapshot = daySnapshots.first else {
+                continue // Skip days with no snapshots
+            }
+
+            let lastSnapshot = daySnapshots.last!
+
+            // Calculate daily deltas from snapshots
+            let kills = lastSnapshot.kills - firstSnapshot.kills
+            let deaths = lastSnapshot.deaths - firstSnapshot.deaths
+            let assists = lastSnapshot.assists - firstSnapshot.assists
+            let headshots = lastSnapshot.headshots - firstSnapshot.headshots
+            let revives = lastSnapshot.revives - firstSnapshot.revives
+            let matches = lastSnapshot.matchesPlayed - firstSnapshot.matchesPlayed
+            let wins = lastSnapshot.wins - firstSnapshot.wins
+            let score = lastSnapshot.totalScore - firstSnapshot.totalScore
+
+            let dailyKD = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
+            let dailyWinRate = matches > 0 ? (Double(wins) / Double(matches)) * 100.0 : 0.0
+
+            // Create DailyPerformanceData for this day
+            let perfData = DailyPerformanceData(
+                deltaKills: kills,
+                deltaDeaths: deaths,
+                deltaHeadshots: headshots,
+                deltaAssists: assists,
+                deltaRevives: revives,
+                deltaMatchesPlayed: matches,
+                deltaScore: score,
+                dailyKD: dailyKD,
+                dailyKDA: deaths > 0 ? Double(kills + assists) / Double(deaths) : Double(kills + assists),
+                dailyAccuracy: lastSnapshot.accuracy,
+                dailyHeadshotPercent: lastSnapshot.headshotPercentage,
+                dailyKPM: lastSnapshot.killsPerMinute,
+                dailyWinRate: dailyWinRate
+            )
+
+            // Create a transient DailyPerformance object
+            // Note: This won't be persisted to the database, just used for display
+            let performance = DailyPerformance(
+                date: targetDay,
+                playerName: firstSnapshot.playerName,
+                platform: firstSnapshot.platform,
+                startSnapshot: firstSnapshot
+            )
+            performance.endSnapshot = lastSnapshot
+            performance.deltaKills = perfData.deltaKills
+            performance.deltaDeaths = perfData.deltaDeaths
+            performance.deltaHeadshots = perfData.deltaHeadshots
+            performance.deltaAssists = perfData.deltaAssists
+            performance.deltaRevives = perfData.deltaRevives
+            performance.deltaMatchesPlayed = perfData.deltaMatchesPlayed
+            performance.deltaScore = perfData.deltaScore
+            performance.dailyKD = perfData.dailyKD
+            performance.dailyAccuracy = perfData.dailyAccuracy
+            performance.dailyHeadshotPercent = perfData.dailyHeadshotPercent
+            performance.dailyKPM = perfData.dailyKPM
+            performance.dailyWinRate = perfData.dailyWinRate
+
+            result.append(performance)
+        }
+
+        logInfo("last7Days: Generated \(result.count) daily records from snapshots", category: .api)
+        logInfo("K/D values: \(result.map { String(format: "%.2f", $0.dailyKD) }.joined(separator: ", "))", category: .api)
+
+        return result
     }
 
     private func calculateStreakDays() -> Int {
