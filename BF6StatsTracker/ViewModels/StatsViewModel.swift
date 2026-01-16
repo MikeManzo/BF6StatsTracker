@@ -381,7 +381,6 @@ class StatsViewModel: ObservableObject {
                 let progressionModeId = self.currentProgressionMode?.progressionMode
                 HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId, playSoundNotification: settings.showNotifications)
                 MapTracker.shared.updateMapStats(from: stats)
-                logInfo("Saved stats snapshot and updated map stats in SwiftData (EA ID: \(eaId ?? "N/A"), Mode: \(progressionModeId ?? "N/A"))", category: .storage)
 
                 // Rebuild DailyPerformance records if needed (only on first load)
                 if HistoryManager.shared.recentDailyPerformances.isEmpty {

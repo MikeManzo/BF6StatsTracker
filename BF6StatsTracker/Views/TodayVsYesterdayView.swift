@@ -365,12 +365,12 @@ struct TodayVsYesterdayView: View {
             }.sorted { $0.timestamp < $1.timestamp }
 
             // Debug logging for today
-            if Calendar.current.isDateInToday(targetDay) {
-                logInfo("Today: Found \(daySnapshots.count) snapshots", category: .api)
-                for (idx, snap) in daySnapshots.enumerated() {
-                    logInfo("Snapshot \(idx): Time=\(snap.timestamp), Kills=\(snap.kills), Assists=\(snap.assists)", category: .api)
-                }
-            }
+//            if Calendar.current.isDateInToday(targetDay) {
+//                logInfo("Today: Found \(daySnapshots.count) snapshots", category: .api)
+//                for (idx, snap) in daySnapshots.enumerated() {
+//                    logInfo("Snapshot \(idx): Time=\(snap.timestamp), Kills=\(snap.kills), Assists=\(snap.assists)", category: .api)
+//                }
+//            }
 
             guard let firstSnapshot = daySnapshots.first else {
                 continue // Skip days with no snapshots
@@ -494,17 +494,17 @@ struct TodayVsYesterdayView: View {
             performance.deltaAssists = avgAssists
 
             // Debug logging for all days
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "MMM d"
-            let dateStr = dateFormatter.string(from: targetDay)
-            logInfo("Day \(dateStr): \(daySnapshots.count) snapshots, Avg K/D: \(String(format: "%.2f", dailyKD)), Avg KDA: \(String(format: "%.2f", dailyKDA))", category: .api)
-            logInfo("  Snapshot K/Ds: \(daySnapshots.map { String(format: "%.2f", $0.kdRatio) }.joined(separator: ", "))", category: .api)
+//            let dateFormatter = DateFormatter()
+//            dateFormatter.dateFormat = "MMM d"
+//            let dateStr = dateFormatter.string(from: targetDay)
+//            logInfo("Day \(dateStr): \(daySnapshots.count) snapshots, Avg K/D: \(String(format: "%.2f", dailyKD)), Avg KDA: \(String(format: "%.2f", dailyKDA))", category: .api)
+//            logInfo("  Snapshot K/Ds: \(daySnapshots.map { String(format: "%.2f", $0.kdRatio) }.joined(separator: ", "))", category: .api)
 
             result.append(performance)
         }
 
-        logInfo("last7Days: Generated \(result.count) daily records from snapshots", category: .api)
-        logInfo("K/D values: \(result.map { String(format: "%.2f", $0.dailyKD) }.joined(separator: ", "))", category: .api)
+//        logInfo("last7Days: Generated \(result.count) daily records from snapshots", category: .api)
+//        logInfo("K/D values: \(result.map { String(format: "%.2f", $0.dailyKD) }.joined(separator: ", "))", category: .api)
 
         return result
     }

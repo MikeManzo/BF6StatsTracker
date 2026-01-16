@@ -119,19 +119,13 @@ class HistoryManager: ObservableObject {
             let matchCompleted = matchDelta >= 1 && timeDelta > 0
 
             if !matchCompleted {
-                logInfo("Skipping snapshot - no completed match detected (matches: +\(matchDelta), time: +\(timeDelta)s)", category: .general)
                 return
             }
-
-            logSuccess("Match completed - saving snapshot (matches: +\(matchDelta), time: +\(timeDelta)s)", category: .success)
 
             // Play sound notification if enabled
             if playSoundNotification {
                 SoundNotificationService.shared.playMatchCompletionSound()
             }
-        } else {
-            // First snapshot ever - always save
-            logInfo("Saving first snapshot for player", category: .cache)
         }
 
         // Match completed or first snapshot, save it
@@ -156,7 +150,6 @@ class HistoryManager: ObservableObject {
         // Get the most recent snapshot as a base
         let recentSnapshots = getRecentSnapshots(limit: 1)
         guard let baseSnapshot = recentSnapshots.first else {
-            logWarning("No snapshots available to base synthetic snapshot on", category: .general)
             return
         }
 
@@ -175,8 +168,6 @@ class HistoryManager: ObservableObject {
         var yesterdayTimePlayed = baseSnapshot.timePlayed
         var yesterdayWins = baseSnapshot.wins
         var yesterdayLosses = baseSnapshot.losses
-
-        logInfo("Creating 10 synthetic snapshots for yesterday...", category: .general)
 
         for i in 0..<10 {
             let killsIncrease = Int.random(in: 1...20)
@@ -227,8 +218,6 @@ class HistoryManager: ObservableObject {
             updateDailyPerformance(with: snapshot, playerName: snapshot.playerName, platform: snapshot.platform)
         }
 
-        logInfo("Created 10 snapshots for yesterday", category: .general)
-
         // Now create 1 snapshot for today
         let killsIncrease = Int.random(in: 1...20)
         let deathsIncrease = Int.random(in: 0...3)
@@ -258,7 +247,6 @@ class HistoryManager: ObservableObject {
         )
 
         context.insert(todaySnapshot)
-        logInfo("Created 1 snapshot for today: +\(killsIncrease) kills, +\(deathsIncrease) deaths, +\(matchesIncrease) matches", category: .general)
 
         updateDailyPerformance(with: todaySnapshot, playerName: todaySnapshot.playerName, platform: todaySnapshot.platform)
 
@@ -541,7 +529,6 @@ class HistoryManager: ObservableObject {
             // Return yesterday's end snapshot (which is the last snapshot of the day)
             return yesterdayPerformances.first?.endSnapshot
         } catch {
-            logWarning("Error fetching yesterday's snapshot: \(error)", category: .general)
             return nil
         }
     }
@@ -951,8 +938,6 @@ class HistoryManager: ObservableObject {
     func rebuildDailyPerformances(playerName: String) {
         guard let context = modelContext else { return }
 
-        logInfo("Rebuilding DailyPerformance records from snapshots...", category: .general)
-
         // Get all snapshots for this player
         let descriptor = FetchDescriptor<StatsSnapshot>(
             predicate: #Predicate<StatsSnapshot> { snapshot in
@@ -962,11 +947,8 @@ class HistoryManager: ObservableObject {
         )
 
         guard let snapshots = try? context.fetch(descriptor) else {
-            logWarning("Failed to fetch snapshots", category: .general)
             return
         }
-
-        logInfo("Found \(snapshots.count) snapshots to process", category: .general)
 
         // Group snapshots by day
         let calendar = Calendar.current
@@ -976,8 +958,6 @@ class HistoryManager: ObservableObject {
             let day = calendar.startOfDay(for: snapshot.timestamp)
             snapshotsByDay[day, default: []].append(snapshot)
         }
-
-        logInfo("Grouped into \(snapshotsByDay.count) days", category: .general)
 
         // Create DailyPerformance for each day
         for (day, daySnapshots) in snapshotsByDay.sorted(by: { $0.key < $1.key }) {
@@ -993,7 +973,6 @@ class HistoryManager: ObservableObject {
             if let existing = try? context.fetch(existingDescriptor).first {
                 // Update existing
                 existing.update(with: last)
-                logInfo("Updated DailyPerformance for \(day)", category: .storage)
             } else {
                 // Create new
                 let performance = DailyPerformance(
@@ -1004,7 +983,6 @@ class HistoryManager: ObservableObject {
                 )
                 performance.update(with: last)
                 context.insert(performance)
-                logSuccess("Created DailyPerformance for \(day)", category: .success)
             }
         }
 
@@ -1013,8 +991,6 @@ class HistoryManager: ObservableObject {
 
         // Reload daily performances
         loadDailyPerformances(playerName: playerName)
-
-        logInfo("Rebuild complete! Now have \(recentDailyPerformances.count) daily performance records", category: .general)
     }
 }
 

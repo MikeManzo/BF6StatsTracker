@@ -298,9 +298,9 @@ struct PlayerStats: Codable, Identifiable {
         let xp = xpData?.first?.total ?? 0
 
         // Debug logging
-        Task { @MainActor in
-            LoggerService.shared.info("Rank Calculation - Total XP: \(xp)", category: .calculation)
-        }
+//        Task { @MainActor in
+//            LoggerService.shared.info("Rank Calculation - Total XP: \(xp)", category: .calculation)
+//        }
 
         // Linear calculation: approximately 105,621 XP per rank
         // Based on calibration: (8,408,095 - 7,774,370) / (137 - 131) = 105,621
@@ -319,7 +319,7 @@ struct PlayerStats: Codable, Identifiable {
         let finalRank = max(1, min(1000, calculatedRank))
 
         Task { @MainActor in
-            LoggerService.shared.info("Calculated Rank: \(finalRank)", category: .calculation)
+//            LoggerService.shared.info("Calculated Rank: \(finalRank)", category: .calculation)
         }
 
         return finalRank
