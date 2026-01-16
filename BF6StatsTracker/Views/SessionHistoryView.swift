@@ -1264,16 +1264,16 @@ struct ImportHistoryView: View {
                             Image(systemName: "info.circle")
                                 .foregroundColor(.blue)
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Version: \(preview.version)")
+                                Text("Format Version: \(preview.version)")
                                     .font(.caption)
                                 Text("Snapshots: \(preview.snapshotCount)")
                                     .font(.caption)
                                 if let exportDate = preview.exportDate {
-                                    Text("Export Date: \(exportDate.formatted(date: .abbreviated, time: .shortened))")
+                                    Text("Exported: \(exportDate.formatted(date: .abbreviated, time: .shortened))")
                                         .font(.caption)
                                 }
                                 if let appVersion = preview.appVersion {
-                                    Text("App Version: \(appVersion)")
+                                    Text("Created by: BF6StatsTracker v\(appVersion)")
                                         .font(.caption)
                                 }
                             }
