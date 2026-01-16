@@ -515,6 +515,94 @@ struct TodayVsYesterdayView: View {
         return formatter.string(from: date)
     }
 
+    /// Get snapshot deltas from the last 7 days with their x-position for the chart
+    /// Shows discrete K/D and KDA for each gaming session (delta from previous snapshot)
+    private var snapshotsForChart: [(sessionKD: Double, sessionKDA: Double, xPosition: Double)] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let allSnapshots = historyManager.getAllSnapshots().sorted { $0.timestamp < $1.timestamp }
+
+        guard !allSnapshots.isEmpty else { return [] }
+
+        // Build a mapping of day -> chart index by mirroring the last7Days logic
+        var dayToChartIndex: [Date: Int] = [:]
+        var chartIndex = 0
+
+        for dayOffset in (0..<7).reversed() {
+            guard let targetDay = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            let nextDay = calendar.date(byAdding: .day, value: 1, to: targetDay)!
+
+            let daySnapshots = allSnapshots.filter { snapshot in
+                snapshot.timestamp >= targetDay && snapshot.timestamp < nextDay
+            }
+
+            if !daySnapshots.isEmpty {
+                dayToChartIndex[targetDay] = chartIndex
+                chartIndex += 1
+            }
+        }
+
+        // Calculate discrete K/D and KDA for each snapshot
+        var result: [(sessionKD: Double, sessionKDA: Double, xPosition: Double)] = []
+
+        for dayOffset in (0..<7).reversed() {
+            guard let targetDay = calendar.date(byAdding: .day, value: -dayOffset, to: today) else {
+                continue
+            }
+
+            let nextDay = calendar.date(byAdding: .day, value: 1, to: targetDay)!
+
+            let daySnapshots = allSnapshots.filter { snapshot in
+                snapshot.timestamp >= targetDay && snapshot.timestamp < nextDay
+            }.sorted { $0.timestamp < $1.timestamp }
+
+            guard !daySnapshots.isEmpty,
+                  let dayChartIndex = dayToChartIndex[targetDay] else {
+                continue
+            }
+
+            let snapshotCount = daySnapshots.count
+
+            for (index, snapshot) in daySnapshots.enumerated() {
+                let inDayOffset = snapshotCount > 1 ? Double(index) / Double(snapshotCount - 1) : 0.5
+                let xPos = Double(dayChartIndex) + (inDayOffset * 0.8) - 0.4
+
+                // Get previous snapshot to calculate deltas
+                let previousSnapshot: StatsSnapshot?
+                if index > 0 {
+                    previousSnapshot = daySnapshots[index - 1]
+                } else {
+                    previousSnapshot = allSnapshots.last { $0.timestamp < targetDay }
+                }
+
+                let deltaKills: Int
+                let deltaDeaths: Int
+                let deltaAssists: Int
+
+                if let prev = previousSnapshot {
+                    deltaKills = snapshot.kills - prev.kills
+                    deltaDeaths = snapshot.deaths - prev.deaths
+                    deltaAssists = snapshot.assists - prev.assists
+                } else {
+                    deltaKills = snapshot.kills
+                    deltaDeaths = snapshot.deaths
+                    deltaAssists = snapshot.assists
+                }
+
+                // Calculate discrete session K/D and KDA
+                let sessionKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
+                let sessionKDA = deltaDeaths > 0 ? Double(deltaKills + deltaAssists) / Double(deltaDeaths) : Double(deltaKills + deltaAssists)
+
+                result.append((sessionKD: sessionKD, sessionKDA: sessionKDA, xPosition: xPos))
+            }
+        }
+
+        return result
+    }
+
     private func calculateStreakDays() -> Int {
         let performances = historyManager.recentDailyPerformances
         guard performances.count >= 2 else { return 0 }
@@ -910,7 +998,7 @@ struct TodayVsYesterdayView: View {
                     Image(systemName: "info.circle")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Text("Shaded areas show relative performance magnitude. KDA includes assists (K+A)/D.")
+                    Text("Stacked bars show session K/D (orange) and KDA (cyan) for each snapshot. Lines show daily averages.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -918,66 +1006,61 @@ struct TodayVsYesterdayView: View {
 
             // Dual-line chart
             Chart {
-                // K/D series
+                // Snapshot bars - K/D (draw first, will be overlaid by KDA)
+                ForEach(Array(snapshotsForChart.enumerated()), id: \.offset) { _, item in
+                    BarMark(
+                        x: .value("Position", item.xPosition),
+                        y: .value("K/D", item.sessionKD)
+                    )
+                    .foregroundStyle(.orange.opacity(0.4))
+                    .cornerRadius(2)
+                }
+
+                // Snapshot bars - KDA (stacked on top of K/D)
+                ForEach(Array(snapshotsForChart.enumerated()), id: \.offset) { _, item in
+                    BarMark(
+                        x: .value("Position", item.xPosition),
+                        yStart: .value("K/D", item.sessionKD),
+                        yEnd: .value("KDA", item.sessionKDA)
+                    )
+                    .foregroundStyle(.cyan.opacity(0.4))
+                    .cornerRadius(2)
+                }
+
+                // K/D trend line (daily averages)
                 ForEach(Array(last7Days.enumerated()), id: \.offset) { index, performance in
                     LineMark(
-                        x: .value("Day", index),
+                        x: .value("Day", Double(index)),
                         y: .value("Value", performance.dailyKD),
                         series: .value("Metric", "K/D")
                     )
                     .foregroundStyle(.orange)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .lineStyle(StrokeStyle(lineWidth: 2.5))
                     .interpolationMethod(.catmullRom)
                     .symbol {
                         Circle()
                             .fill(.orange)
-                            .frame(width: 6, height: 6)
+                            .stroke(.white, lineWidth: 1.5)
+                            .frame(width: 8, height: 8)
                     }
-
-                    AreaMark(
-                        x: .value("Day", index),
-                        y: .value("Value", performance.dailyKD),
-                        series: .value("Metric", "K/D")
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.orange.opacity(0.2), .orange.opacity(0.05)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.catmullRom)
                 }
 
-                // KDA series
+                // KDA trend line (daily averages)
                 ForEach(Array(last7Days.enumerated()), id: \.offset) { index, performance in
                     LineMark(
-                        x: .value("Day", index),
+                        x: .value("Day", Double(index)),
                         y: .value("Value", performance.computedDailyKDA),
                         series: .value("Metric", "KDA")
                     )
                     .foregroundStyle(.cyan)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .lineStyle(StrokeStyle(lineWidth: 2.5))
                     .interpolationMethod(.catmullRom)
                     .symbol {
                         Circle()
                             .fill(.cyan)
-                            .frame(width: 6, height: 6)
+                            .stroke(.white, lineWidth: 1.5)
+                            .frame(width: 8, height: 8)
                     }
-
-                    AreaMark(
-                        x: .value("Day", index),
-                        y: .value("Value", performance.computedDailyKDA),
-                        series: .value("Metric", "KDA")
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.cyan.opacity(0.2), .cyan.opacity(0.05)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.catmullRom)
                 }
             }
             .chartXAxis(.hidden)
