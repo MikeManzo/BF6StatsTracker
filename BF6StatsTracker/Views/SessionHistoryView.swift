@@ -641,17 +641,34 @@ struct SnapshotRow: View {
 
             Divider()
 
-            // Core stats
-            HStack(spacing: 8) {
-                StatChip(label: "K/D", value: String(format: "%.2f", snapshot.kdRatio), color: snapshot.kdRatio >= 1.0 ? .green : .orange)
-                StatChip(label: "Kills", value: "\(snapshot.kills)", color: .red)
-                StatChip(label: "Deaths", value: "\(snapshot.deaths)", color: Theme.textSecondary)
-                StatChip(label: "Wins", value: "\(snapshot.wins)", color: .blue)
-                StatChip(label: "Matches", value: "\(snapshot.matchesPlayed)", color: .cyan)
-                StatChip(label: "Accuracy", value: String(format: "%.1f%%", snapshot.accuracy), color: .purple)
-                StatChip(label: "HS%", value: String(format: "%.1f%%", snapshot.headshotPercentage), color: .yellow)
-                StatChip(label: "KPM", value: String(format: "%.2f", snapshot.killsPerMinute), color: .pink)
-                StatChip(label: "Score", value: formatScore(snapshot.totalScore), color: .indigo)
+            // Core stats - show delta values
+            if let deltaStats = getDeltaStats() {
+                HStack(spacing: 8) {
+                    StatChip(label: "K/D", value: String(format: "%.2f", deltaStats.kdRatio), color: deltaStats.kdRatio >= 1.0 ? .green : .orange)
+                    StatChip(label: "Kills", value: formatDelta(deltaStats.kills), color: .red)
+                    StatChip(label: "Deaths", value: formatDelta(deltaStats.deaths), color: Theme.textSecondary)
+                    StatChip(label: "Assists", value: formatDelta(deltaStats.assists), color: .cyan)
+                    StatChip(label: "Wins", value: formatDelta(deltaStats.wins), color: .blue)
+                    StatChip(label: "Matches", value: formatDelta(deltaStats.matches), color: .cyan)
+                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", deltaStats.accuracy), color: .purple)
+                    StatChip(label: "HS%", value: String(format: "%.1f%%", deltaStats.headshotPercentage), color: .yellow)
+                    StatChip(label: "KPM", value: String(format: "%.2f", deltaStats.killsPerMinute), color: .pink)
+                    StatChip(label: "Score", value: formatScore(deltaStats.totalScore), color: .indigo)
+                }
+            } else {
+                // First snapshot - show cumulative values
+                HStack(spacing: 8) {
+                    StatChip(label: "K/D", value: String(format: "%.2f", snapshot.kdRatio), color: snapshot.kdRatio >= 1.0 ? .green : .orange)
+                    StatChip(label: "Kills", value: "\(snapshot.kills)", color: .red)
+                    StatChip(label: "Deaths", value: "\(snapshot.deaths)", color: Theme.textSecondary)
+                    StatChip(label: "Assists", value: "\(snapshot.assists)", color: .cyan)
+                    StatChip(label: "Wins", value: "\(snapshot.wins)", color: .blue)
+                    StatChip(label: "Matches", value: "\(snapshot.matchesPlayed)", color: .cyan)
+                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", snapshot.accuracy), color: .purple)
+                    StatChip(label: "HS%", value: String(format: "%.1f%%", snapshot.headshotPercentage), color: .yellow)
+                    StatChip(label: "KPM", value: String(format: "%.2f", snapshot.killsPerMinute), color: .pink)
+                    StatChip(label: "Score", value: formatScore(snapshot.totalScore), color: .indigo)
+                }
             }
 
             Spacer()
@@ -672,6 +689,47 @@ struct SnapshotRow: View {
         }
     }
 
+    private func getDeltaStats() -> DeltaStats? {
+        // Get all snapshots from HistoryManager
+        guard let allSnapshots = try? HistoryManager.shared.modelContext?.fetch(
+            FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        ) else {
+            return nil
+        }
+
+        // Find the snapshot immediately before this one
+        guard let currentIndex = allSnapshots.firstIndex(where: { $0.id == snapshot.id }),
+              currentIndex + 1 < allSnapshots.count else {
+            return nil
+        }
+
+        let previous = allSnapshots[currentIndex + 1]
+
+        // Calculate deltas
+        let deltaKills = snapshot.kills - previous.kills
+        let deltaDeaths = snapshot.deaths - previous.deaths
+        let deltaAssists = snapshot.assists - previous.assists
+        let deltaWins = snapshot.wins - previous.wins
+        let deltaMatches = snapshot.matchesPlayed - previous.matchesPlayed
+        let deltaScore = snapshot.totalScore - previous.totalScore
+
+        // Calculate K/D from deltas
+        let kdRatio = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
+
+        return DeltaStats(
+            kills: deltaKills,
+            deaths: deltaDeaths,
+            assists: deltaAssists,
+            wins: deltaWins,
+            matches: deltaMatches,
+            totalScore: deltaScore,
+            kdRatio: kdRatio,
+            accuracy: snapshot.accuracy,
+            headshotPercentage: snapshot.headshotPercentage,
+            killsPerMinute: snapshot.killsPerMinute
+        )
+    }
+
     private func getMapsPlayed() -> [MapActivity]? {
         // Get all snapshots from HistoryManager
         guard let allSnapshots = try? HistoryManager.shared.modelContext?.fetch(
@@ -688,6 +746,16 @@ struct SnapshotRow: View {
 
         let previous = allSnapshots[currentIndex + 1]
         return snapshot.mapsPlayedSince(previous)
+    }
+
+    private func formatDelta(_ value: Int) -> String {
+        if value > 0 {
+            return "+\(value)"
+        } else if value < 0 {
+            return "\(value)"
+        } else {
+            return "0"
+        }
     }
 
     private func mapsPlayedSection(_ maps: [MapActivity]) -> some View {
@@ -1672,6 +1740,21 @@ struct ImportHistoryView: View {
 
         return snapshot
     }
+}
+
+// MARK: - Supporting Types
+
+struct DeltaStats {
+    let kills: Int
+    let deaths: Int
+    let assists: Int
+    let wins: Int
+    let matches: Int
+    let totalScore: Int
+    let kdRatio: Double
+    let accuracy: Double
+    let headshotPercentage: Double
+    let killsPerMinute: Double
 }
 
 // MARK: - Import Supporting Types
