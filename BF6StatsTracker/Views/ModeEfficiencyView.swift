@@ -24,6 +24,9 @@ struct ModeEfficiencyView: View {
     @State private var sortBy: EfficiencySortOption = .xpEfficiency
     @State private var showOnlyRanked: Bool = false
 
+    // Cached filtered modes to avoid recalculating on every view update
+    @State private var cachedFilteredModes: [ProgressionMode] = []
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -46,6 +49,18 @@ struct ModeEfficiencyView: View {
             .padding()
         }
         .background(Theme.backgroundPrimary.ignoresSafeArea())
+        .onAppear {
+            updateFilteredModes()
+        }
+        .onChange(of: sortBy) { _, _ in
+            updateFilteredModes()
+        }
+        .onChange(of: showOnlyRanked) { _, _ in
+            updateFilteredModes()
+        }
+        .onChange(of: viewModel.progressionModes.count) { _, _ in
+            updateFilteredModes()
+        }
     }
 
     // MARK: - Header
@@ -126,9 +141,7 @@ struct ModeEfficiencyView: View {
     // MARK: - Filtered Modes
 
     private var filteredModes: [ProgressionMode] {
-        viewModel.progressionModes
-            .filter { !showOnlyRanked || $0.persistStats }
-            .sorted(by: sortComparator)
+        cachedFilteredModes
     }
 
     // MARK: - Loading View
@@ -222,6 +235,14 @@ struct ModeEfficiencyView: View {
         case .alphabetical:
             return lhs.displayName < rhs.displayName
         }
+    }
+
+    // MARK: - Cache Update
+
+    private func updateFilteredModes() {
+        cachedFilteredModes = viewModel.progressionModes
+            .filter { !showOnlyRanked || $0.persistStats }
+            .sorted(by: sortComparator)
     }
 }
 

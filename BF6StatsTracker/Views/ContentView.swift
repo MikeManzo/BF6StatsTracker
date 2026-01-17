@@ -127,7 +127,6 @@ struct ContentView: View {
                         insertion: .opacity.combined(with: .move(edge: .trailing)),
                         removal: .opacity.combined(with: .move(edge: .leading))
                     ))
-                    .id(viewModel.activeTab)
                 }
                 .padding()
                 .animation(.easeInOut(duration: 0.25), value: viewModel.activeTab)

@@ -26,24 +26,11 @@ struct MapStatsView: View {
     @State private var showingComparison = false
     @State private var viewMode: ViewMode = .grid
 
+    // Cached filtered maps to avoid recalculating on every view update
+    @State private var cachedFilteredMaps: [MapPerformance] = []
+
     var filteredMaps: [MapPerformance] {
-        guard let stats = viewModel.playerStats,
-              let maps = stats.maps else { return [] }
-
-        let filtered = searchText.isEmpty
-            ? maps
-            : maps.filter { $0.mapName.localizedCaseInsensitiveContains(searchText) }
-
-        switch sortBy {
-        case .matches:
-            return filtered.sorted { $0.matchesPlayed > $1.matchesPlayed }
-        case .winRate:
-            return filtered.sorted { $0.winRate > $1.winRate }
-        case .timePlayed:
-            return filtered.sorted { $0.secondsPlayed > $1.secondsPlayed }
-        case .name:
-            return filtered.sorted { $0.mapName < $1.mapName }
-        }
+        cachedFilteredMaps
     }
 
     var body: some View {
@@ -75,6 +62,18 @@ struct MapStatsView: View {
             }
         }
         .background(Theme.backgroundPrimary)
+        .onAppear {
+            updateFilteredMaps()
+        }
+        .onChange(of: sortBy) { _, _ in
+            updateFilteredMaps()
+        }
+        .onChange(of: searchText) { _, _ in
+            updateFilteredMaps()
+        }
+        .onChange(of: viewModel.playerStats?.maps?.count) { _, _ in
+            updateFilteredMaps()
+        }
     }
 
     // MARK: - Header
@@ -247,6 +246,31 @@ struct MapStatsView: View {
         if winRate >= 50 { return "Good" }
         if winRate >= 40 { return "Average" }
         return "Below Average"
+    }
+
+    // MARK: - Cache Update
+
+    private func updateFilteredMaps() {
+        guard let stats = viewModel.playerStats,
+              let maps = stats.maps else {
+            cachedFilteredMaps = []
+            return
+        }
+
+        let filtered = searchText.isEmpty
+            ? maps
+            : maps.filter { $0.mapName.localizedCaseInsensitiveContains(searchText) }
+
+        switch sortBy {
+        case .matches:
+            cachedFilteredMaps = filtered.sorted { $0.matchesPlayed > $1.matchesPlayed }
+        case .winRate:
+            cachedFilteredMaps = filtered.sorted { $0.winRate > $1.winRate }
+        case .timePlayed:
+            cachedFilteredMaps = filtered.sorted { $0.secondsPlayed > $1.secondsPlayed }
+        case .name:
+            cachedFilteredMaps = filtered.sorted { $0.mapName < $1.mapName }
+        }
     }
 }
 

@@ -32,6 +32,14 @@ struct PerformanceChartsView: View {
     @State private var selectedSnapshot: StatsSnapshot?
     @State private var showingSessionView = false
 
+    // Cached computed data to avoid recalculating on every view update
+    @State private var cachedSnapshots: [StatsSnapshot] = []
+    @State private var cachedDailyKDTrend: [(Date, Double)] = []
+    @State private var cachedDailyKillsTrend: [(Date, Int)] = []
+    @State private var cachedRolling7: [(Date, Double)] = []
+    @State private var cachedRolling30: [(Date, Double)] = []
+    @State private var cachedHourlyData: [HourlyPerformanceData] = []
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -74,6 +82,15 @@ struct PerformanceChartsView: View {
         }
         .background(Theme.backgroundPrimary)
         .animation(.easeInOut(duration: 0.3), value: selectedPeriod)
+        .onAppear {
+            updateCachedData()
+        }
+        .onChange(of: selectedPeriod) { _, _ in
+            updateCachedData()
+        }
+        .onChange(of: allSnapshots.count) { _, _ in
+            updateCachedData()
+        }
     }
 
     // MARK: - Header
@@ -114,9 +131,9 @@ struct PerformanceChartsView: View {
     // MARK: - Summary Statistics Card
 
     private var summaryStatsCard: some View {
-        let dailyData = historyManager.getDailyKDTrend(days: selectedPeriod.days)
-        let avgKD = historyManager.getAverageDailyKD(days: selectedPeriod.days)
-        let stdDev = historyManager.getDailyKDStandardDeviation(days: selectedPeriod.days)
+        let dailyData = cachedDailyKDTrend
+        let avgKD = dailyData.isEmpty ? 0.0 : dailyData.map { $0.1 }.reduce(0.0, +) / Double(dailyData.count)
+        let stdDev = calculateStdDev(dailyData)
         let bestDay = dailyData.max(by: { $0.1 < $1.1 })
         let worstDay = dailyData.min(by: { $0.1 < $1.1 })
         let trend = calculateTrend(dailyData)
@@ -187,10 +204,10 @@ struct PerformanceChartsView: View {
                 Spacer()
             }
 
-            let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
-            let dailyData = historyManager.getDailyKDTrend(days: selectedPeriod.days)
-            let (bestSnapshot, worstSnapshot) = historyManager.getBestAndWorstSnapshots(days: selectedPeriod.days)
-            let avgKD = historyManager.getAverageDailyKD(days: selectedPeriod.days)
+            let snapshots = cachedSnapshots
+            let dailyData = cachedDailyKDTrend
+            let (bestSnapshot, worstSnapshot) = getBestAndWorstFromCache()
+            let avgKD = dailyData.isEmpty ? 0.0 : dailyData.map { $0.1 }.reduce(0.0, +) / Double(dailyData.count)
 
             if snapshots.isEmpty {
                 noDataView
@@ -338,9 +355,9 @@ struct PerformanceChartsView: View {
                 Spacer()
             }
 
-            let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
-            let rolling7 = historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(7, snapshots.count))
-            let rolling30 = selectedPeriod.days >= 30 ? historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(30, snapshots.count)) : []
+            let snapshots = cachedSnapshots
+            let rolling7 = cachedRolling7
+            let rolling30 = cachedRolling30
 
             if snapshots.isEmpty {
                 noDataView
@@ -435,7 +452,7 @@ struct PerformanceChartsView: View {
                 Spacer()
             }
 
-            let dailyData = historyManager.getDailyKillsTrend(days: selectedPeriod.days)
+            let dailyData = cachedDailyKillsTrend
 
             if dailyData.isEmpty {
                 noDataView
@@ -519,7 +536,7 @@ struct PerformanceChartsView: View {
     // MARK: - Snapshot Kills & Deaths Section
 
     private var snapshotKillsDeathsSection: some View {
-        let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
+        let snapshots = cachedSnapshots
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -683,12 +700,12 @@ struct PerformanceChartsView: View {
                 Spacer()
             }
 
-            let snapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
+            let snapshots = cachedSnapshots
 
             if snapshots.isEmpty {
                 noDataView
             } else {
-                let hourlyData = historyManager.getHourlyStats(snapshots: snapshots)
+                let hourlyData = cachedHourlyData
 
                 // K/D by Hour
                 VStack(alignment: .leading, spacing: 8) {
@@ -1061,6 +1078,34 @@ struct PerformanceChartsView: View {
         guard let snapshots = try? context.fetch(descriptor), !snapshots.isEmpty else { return 0.0 }
 
         return snapshots.map { $0.kdRatio }.reduce(0.0, +) / Double(snapshots.count)
+    }
+
+    // MARK: - Cache Update
+
+    private func updateCachedData() {
+        cachedSnapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
+        cachedDailyKDTrend = historyManager.getDailyKDTrend(days: selectedPeriod.days)
+        cachedDailyKillsTrend = historyManager.getDailyKillsTrend(days: selectedPeriod.days)
+
+        let snapshotCount = cachedSnapshots.count
+        cachedRolling7 = historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(7, snapshotCount))
+        cachedRolling30 = selectedPeriod.days >= 30 ? historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(30, snapshotCount)) : []
+        cachedHourlyData = historyManager.getHourlyStats(snapshots: cachedSnapshots)
+    }
+
+    private func getBestAndWorstFromCache() -> (best: StatsSnapshot?, worst: StatsSnapshot?) {
+        guard !cachedSnapshots.isEmpty else { return (nil, nil) }
+        let best = cachedSnapshots.max(by: { $0.kdRatio < $1.kdRatio })
+        let worst = cachedSnapshots.min(by: { $0.kdRatio < $1.kdRatio })
+        return (best, worst)
+    }
+
+    private func calculateStdDev(_ data: [(Date, Double)]) -> Double {
+        guard !data.isEmpty else { return 0.0 }
+        let values = data.map { $0.1 }
+        let avg = values.reduce(0.0, +) / Double(values.count)
+        let variance = values.map { pow($0 - avg, 2) }.reduce(0.0, +) / Double(values.count)
+        return sqrt(variance)
     }
 }
 
