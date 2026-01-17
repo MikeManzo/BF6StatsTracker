@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var showingSettings = false
     @State private var showingEALogin = false
     @State private var showingAccountSelection = false
+    @State private var showingXPBreakdown = false
 
     var body: some View {
         ZStack {
@@ -135,176 +136,249 @@ struct ContentView: View {
     }
     
     // MARK: - Header View
-    
+
     private var headerView: some View {
-        HStack(spacing: 16) {
-            // Player Info
+        HStack(spacing: 20) {
+            // LEADING SECTION: Player Identity
+            playerIdentitySection
+
+            Spacer()
+
+            // CENTER SECTION: Quick Stats
             if let stats = viewModel.playerStats {
-                HStack(spacing: 12) {
-                    // Player Icon
+                quickStatsSection(stats: stats)
+            }
+
+            Spacer()
+
+            // TRAILING SECTION: Actions Toolbar
+            actionsToolbarSection
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .frame(height: 76)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
+    }
+
+    // MARK: - Player Identity Section
+
+    private var playerIdentitySection: some View {
+        HStack(spacing: 12) {
+            if let stats = viewModel.playerStats {
+                // Avatar with EA badge overlay
+                ZStack(alignment: .bottomTrailing) {
                     PlayerAvatarView(
                         avatarUrl: EAAccountStore.shared.mostRecentAccount?.avatarUrl,
-                        size: 50
+                        size: 44
                     )
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(stats.userName)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(Theme.textPrimary)
+                    if viewModel.isEAAuthenticated {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.green)
+                            .background(
+                                Circle()
+                                    .fill(.white)
+                                    .frame(width: 16, height: 16)
+                            )
+                            .offset(x: 4, y: 4)
+                    }
+                }
 
-                            PlatformIconView(size: 16)
+                VStack(alignment: .leading, spacing: 3) {
+                    // Name and platform
+                    HStack(spacing: 6) {
+                        Text(stats.userName)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
 
-                            // EA Verified badge
-                            if viewModel.isEAAuthenticated {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .foregroundColor(.green)
+                        PlatformIconView(size: 14)
+                    }
+
+                    // Total XP - clickable to show XP breakdown
+                    if let xpArray = stats.xpData, let xp = xpArray.first {
+                        Button {
+                            showingXPBreakdown.toggle()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(.yellow)
+
+                                Text("\(formatXP(xp.total)) XP")
                                     .font(.caption)
-                                    .help("EA Account Verified")
+                                    .foregroundColor(.secondary)
                             }
                         }
-
-                        // XP Breakdown
-                        if let xpArray = stats.xpData, let xp = xpArray.first {
-                            HStack(spacing: 12) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "star.fill")
-                                        .font(.caption2)
-                                        .foregroundColor(.yellow)
-                                    Text("\(formatXP(xp.total)) XP")
-                                        .font(.caption)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Theme.textPrimary)
-                                        .help("XP Total")
-                                }
-
-                                Text("•")
-                                    .foregroundColor(.secondary)
-
-                                HStack(spacing: 4) {
-                                    Image(systemName: "target")
-                                        .font(.caption2)
-                                        .foregroundColor(.blue)
-                                    Text("\(formatXP(xp.performance))")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .help("XP Performance")
-                                }
-
-                                HStack(spacing: 4) {
-                                    Image(systemName: "trophy.fill")
-                                        .font(.caption2)
-                                        .foregroundColor(.orange)
-                                    Text("\(formatXP(xp.accolades))")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .help("XP Accolades")
-                                }
-                            }
-                        } else {
-                            Text("\(viewModel.formattedPlayTime) played")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                        .buttonStyle(.plain)
+                        .help("Click to view XP breakdown")
+                        .popover(isPresented: $showingXPBreakdown) {
+                            xpBreakdownPopover
                         }
                     }
                 }
             }
-            
-            Spacer()
-            
-            // Quick Stats
-            if let stats = viewModel.playerStats {
-                HStack(spacing: 20) {
-                    QuickStatView(title: "K/D", value: String(format: "%.2f", stats.kdRatio), color: .green, trend: viewModel.kdTrend)
-                    QuickStatView(title: "Kills", value: stats.kills.formatted(), color: .red, trend: viewModel.killsTrend)
-                    QuickStatView(title: "W/L", value: String(format: "%.1f%%", stats.wlRatio), color: .blue, trend: viewModel.wlTrend)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Player information")
+    }
+
+    // MARK: - XP Breakdown Popover
+
+    private var xpBreakdownPopover: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let stats = viewModel.playerStats,
+               let xpArray = stats.xpData,
+               let xp = xpArray.first {
+
+                Text("Experience Breakdown")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+
+                Divider()
+
+                HStack(spacing: 8) {
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.yellow)
+                    Text("\(formatXP(xp.total)) Total XP")
+                        .font(.body)
+                        .foregroundColor(.primary)
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: "target")
+                        .foregroundColor(.blue)
+                    Text("\(formatXP(xp.performance)) Performance")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: "trophy.fill")
+                        .foregroundColor(.orange)
+                    Text("\(formatXP(xp.accolades)) Accolades")
+                        .font(.body)
+                        .foregroundColor(.secondary)
                 }
             }
-            
-            // Actions
-            HStack(spacing: 12) {
-                // Cache indicator
-                if let _ = viewModel.cacheAge {
-                    Text(viewModel.formatCacheAge())
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.secondary.opacity(0.2))
-                        .cornerRadius(4)
-                }
-                
-                // Refresh button
-                Button {
+        }
+        .padding(16)
+        .frame(width: 220)
+    }
+
+    // MARK: - Quick Stats Section
+
+    private func quickStatsSection(stats: PlayerStats) -> some View {
+        HStack(spacing: 20) {
+            CleanStatCard(
+                value: String(format: "%.2f", stats.kdRatio),
+                label: "K/D",
+                color: .green,
+                trend: viewModel.kdTrend
+            )
+
+            Rectangle()
+                .fill(Color.secondary.opacity(0.2))
+                .frame(width: 1, height: 40)
+
+            CleanStatCard(
+                value: formatKills(stats.kills),
+                label: "KILLS",
+                color: .orange,
+                trend: viewModel.killsTrend
+            )
+
+            Rectangle()
+                .fill(Color.secondary.opacity(0.2))
+                .frame(width: 1, height: 40)
+
+            CleanStatCard(
+                value: String(format: "%.1f%%", stats.wlRatio),
+                label: "WIN RATE",
+                color: .blue,
+                trend: viewModel.wlTrend
+            )
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Quick statistics")
+    }
+
+    // MARK: - Actions Toolbar Section
+
+    private var actionsToolbarSection: some View {
+        HStack(spacing: 12) {
+            // Primary action group - toolbar style
+            HStack(spacing: 8) {
+                ToolbarButton(
+                    icon: "arrow.clockwise",
+                    tooltip: "Refresh stats (⌘R)",
+                    isLoading: viewModel.isLoading
+                ) {
                     Task {
                         await viewModel.forceRefreshStats()
                     }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.title3)
-                        .foregroundColor(Theme.textPrimary)
-                        .rotationEffect(.degrees(viewModel.isLoading ? 360 : 0))
-                        .animation(viewModel.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: viewModel.isLoading)
                 }
-                .buttonStyle(.plain)
-                .disabled(viewModel.isLoading)
                 .keyboardShortcut("r", modifiers: .command)
-                .help("Refresh stats (⌘R)")
-                .accessibilityLabel("Refresh statistics")
+                .disabled(viewModel.isLoading)
 
-                // Search button
-                Button {
+                Divider()
+                    .frame(height: 20)
+
+                ToolbarButton(
+                    icon: "magnifyingglass",
+                    tooltip: "Search player (⌘F)"
+                ) {
                     showingSearch = true
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .font(.title3)
-                        .foregroundColor(Theme.textPrimary)
                 }
-                .buttonStyle(.plain)
                 .keyboardShortcut("f", modifiers: .command)
-                .help("Search player (⌘F)")
-                .accessibilityLabel("Search for player")
 
-                // Settings button
-                Button {
+                Divider()
+                    .frame(height: 20)
+
+                ToolbarButton(
+                    icon: "gearshape",
+                    tooltip: "Settings (⌘,)"
+                ) {
                     showingSettings = true
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.title3)
-                        .foregroundColor(Theme.textPrimary)
                 }
-                .buttonStyle(.plain)
                 .keyboardShortcut(",", modifiers: .command)
-                .help("Settings (⌘,)")
-                .accessibilityLabel("Open settings")
+            }
+            .padding(4)
+            .background(Color.secondary.opacity(0.08))
+            .cornerRadius(7)
 
-                // Account switcher button (if multiple accounts exist)
+            // Secondary actions menu
+            Menu {
                 if accountStore.accounts.count > 1 {
                     Button {
                         showingAccountSelection = true
                     } label: {
-                        Image(systemName: "person.2.fill")
-                            .font(.title3)
-                            .foregroundColor(Theme.textPrimary)
+                        Label("Switch Account", systemImage: "person.2.fill")
                     }
-                    .buttonStyle(.plain)
-                    .help("Switch Account")
+
+                    Divider()
                 }
 
-                // Logout button
                 Button(role: .destructive) {
                     viewModel.logout()
                 } label: {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .font(.title3)
-                        .foregroundColor(.red)
+                    Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
                 }
-                .buttonStyle(.plain)
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.body)
+                    .foregroundColor(.primary)
+                    .frame(width: 28, height: 28)
             }
+            .menuStyle(.borderlessButton)
+            .help("More options")
         }
-        .padding()
-        .background(Theme.overlayColor)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Action buttons")
     }
     
     // MARK: - Tab Bar View
@@ -454,7 +528,7 @@ struct ContentView: View {
     }
 
     private func pulseOpacity(for index: Int) -> Double {
-        let delay = Double(index) * 0.2
+        let _ = Double(index) * 0.2  // Delay calculation for future animation use
         return isPulsing ? 0.0 : 0.6
     }
 
@@ -635,38 +709,69 @@ struct ContentView: View {
             return "\(xp)"
         }
     }
+
+    private func formatKills(_ kills: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        return formatter.string(from: NSNumber(value: kills)) ?? "\(kills)"
+    }
 }
 
-// MARK: - Quick Stat View
+// MARK: - Clean Stat Card
 
-struct QuickStatView: View {
-    let title: String
+struct CleanStatCard: View {
     let value: String
+    let label: String
     let color: Color
     var trend: TrendDirection? = nil
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 4) {
             HStack(spacing: 4) {
                 Text(value)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .foregroundColor(color)
 
                 if let trend = trend {
                     Image(systemName: trend.icon)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(trend.color)
                 }
             }
 
-            Text(title)
+            Text(label)
                 .font(.caption2)
                 .foregroundColor(.secondary)
+                .textCase(.uppercase)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(color.opacity(0.1))
-        .cornerRadius(8)
+        .frame(minWidth: 60)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
+    }
+}
+
+// MARK: - Toolbar Button
+
+struct ToolbarButton: View {
+    let icon: String
+    let tooltip: String
+    var isLoading: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundColor(.primary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+                .rotationEffect(.degrees(isLoading ? 360 : 0))
+                .animation(isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isLoading)
+        }
+        .buttonStyle(.plain)
+        .help(tooltip)
+        .accessibilityLabel(tooltip)
     }
 }
 
