@@ -34,7 +34,6 @@ struct SettingsView: View {
     @State private var selectedColorScheme: AppColorScheme = .orange
     @State private var debugMode: Bool = false
     @State private var showClearHistoryConfirmation = false
-    @State private var showAbout = false
     @State private var accountToDelete: StoredEAAccount?
     @State private var showDeleteAccountAlert = false
     
@@ -260,48 +259,7 @@ struct SettingsView: View {
                                 .foregroundColor(Theme.bf6Red.opacity(0.8))
                         }
                     }
-                    
-                    // About Section
-                    SettingsSection(title: "About", icon: "info.circle.fill") {
-                        VStack(spacing: 12) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("BF6 Stats Tracker")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Theme.textPrimary)
 
-                                    Text("Version 1.0.0")
-                                        .font(.caption)
-                                        .foregroundColor(Theme.textSecondary)
-                                }
-
-                                Spacer()
-
-                                Button {
-                                    showAbout = true
-                                } label: {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "info.circle")
-                                        Text("About")
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(Theme.bf6Orange)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Theme.bf6Orange.opacity(0.1))
-                                    .cornerRadius(8)
-                                }
-                                .buttonStyle(.plain)
-                            }
-
-                            Text("Designed & Built by CitizenCoder • Powered by GameTools.Network API")
-                                .font(.caption)
-                                .foregroundColor(Theme.textSecondary)
-                                .multilineTextAlignment(.center)
-                        }
-                    }
-                    
                     // Save Button
                     Button {
                         saveSettings()
@@ -329,9 +287,6 @@ struct SettingsView: View {
         .background(Theme.backgroundPrimary)
         .onAppear {
             loadCurrentSettings()
-        }
-        .sheet(isPresented: $showAbout) {
-            AboutView()
         }
         .alert("Clear Historical Data?", isPresented: $showClearHistoryConfirmation) {
             Button("Cancel", role: .cancel) { }
