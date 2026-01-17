@@ -23,13 +23,37 @@ struct PlayerSearchView: View {
     @Environment(\.dismiss) var dismiss
 
     @State private var playerName = ""
-    @State private var selectedPlatform: Platform = .pc
     @State private var isSearching = false
     @State private var searchError: String?
     @State private var recentSearches: [RecentSearch] = []
-    @State private var showEALogin = false
+    @State private var foundPlayer: PlayerStats?
+    @State private var showPlayerPreview = false
+
+    // Default platform - PC is the most common
+    private let defaultPlatform: Platform = .pc
 
     var body: some View {
+        Group {
+            if showPlayerPreview, let player = foundPlayer {
+                PlayerPreviewView(
+                    playerStats: player,
+                    playerName: playerName,
+                    platform: defaultPlatform,
+                    onReplace: {
+                        replaceCurrentUser()
+                    },
+                    onCancel: {
+                        showPlayerPreview = false
+                        foundPlayer = nil
+                    }
+                )
+            } else {
+                searchFormView
+            }
+        }
+    }
+
+    private var searchFormView: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
@@ -53,31 +77,11 @@ struct PlayerSearchView: View {
 
             // Search Form
             VStack(spacing: 20) {
-                // EA Authentication Section
-                if viewModel.isEAAuthenticated {
-                    // Show logged-in user info
-                    eaAuthenticatedSection
-                } else {
-                    // Show EA login option
-                    eaLoginSection
-                }
-
-                Divider()
-                    .padding(.vertical, 4)
-
                 // Player Name Field
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Player Name")
-                            .font(.headline)
-                            .foregroundColor(Theme.textSecondary)
-
-                        if viewModel.isEAAuthenticated {
-                            Text("(Using EA ID)")
-                                .font(.caption)
-                                .foregroundColor(Theme.bf6Green)
-                        }
-                    }
+                    Text("Player Name")
+                        .font(.headline)
+                        .foregroundColor(Theme.textSecondary)
 
                     HStack {
                         Image(systemName: "person.fill")
@@ -95,25 +99,7 @@ struct PlayerSearchView: View {
                         .font(.caption)
                         .foregroundColor(Theme.textSecondary)
                 }
-                
-                // Platform Selection
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Platform")
-                        .font(.headline)
-                        .foregroundColor(Theme.textSecondary)
-                    
-                    HStack(spacing: 12) {
-                        ForEach(Platform.allCases) { platform in
-                            PlatformButton(
-                                platform: platform,
-                                isSelected: selectedPlatform == platform
-                            ) {
-                                selectedPlatform = platform
-                            }
-                        }
-                    }
-                }
-                
+
                 // Error Message
                 if let error = searchError {
                     HStack {
@@ -184,7 +170,6 @@ struct PlayerSearchView: View {
                         ForEach(recentSearches) { search in
                             RecentSearchRow(search: search) {
                                 playerName = search.name
-                                selectedPlatform = search.platform
                                 performSearch()
                             }
                         }
@@ -199,165 +184,77 @@ struct PlayerSearchView: View {
         .background(Theme.backgroundPrimary)
         .onAppear {
             loadRecentSearches()
-            // Pre-fill with EA ID if authenticated
-            if viewModel.isEAAuthenticated, let eaId = viewModel.settings.eaId {
-                playerName = eaId
-            }
-        }
-        .sheet(isPresented: $showEALogin) {
-            EALoginView()
-                .environmentObject(viewModel)
         }
     }
 
-    // MARK: - EA Authentication Section (Logged In)
-
-    private var eaAuthenticatedSection: some View {
-        VStack(spacing: 12) {
-            HStack {
-                // EA Icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.orange, .red],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 40, height: 40)
-
-                    Image(systemName: "person.badge.key.fill")
-                        .foregroundColor(Theme.textPrimary)
-                        .font(.system(size: 18))
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(viewModel.settings.eaId ?? "EA User")
-                            .font(.headline)
-                            .foregroundColor(Theme.textPrimary)
-
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(Theme.bf6Green)
-                            .font(.caption)
-                    }
-
-                    Text("EA Account Connected")
-                        .font(.caption)
-                        .foregroundColor(Theme.bf6Green)
-                }
-
-                Spacer()
-
-                // Use My Stats button
-                Button {
-                    if let eaId = viewModel.settings.eaId {
-                        playerName = eaId
-                        performSearch()
-                    }
-                } label: {
-                    Text("Use My Stats")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textPrimary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Theme.bf6Green)
-                        .cornerRadius(6)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            .background(Theme.bf6Green.opacity(0.1))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Theme.bf6Green.opacity(0.3), lineWidth: 1)
-            )
-
-            // Identity details (collapsible)
-            DisclosureGroup {
-                VStack(alignment: .leading, spacing: 8) {
-                    IdentityDetailRow(label: "EA ID", value: viewModel.settings.eaId ?? "N/A")
-                    IdentityDetailRow(label: "Nucleus ID", value: viewModel.settings.nucleusId ?? "N/A")
-                    IdentityDetailRow(label: "Persona ID", value: viewModel.settings.personaId ?? "N/A")
-                }
-                .padding(.top, 8)
-            } label: {
-                Text("View Identity Details")
-                    .font(.caption)
-                    .foregroundColor(Theme.textSecondary)
-            }
-            .tint(.secondary)
-        }
-    }
-
-    // MARK: - EA Login Section (Not Logged In)
-
-    private var eaLoginSection: some View {
-        Button {
-            showEALogin = true
-        } label: {
-            HStack {
-                Image(systemName: "person.badge.key.fill")
-                    .font(.title2)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.orange, .red],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Sign in with EA")
-                        .font(.headline)
-                        .foregroundColor(Theme.textPrimary)
-
-                    Text("Automatically detect your EA ID")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .foregroundColor(Theme.textSecondary)
-            }
-            .padding()
-            .background(Theme.cardBackground)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Theme.bf6Orange.opacity(0.3), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-    
     // MARK: - Actions
     
     private func performSearch() {
         guard !playerName.isEmpty else { return }
-        
+
         isSearching = true
         searchError = nil
-        
+
         Task {
             do {
-                await viewModel.searchPlayer(name: playerName, platform: selectedPlatform)
-                
-                if viewModel.error == nil {
-                    // Save to recent searches
-                    addRecentSearch(name: playerName, platform: selectedPlatform)
-                    dismiss()
-                } else {
-                    searchError = viewModel.error?.localizedDescription
+                // Step 1: Authenticate with GamerID to get EA identity (nucleusId, personaId)
+                guard let url = URL(string: "https://rip-bf.com/api/eaid/?name=\(playerName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? playerName)") else {
+                    throw BF6TrackerError.invalidURL
                 }
+
+                let (data, _) = try await URLSession.shared.data(from: url)
+                let response = try JSONDecoder().decode(RipBFAPIResponse.self, from: data)
+
+                // Check if there was an error
+                if response.error {
+                    searchError = response.message
+                    isSearching = false
+                    return
+                }
+
+                // Get the first user from the response
+                guard let apiUser = response.users?.first else {
+                    searchError = "No player found with that name"
+                    isSearching = false
+                    return
+                }
+
+                // Step 2: Create a full PlayerIdentifier with EA identity
+                let identifier = PlayerIdentifier(
+                    name: apiUser.EAID,
+                    platform: defaultPlatform,
+                    nucleusId: apiUser.userId,
+                    personaId: apiUser.id
+                )
+
+                // Step 3: Fetch stats from gametools API using the full identifier
+                let stats = try await APIService.shared.fetchPlayerStats(identifier: identifier)
+
+                // Save the found player and show preview
+                foundPlayer = stats
+                showPlayerPreview = true
+
+                // Save to recent searches
+                addRecentSearch(name: playerName, platform: defaultPlatform)
+            } catch let error as BF6TrackerError {
+                searchError = error.errorDescription ?? "Player not found"
+            } catch {
+                searchError = "Network error: \(error.localizedDescription)"
             }
-            
+
             isSearching = false
+        }
+    }
+
+    private func replaceCurrentUser() {
+        // Now actually update the current user with the searched player
+        Task {
+            await viewModel.searchPlayer(name: playerName, platform: defaultPlatform)
+
+            // Close the preview and search view
+            showPlayerPreview = false
+            foundPlayer = nil
+            dismiss()
         }
     }
     
@@ -407,36 +304,6 @@ struct RecentSearch: Codable, Identifiable {
     }
 }
 
-// MARK: - Platform Button
-
-struct PlatformButton: View {
-    let platform: Platform
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                PlatformIconView(platform: platform, size: 24)
-                
-                Text(platform.displayName)
-                    .font(.caption)
-                    .lineLimit(1)
-            }
-            .foregroundColor(isSelected ? Theme.selectedText : Theme.textSecondary)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(isSelected ? Theme.bf6Blue.opacity(0.3) : Theme.cardBackground)
-            .cornerRadius(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isSelected ? Theme.bf6Blue : Color.clear, lineWidth: 2)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Recent Search Row
 
 struct RecentSearchRow: View {
@@ -446,23 +313,15 @@ struct RecentSearchRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                PlatformIconView(platform: search.platform, size: 18)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(search.name)
-                        .fontWeight(.medium)
-                    
-                    Text(search.platform.displayName)
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                
+                Text(search.name)
+                    .fontWeight(.medium)
+
                 Spacer()
-                
+
                 Text(search.date.formatted(.relative(presentation: .named)))
                     .font(.caption2)
                     .foregroundColor(Theme.textSecondary)
-                
+
                 Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundColor(Theme.textSecondary)
@@ -475,38 +334,187 @@ struct RecentSearchRow: View {
     }
 }
 
-// MARK: - Identity Detail Row
+// MARK: - Player Preview View
 
-struct IdentityDetailRow: View {
-    let label: String
-    let value: String
+struct PlayerPreviewView: View {
+    let playerStats: PlayerStats
+    let playerName: String
+    let platform: Platform
+    let onReplace: () -> Void
+    let onCancel: () -> Void
 
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(Theme.textSecondary)
-                .frame(width: 80, alignment: .leading)
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Player Found")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                Spacer()
+            }
+            .padding()
+            .background(Theme.overlayColor)
+
+            // Player Summary
+            VStack(spacing: 20) {
+                // Player Name
+                VStack(spacing: 8) {
+                    Text(playerName)
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(Theme.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Theme.cardBackground)
+                        .cornerRadius(12)
+                }
+
+                // Key Stats Grid
+                VStack(spacing: 12) {
+                    Text("Player Statistics")
+                        .font(.headline)
+                        .foregroundColor(Theme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 12) {
+                        StatPreviewCard(
+                            title: "Rank",
+                            value: "\(playerStats.rank)",
+                            icon: "star.fill",
+                            color: Theme.bf6Orange
+                        )
+
+                        StatPreviewCard(
+                            title: "Mastery",
+                            value: "\(playerStats.masteryLevel)",
+                            icon: "arrow.up.circle.fill",
+                            color: Theme.bf6Blue
+                        )
+
+                        StatPreviewCard(
+                            title: "K/D Ratio",
+                            value: String(format: "%.2f", playerStats.kdRatio),
+                            icon: "target",
+                            color: playerStats.kdRatio >= 1.0 ? Theme.bf6Green : Theme.bf6Red
+                        )
+
+                        StatPreviewCard(
+                            title: "Win Rate",
+                            value: playerStats.wlPercent,
+                            icon: "trophy.fill",
+                            color: playerStats.wlRatio >= 50.0 ? Theme.bf6Green : Theme.bf6Orange
+                        )
+
+                        StatPreviewCard(
+                            title: "Kills",
+                            value: formatNumber(playerStats.kills),
+                            icon: "scope",
+                            color: Theme.textPrimary
+                        )
+
+                        StatPreviewCard(
+                            title: "Playtime",
+                            value: formatPlaytime(playerStats.timePlayed),
+                            icon: "clock.fill",
+                            color: Theme.textPrimary
+                        )
+                    }
+                }
+
+                Spacer()
+
+                // Action Buttons
+                VStack(spacing: 12) {
+                    Button {
+                        onReplace()
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                            Text("Replace Current User")
+                        }
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        onCancel()
+                    } label: {
+                        Text("Cancel")
+                            .font(.title3)
+                            .foregroundColor(Theme.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Theme.cardBackground)
+                            .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding()
+        }
+        .frame(width: 500, height: 700)
+        .background(Theme.backgroundPrimary)
+    }
+
+    private func formatNumber(_ number: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
+    }
+
+    private func formatPlaytime(_ seconds: Int) -> String {
+        let hours = seconds / 3600
+        if hours < 1000 {
+            return "\(hours)h"
+        } else {
+            return String(format: "%.1fk h", Double(hours) / 1000.0)
+        }
+    }
+}
+
+// MARK: - Stat Preview Card
+
+struct StatPreviewCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
 
             Text(value)
-                .font(.caption)
+                .font(.title2)
+                .fontWeight(.bold)
                 .foregroundColor(Theme.textPrimary)
-                .lineLimit(1)
-                .truncationMode(.middle)
 
-            Spacer()
-
-            Button {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(value, forType: .string)
-            } label: {
-                Image(systemName: "doc.on.doc")
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .help("Copy to clipboard")
+            Text(title)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
         }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(10)
     }
 }
 
