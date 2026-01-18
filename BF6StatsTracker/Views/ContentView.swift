@@ -16,7 +16,6 @@
 //
 
 import SwiftUI
-import EAIdentityKit
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: StatsViewModel

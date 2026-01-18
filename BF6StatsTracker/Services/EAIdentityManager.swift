@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import EAIdentityKit
 import WebKit
 
 /// Represents the authenticated EA player identity
@@ -69,7 +68,7 @@ actor EAIdentityManager {
     /// Uses EAIdentityAPI directly to avoid keychain issues
     /// - Parameter token: EA OAuth access token
     /// - Returns: The authenticated player identity
-    func authenticate(with token: String) async throws -> EAPlayerIdentity {
+/*    func authenticate(with token: String) async throws -> EAPlayerIdentity {
         // Use EAIdentityAPI directly with the token - no keychain storage
         let api = EAIdentityAPI(accessToken: token)
 
@@ -93,11 +92,11 @@ actor EAIdentityManager {
         logSuccess("EA Identity retrieved - EA ID: \(identity.eaId), Nucleus ID: \(identity.nucleusId)", category: .success)
 
         return identity
-    }
+    } */
 
     /// Get the current identity, refreshing if needed
     /// - Returns: The current player identity
-    func getIdentity() async throws -> EAPlayerIdentity {
+/*    func getIdentity() async throws -> EAPlayerIdentity {
         // Check if we have a valid cached identity
         if let identity = cachedIdentity, !identity.isExpired {
             return identity
@@ -141,7 +140,7 @@ actor EAIdentityManager {
         let identity = try await getIdentity()
         return identity.eaId
     }
-
+*/
     /// Load identity from a stored account (no token required)
     /// This allows quick account switching without re-authentication
     /// - Parameter identity: The stored player identity
@@ -205,7 +204,7 @@ actor EAIdentityManager {
     }
 
     /// Test if the current token is still valid
-    func testToken() async throws -> Bool {
+/*    func testToken() async throws -> Bool {
         guard let token = currentToken ?? loadToken() else { return false }
 
         do {
@@ -216,7 +215,7 @@ actor EAIdentityManager {
             return false
         }
     }
-
+*/
     // MARK: - Persistence (using UserDefaults instead of Keychain)
 
     private func loadCachedIdentity() async {

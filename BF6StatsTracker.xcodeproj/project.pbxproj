@@ -67,7 +67,6 @@
 		27E543832EE98F1D00B01618 /* SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543822EE98F1D00B01618 /* SessionHistoryView.swift */; };
 		27E543852EE98F2D00B01618 /* PerformanceChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543842EE98F2D00B01618 /* PerformanceChartsView.swift */; };
 		27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543862EE98F4000B01618 /* ServerBrowserView.swift */; };
-		27E798052EE645220002311A /* EAIdentityKit in Frameworks */ = {isa = PBXBuildFile; productRef = 27E798042EE645220002311A /* EAIdentityKit */; };
 		27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798062EE645F80002311A /* EAIdentityManager.swift */; };
 		27E798092EE646350002311A /* EALoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798082EE646350002311A /* EALoginView.swift */; };
 /* End PBXBuildFile section */
@@ -150,7 +149,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27E798052EE645220002311A /* EAIdentityKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,7 +354,6 @@
 			);
 			mainGroup = 3000000000000001;
 			packageReferences = (
-				27E798032EE645220002311A /* XCRemoteSwiftPackageReference "EAIdentityKit" */,
 			);
 			productRefGroup = 3000000000000003 /* Products */;
 			projectDirPath = "";
@@ -687,25 +684,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		27E798032EE645220002311A /* XCRemoteSwiftPackageReference "EAIdentityKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/MikeManzo/EAIdentityKit";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		27E798042EE645220002311A /* EAIdentityKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 27E798032EE645220002311A /* XCRemoteSwiftPackageReference "EAIdentityKit" */;
-			productName = EAIdentityKit;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 6000000000000001 /* Project object */;
 }

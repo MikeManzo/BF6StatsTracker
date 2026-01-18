@@ -9,7 +9,6 @@
 //
 
 import Foundation
-import EAIdentityKit
 import SwiftUI
 
 extension StatsViewModel {

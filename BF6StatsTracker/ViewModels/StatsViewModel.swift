@@ -17,7 +17,6 @@
 //
 
 import SwiftUI
-import EAIdentityKit
 import Combine
 
 @MainActor
@@ -122,7 +121,7 @@ class StatsViewModel: ObservableObject {
 
     /// Authenticate with EA using an access token
     /// - Parameter token: EA OAuth access token obtained from web login
-    func authenticateWithEA(token: String) async {
+/*    func authenticateWithEA(token: String) async {
         isAuthenticating = true
         eaAuthError = nil
 
@@ -162,6 +161,7 @@ class StatsViewModel: ObservableObject {
 
         isAuthenticating = false
     }
+ */
 
     /// Authenticate with EA using GamerID via rip-bf.com API
     /// - Parameter gamerID: EA GamerID (username)
