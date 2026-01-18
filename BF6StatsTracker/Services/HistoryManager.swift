@@ -355,7 +355,23 @@ class HistoryManager: ObservableObject {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         let snapshots = getSnapshots(from: startDate, to: Date())
 
-        return snapshots.map { ($0.timestamp, $0.kdRatio) }
+        // Convert cumulative K/D to daily K/D ratios based on deltas
+        guard snapshots.count >= 2 else {
+            return snapshots.map { ($0.timestamp, $0.kdRatio) }
+        }
+
+        var dailyKDs: [(Date, Double)] = []
+        // Snapshots are in reverse order (newest first at index 0)
+        for i in 0..<snapshots.count - 1 {
+            let newer = snapshots[i]      // Newer snapshot (earlier index)
+            let older = snapshots[i + 1]  // Older snapshot (later index)
+            let killDelta = newer.kills - older.kills
+            let deathDelta = newer.deaths - older.deaths
+            let dailyKD = deathDelta > 0 ? Double(killDelta) / Double(deathDelta) : Double(killDelta)
+            dailyKDs.append((newer.timestamp, max(0, dailyKD))) // Use max to avoid negative K/D
+        }
+
+        return dailyKDs.reversed() // Return in chronological order (oldest first)
     }
 
     /// Calculate kills per minute trend
@@ -366,23 +382,63 @@ class HistoryManager: ObservableObject {
         return snapshots.map { ($0.timestamp, $0.killsPerMinute) }
     }
 
-    /// Calculate kills trend
+    /// Calculate kills trend - returns daily kill deltas
     func getKillsTrend(days: Int = 7) -> [(Date, Int)] {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         let snapshots = getSnapshots(from: startDate, to: Date())
 
-        return snapshots.map { ($0.timestamp, $0.kills) }
+        // Convert cumulative kills to daily deltas
+        guard snapshots.count >= 2 else {
+            return snapshots.map { ($0.timestamp, $0.kills) }
+        }
+
+        var deltas: [(Date, Int)] = []
+        // Snapshots are in reverse order (newest first at index 0)
+        for i in 0..<snapshots.count - 1 {
+            let newer = snapshots[i]      // Newer snapshot (earlier index)
+            let older = snapshots[i + 1]  // Older snapshot (later index)
+            let killDelta = newer.kills - older.kills
+            deltas.append((newer.timestamp, max(0, killDelta))) // Use max to avoid negative deltas
+        }
+
+        return deltas.reversed() // Return in chronological order (oldest first)
     }
 
-    /// Calculate W/L ratio trend
+    /// Calculate W/L ratio trend - returns daily W/L ratios based on deltas
     func getWLTrend(days: Int = 7) -> [(Date, Double)] {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         let snapshots = getSnapshots(from: startDate, to: Date())
 
-        return snapshots.map { snapshot -> (Date, Double) in
-            let wlRatio = snapshot.losses > 0 ? Double(snapshot.wins) / Double(snapshot.losses) : Double(snapshot.wins)
-            return (snapshot.timestamp, wlRatio)
+        // Convert cumulative W/L to daily W/L ratios based on deltas
+        guard snapshots.count >= 2 else {
+            return snapshots.map { snapshot -> (Date, Double) in
+                let wlRatio = snapshot.losses > 0 ? Double(snapshot.wins) / Double(snapshot.losses) : Double(snapshot.wins)
+                return (snapshot.timestamp, wlRatio)
+            }
         }
+
+        var dailyWLs: [(Date, Double)] = []
+        // Snapshots are in reverse order (newest first at index 0)
+        for i in 0..<snapshots.count - 1 {
+            let newer = snapshots[i]      // Newer snapshot (earlier index)
+            let older = snapshots[i + 1]  // Older snapshot (later index)
+            let winDelta = newer.wins - older.wins
+            let lossDelta = newer.losses - older.losses
+
+            // Calculate daily W/L ratio
+            let dailyWL: Double
+            if lossDelta > 0 {
+                dailyWL = Double(winDelta) / Double(lossDelta)
+            } else if winDelta > 0 {
+                dailyWL = Double(winDelta) // All wins, no losses
+            } else {
+                dailyWL = 0.0 // No games played
+            }
+
+            dailyWLs.append((newer.timestamp, max(0, dailyWL)))
+        }
+
+        return dailyWLs.reversed() // Return in chronological order (oldest first)
     }
 
     /// Get performance summary for period
@@ -407,15 +463,29 @@ class HistoryManager: ObservableObject {
     private func calculateTrend(values: [Double]) -> TrendDirection {
         guard values.count >= 2 else { return .stable }
 
-        let firstHalf = values.prefix(values.count / 2)
-        let secondHalf = values.suffix(values.count / 2)
+        // Values are now in chronological order (oldest first) after our delta calculations
+        let firstHalf = values.prefix(values.count / 2)  // Older period
+        let secondHalf = values.suffix(values.count / 2) // Recent period
 
         let firstAvg = firstHalf.reduce(0, +) / Double(firstHalf.count)
         let secondAvg = secondHalf.reduce(0, +) / Double(secondHalf.count)
 
-        let difference = secondAvg - firstAvg
+        // Guard against division by zero or very small averages
+        guard firstAvg > 0.01 else {
+            // If old average is near zero, just compare absolute values
+            if secondAvg > firstAvg + 0.5 {
+                return .improving
+            } else if secondAvg < firstAvg - 0.5 {
+                return .declining
+            } else {
+                return .stable
+            }
+        }
+
+        let difference = secondAvg - firstAvg  // Recent - Old (positive = improving)
         let percentChange = (difference / firstAvg) * 100
 
+        // Use 5% threshold for trend detection
         if percentChange > 5 {
             return .improving
         } else if percentChange < -5 {
