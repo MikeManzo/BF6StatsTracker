@@ -78,6 +78,10 @@ struct MapsPlayedCard: View {
                     Label(mapActivity.timePlayedFormatted, systemImage: "clock.fill")
                         .font(.caption)
                         .foregroundColor(Theme.textSecondary)
+
+                    Label(mapActivity.recordFormatted, systemImage: mapActivity.hasWins ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(mapActivity.hasWins ? .green : .red)
                 }
             }
 
@@ -119,20 +123,34 @@ struct MapsPlayedCard: View {
                             Text(mapActivity.timePlayedShort)
                                 .font(.caption2)
                                 .foregroundColor(Theme.textSecondary)
+
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundColor(Theme.textSecondary)
+
+                            Text(mapActivity.recordFormatted)
+                                .font(.caption2)
+                                .foregroundColor(mapActivity.hasWins ? .green : .red)
                         }
                     }
 
                     Spacer()
 
-                    // Time badge
-                    Text(mapActivity.timePlayedShort)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.bf6Orange)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Theme.bf6Orange.opacity(0.1))
-                        .cornerRadius(6)
+                    // Win/Loss badge
+                    HStack(spacing: 4) {
+                        Image(systemName: mapActivity.hasWins ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .font(.caption2)
+                            .foregroundColor(mapActivity.hasWins ? .green : .red)
+
+                        Text(mapActivity.recordFormatted)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(mapActivity.hasWins ? .green : .red)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background((mapActivity.hasWins ? Color.green : Color.red).opacity(0.1))
+                    .cornerRadius(6)
                 }
                 .padding(.vertical, 4)
             }
