@@ -316,7 +316,9 @@ struct ContentView: View {
                 ToolbarButton(
                     icon: "arrow.clockwise",
                     tooltip: "Refresh stats (⌘R)",
-                    isLoading: viewModel.isLoading
+                    isLoading: viewModel.isLoading,
+                    buttonColor: viewModel.refreshButtonColor,
+                    shouldPulsate: viewModel.shouldPulsateRefreshButton
                 ) {
                     Task {
                         await viewModel.forceRefreshStats()
@@ -757,21 +759,96 @@ struct ToolbarButton: View {
     let icon: String
     let tooltip: String
     var isLoading: Bool = false
+    var buttonColor: Color? = nil
+    var shouldPulsate: Bool = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundColor(.primary)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-                .rotationEffect(.degrees(isLoading ? 360 : 0))
-                .animation(isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isLoading)
+            ZStack {
+                // Pulsating background circle using Core Animation
+                if shouldPulsate {
+                    PulsatingCircle(color: buttonColor ?? .primary)
+                        .frame(width: 28, height: 28)
+                }
+
+                // Icon
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundColor(buttonColor ?? .primary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+                    .rotationEffect(.degrees(isLoading ? 360 : 0))
+                    .animation(isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isLoading)
+            }
         }
         .buttonStyle(.plain)
         .help(tooltip)
         .accessibilityLabel(tooltip)
+    }
+}
+
+// MARK: - Pulsating Circle (Core Animation)
+
+struct PulsatingCircle: NSViewRepresentable {
+    let color: Color
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        view.wantsLayer = true
+
+        let shapeLayer = CAShapeLayer()
+        let size: CGFloat = 28
+        let circlePath = NSBezierPath(ovalIn: CGRect(x: 0, y: 0, width: size, height: size))
+        shapeLayer.path = circlePath.cgPath
+        shapeLayer.fillColor = NSColor(color).withAlphaComponent(0.4).cgColor
+        shapeLayer.frame = CGRect(x: 0, y: 0, width: size, height: size)
+
+        // Core Animation - runs entirely on GPU
+        let pulseAnimation = CABasicAnimation(keyPath: "transform.scale")
+        pulseAnimation.fromValue = 1.0
+        pulseAnimation.toValue = 1.4
+        pulseAnimation.duration = 0.8
+        pulseAnimation.autoreverses = true
+        pulseAnimation.repeatCount = .infinity
+        pulseAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+
+        shapeLayer.add(pulseAnimation, forKey: "pulse")
+
+        view.layer?.addSublayer(shapeLayer)
+
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // No updates needed - animation is continuous
+    }
+}
+
+// MARK: - NSBezierPath to CGPath Extension
+
+extension NSBezierPath {
+    var cgPath: CGPath {
+        let path = CGMutablePath()
+        var points = [CGPoint](repeating: .zero, count: 3)
+
+        for i in 0..<elementCount {
+            let type = element(at: i, associatedPoints: &points)
+            switch type {
+            case .moveTo:
+                path.move(to: points[0])
+            case .lineTo:
+                path.addLine(to: points[0])
+            case .curveTo:
+                path.addCurve(to: points[2], control1: points[0], control2: points[1])
+            case .closePath:
+                path.closeSubpath()
+            default:
+                break
+            }
+        }
+
+        return path
     }
 }
 

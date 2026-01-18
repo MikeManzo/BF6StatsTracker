@@ -31,6 +31,9 @@ extension StatsViewModel {
         cacheAge = nil
         error = nil
 
+        // Stop refresh timers and reset progress
+        stopRefreshTimers()
+
         // Reset selection states
         selectedClass = nil
         selectedWeaponCategory = nil

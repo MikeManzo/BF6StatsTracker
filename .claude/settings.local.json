@@ -37,7 +37,8 @@
       "Bash(wc:*)",
       "Bash(git add:*)",
       "Bash(git checkout:*)",
-      "Bash(ruby -e:*)"
+      "Bash(ruby -e:*)",
+      "Bash(xcrun swift:*)"
     ],
     "deny": [],
     "ask": []

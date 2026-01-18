@@ -67,9 +67,14 @@ class StatsViewModel: ObservableObject {
     // App initialization state
     @Published var isInitializing = true
 
+    // Refresh timer progress tracking
+    @Published var refreshProgress: Double = 0.0 // 0.0 to 1.0
+
     // MARK: - Private Properties
 
     private var refreshTimer: Timer?
+    private var stateTransitionTimer: Timer?
+    private var refreshStartTime: Date?
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
@@ -289,6 +294,8 @@ class StatsViewModel: ObservableObject {
     
     func forceRefreshStats() async {
         await fetchStats(forceRefresh: true)
+        // Reset the progress timer when manually refreshing
+        resetRefreshProgress()
     }
 
     func retryMissingData() async {
@@ -503,15 +510,71 @@ class StatsViewModel: ObservableObject {
     }
 
     // MARK: - Auto Refresh
-    
+
     private func setupAutoRefresh() {
         refreshTimer?.invalidate()
-        
-        guard settings.autoRefresh else { return }
-        
+        stateTransitionTimer?.invalidate()
+
+        guard settings.autoRefresh else {
+            refreshProgress = 0.0
+            return
+        }
+
+        // Reset progress tracking
+        refreshStartTime = Date()
+        refreshProgress = 0.0
+
+        // Main refresh timer
         refreshTimer = Timer.scheduledTimer(withTimeInterval: settings.refreshInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.refreshStats()
+                self?.resetRefreshProgress()
+            }
+        }
+
+        // Schedule efficient state transition updates
+        scheduleNextStateTransition()
+    }
+
+    private func resetRefreshProgress() {
+        refreshStartTime = Date()
+        refreshProgress = 0.0
+        scheduleNextStateTransition()
+    }
+
+    private func scheduleNextStateTransition() {
+        stateTransitionTimer?.invalidate()
+
+        guard let startTime = refreshStartTime else { return }
+
+        let interval = settings.refreshInterval
+        let elapsed = Date().timeIntervalSince(startTime)
+
+        // Update current progress
+        refreshProgress = min(elapsed / interval, 1.0)
+
+        // Determine next state boundary
+        let nextBoundary: Double
+        if refreshProgress < 0.33 {
+            nextBoundary = interval * 0.33  // Green -> Yellow
+        } else if refreshProgress < 0.66 {
+            nextBoundary = interval * 0.66  // Yellow -> Red (start pulsing)
+        } else {
+            // We're in the red zone, no more transitions until refresh
+            return
+        }
+
+        let timeUntilNext = nextBoundary - elapsed
+
+        guard timeUntilNext > 0 else {
+            // Edge case: we're already past this boundary, skip to next
+            return
+        }
+
+        // Schedule single-shot timer for the next state change
+        stateTransitionTimer = Timer.scheduledTimer(withTimeInterval: timeUntilNext, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.scheduleNextStateTransition()
             }
         }
     }
@@ -522,6 +585,12 @@ class StatsViewModel: ObservableObject {
             await saveSettings()
         }
         setupAutoRefresh()
+    }
+
+    func stopRefreshTimers() {
+        refreshTimer?.invalidate()
+        stateTransitionTimer?.invalidate()
+        refreshProgress = 0.0
     }
     
     // MARK: - Cache Management
@@ -562,6 +631,22 @@ class StatsViewModel: ObservableObject {
 
     var hasPlayerData: Bool {
         playerStats != nil
+    }
+
+    // Refresh button color based on progress
+    var refreshButtonColor: Color {
+        if refreshProgress < 0.33 {
+            return .green
+        } else if refreshProgress < 0.66 {
+            return .yellow
+        } else {
+            return .red
+        }
+    }
+
+    // Whether the refresh button should pulsate
+    var shouldPulsateRefreshButton: Bool {
+        return refreshProgress >= 0.66
     }
 
     var hasCompleteData: Bool {
