@@ -660,6 +660,10 @@ class StatsViewModel: ObservableObject {
         HistoryManager.shared.calculateKillsTrend(days: 7)
     }
 
+    var assistsTrend: TrendDirection {
+        HistoryManager.shared.calculateAssistsTrend(days: 7)
+    }
+
     var kdTrend: TrendDirection {
         HistoryManager.shared.calculateKDTrend(days: 7)
     }

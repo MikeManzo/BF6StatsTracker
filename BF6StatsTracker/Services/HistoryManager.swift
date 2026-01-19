@@ -404,6 +404,28 @@ class HistoryManager: ObservableObject {
         return deltas.reversed() // Return in chronological order (oldest first)
     }
 
+    /// Calculate assists trend - returns daily assist deltas
+    func getAssistsTrend(days: Int = 7) -> [(Date, Int)] {
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let snapshots = getSnapshots(from: startDate, to: Date())
+
+        // Convert cumulative assists to daily deltas
+        guard snapshots.count >= 2 else {
+            return snapshots.map { ($0.timestamp, $0.assists) }
+        }
+
+        var deltas: [(Date, Int)] = []
+        // Snapshots are in reverse order (newest first at index 0)
+        for i in 0..<snapshots.count - 1 {
+            let newer = snapshots[i]      // Newer snapshot (earlier index)
+            let older = snapshots[i + 1]  // Older snapshot (later index)
+            let assistDelta = newer.assists - older.assists
+            deltas.append((newer.timestamp, max(0, assistDelta))) // Use max to avoid negative deltas
+        }
+
+        return deltas.reversed() // Return in chronological order (oldest first)
+    }
+
     /// Calculate W/L ratio trend - returns daily W/L ratios based on deltas
     func getWLTrend(days: Int = 7) -> [(Date, Double)] {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
@@ -501,6 +523,15 @@ class HistoryManager: ObservableObject {
         guard !killsData.isEmpty else { return .stable }
 
         let values = killsData.map { Double($0.1) }
+        return calculateTrend(values: values)
+    }
+
+    /// Calculate trend for assists (using Int values)
+    func calculateAssistsTrend(days: Int = 7) -> TrendDirection {
+        let assistsData = getAssistsTrend(days: days)
+        guard !assistsData.isEmpty else { return .stable }
+
+        let values = assistsData.map { Double($0.1) }
         return calculateTrend(values: values)
     }
 

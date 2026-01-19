@@ -296,6 +296,17 @@ struct ContentView: View {
                 .frame(width: 1, height: 40)
 
             CleanStatCard(
+                value: formatKills(stats.assists),
+                label: "ASSISTS",
+                color: .purple,
+                trend: viewModel.assistsTrend
+            )
+
+            Rectangle()
+                .fill(Color.secondary.opacity(0.2))
+                .frame(width: 1, height: 40)
+
+            CleanStatCard(
                 value: String(format: "%.1f%%", stats.wlRatio),
                 label: "WIN RATE",
                 color: .blue,
