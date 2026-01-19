@@ -293,33 +293,40 @@ struct TodayVsYesterdayView: View {
         yesterdayData?.deltaRevives ?? 0
     }
 
-    // Get yesterday's data by summing all snapshots from the previous day
+    // Get yesterday's data by comparing last snapshot of yesterday to last snapshot of day before yesterday
     private var yesterdayData: DailyPerformanceData? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        let dayBeforeYesterday = calendar.date(byAdding: .day, value: -2, to: today) ?? today
 
         let snapshots = historyManager.getAllSnapshots()
+
+        // Get last snapshot from yesterday
         let yesterdaySnapshots = snapshots.filter { snapshot in
             calendar.isDate(snapshot.timestamp, inSameDayAs: yesterday)
-        }
+        }.sorted { $0.timestamp < $1.timestamp }
 
-        guard !yesterdaySnapshots.isEmpty else { return nil }
+        guard let lastYesterday = yesterdaySnapshots.last else { return nil }
 
-        // Sort by timestamp to get first and last
-        let sorted = yesterdaySnapshots.sorted { $0.timestamp < $1.timestamp }
-        guard let first = sorted.first, let last = sorted.last else { return nil }
+        // Get last snapshot from day before yesterday
+        let dayBeforeSnapshots = snapshots.filter { snapshot in
+            calendar.isDate(snapshot.timestamp, inSameDayAs: dayBeforeYesterday)
+        }.sorted { $0.timestamp < $1.timestamp }
 
-        let kills = last.kills - first.kills
-        let deaths = last.deaths - first.deaths
-        let matches = last.matchesPlayed - first.matchesPlayed + 1
+        guard let lastDayBefore = dayBeforeSnapshots.last else { return nil }
+
+        let kills = lastYesterday.kills - lastDayBefore.kills
+        let deaths = lastYesterday.deaths - lastDayBefore.deaths
+        let matches = lastYesterday.matchesPlayed - lastDayBefore.matchesPlayed
         let kd = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
-        let headshots = last.headshots - first.headshots
-        let assists = last.assists - first.assists
-        let revives = last.revives - first.revives
-        let score = last.totalScore - first.totalScore
+        let headshots = lastYesterday.headshots - lastDayBefore.headshots
+        let assists = lastYesterday.assists - lastDayBefore.assists
+        let revives = lastYesterday.revives - lastDayBefore.revives
+        let score = lastYesterday.totalScore - lastDayBefore.totalScore
         let killAssists = kills + assists
         let kda = deaths > 0 ? Double(killAssists) / Double(deaths) : Double(killAssists)
+        let wins = lastYesterday.wins - lastDayBefore.wins
 
         return DailyPerformanceData(
             deltaKills: kills,
@@ -331,10 +338,10 @@ struct TodayVsYesterdayView: View {
             deltaScore: score,
             dailyKD: kd,
             dailyKDA: kda,
-            dailyAccuracy: last.accuracy,
-            dailyHeadshotPercent: last.headshotPercentage,
-            dailyKPM: last.killsPerMinute,
-            dailyWinRate: matches > 0 ? (Double(last.wins - first.wins) / Double(matches)) * 100.0 : 0.0
+            dailyAccuracy: lastYesterday.accuracy,
+            dailyHeadshotPercent: lastYesterday.headshotPercentage,
+            dailyKPM: lastYesterday.killsPerMinute,
+            dailyWinRate: matches > 0 ? (Double(wins) / Double(matches)) * 100.0 : 0.0
         )
     }
 
