@@ -60,17 +60,21 @@ struct UnifiedStatCard: View {
         VStack(alignment: .leading, spacing: 12) {
             headerView
             valueView
-            
+
             if let subtitle = config.subtitle {
                 subtitleView(subtitle)
             }
-            
+
             if let progress = config.progress {
                 progressView(progress)
             }
-            
+
             if let trend = config.trend {
                 trendView(trend)
+            } else {
+                // Add padding equivalent to trend view height to maintain consistent card height
+                Color.clear
+                    .frame(height: 16) // Approximate height of trend view (caption font + spacing)
             }
         }
     }
