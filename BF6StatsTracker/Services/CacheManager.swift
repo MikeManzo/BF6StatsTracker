@@ -223,6 +223,9 @@ actor SettingsManager {
         do {
             let data = try JSONEncoder().encode(settings)
             userDefaults.set(data, forKey: settingsKey)
+
+            // Also save menuBarOnlyMode separately for quick access at app launch
+            userDefaults.set(settings.menuBarOnlyMode, forKey: "menuBarOnlyMode")
         } catch {
             logWarning("Failed to save settings: \(error)", category: .storage)
         }

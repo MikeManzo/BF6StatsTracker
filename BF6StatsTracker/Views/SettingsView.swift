@@ -34,6 +34,7 @@ struct SettingsView: View {
     @State private var selectedColorScheme: AppColorScheme = .orange
     @State private var debugMode: Bool = false
     @State private var playSoundOnSnapshot: Bool = true
+    @State private var menuBarOnlyMode: Bool = false
     @State private var showClearHistoryConfirmation = false
     @State private var accountToDelete: StoredEAAccount?
     @State private var showDeleteAccountAlert = false
@@ -226,10 +227,38 @@ struct SettingsView: View {
                             Toggle("Play Sound on when new data is available", isOn: $playSoundOnSnapshot)
                                 .foregroundColor(Theme.textPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            
+
                         }
                     }
-                    
+
+                    // Menubar Settings
+                    SettingsSection(title: "Menu Bar", icon: "menubar.rectangle") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle("Menu Bar Only Mode", isOn: $menuBarOnlyMode)
+                                .foregroundColor(Theme.textPrimary)
+
+                            Text("Hides the desktop icon and runs the app exclusively in the menu bar. You can still access the main window from the menu bar icon.")
+                                .font(.caption)
+                                .foregroundColor(Theme.textSecondary)
+
+                            if menuBarOnlyMode {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundColor(Theme.bf6Orange)
+                                        .font(.caption)
+
+                                    Text("App will restart to apply this change")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.bf6Orange)
+                                }
+                                .padding(8)
+                                .background(Theme.bf6Orange.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
                     // Data Management
                     SettingsSection(title: "Data Management", icon: "internaldrive.fill") {
                         VStack(spacing: 12) {
@@ -334,10 +363,13 @@ struct SettingsView: View {
         selectedColorScheme = viewModel.settings.selectedColorScheme
         debugMode = viewModel.settings.debugMode
         playSoundOnSnapshot = viewModel.settings.playSoundOnSnapshot
+        menuBarOnlyMode = viewModel.settings.menuBarOnlyMode
         Theme.setAccentScheme(selectedColorScheme)
     }
 
     private func saveSettings() {
+        let previousMenuBarOnlyMode = viewModel.settings.menuBarOnlyMode
+
         viewModel.settings.autoRefresh = autoRefresh
         viewModel.settings.refreshInterval = refreshInterval
         viewModel.settings.showNotifications = showNotifications
@@ -345,12 +377,43 @@ struct SettingsView: View {
         viewModel.settings.selectedColorScheme = selectedColorScheme
         viewModel.settings.debugMode = debugMode
         viewModel.settings.playSoundOnSnapshot = playSoundOnSnapshot
+        viewModel.settings.menuBarOnlyMode = menuBarOnlyMode
         Theme.setAccentScheme(selectedColorScheme)
 
         Task {
             await viewModel.saveSettings()
             await MainActor.run {
                 dismiss()
+
+                // If menu bar only mode changed, restart the app to apply the change
+                if previousMenuBarOnlyMode != menuBarOnlyMode {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        restartApplication()
+                    }
+                }
+            }
+        }
+    }
+
+    private func restartApplication() {
+        guard let bundleURL = Bundle.main.bundleURL as URL? else {
+            logError("Failed to get bundle URL for restart", category: .error)
+            return
+        }
+
+        // Create a configuration for launching
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+
+        // Launch the app
+        NSWorkspace.shared.openApplication(at: bundleURL, configuration: configuration) { app, error in
+            if let error = error {
+                logError("Failed to relaunch app: \(error)", category: .error)
+            } else {
+                // Terminate this instance after successfully launching new one
+                DispatchQueue.main.async {
+                    NSApplication.shared.terminate(nil)
+                }
             }
         }
     }

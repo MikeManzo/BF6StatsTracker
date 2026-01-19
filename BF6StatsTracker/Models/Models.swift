@@ -1350,6 +1350,7 @@ struct AppSettings: Codable {
     var selectedColorScheme: AppColorScheme
     var debugMode: Bool
     var playSoundOnSnapshot: Bool
+    var menuBarOnlyMode: Bool
 
     // EA Identity fields - populated from EAIdentityKit
     var nucleusId: String?        // pidId - Master account identifier
@@ -1368,6 +1369,7 @@ struct AppSettings: Codable {
         self.selectedColorScheme = .orange
         self.debugMode = false
         self.playSoundOnSnapshot = true
+        self.menuBarOnlyMode = false
         self.nucleusId = nil
         self.personaId = nil
         self.eaId = nil
@@ -1395,7 +1397,7 @@ struct AppSettings: Codable {
     enum CodingKeys: String, CodingKey {
         case playerName, platform, autoRefresh, refreshInterval, tilePositions
         case showNotifications, compactMode, selectedColorScheme, debugMode
-        case playSoundOnSnapshot
+        case playSoundOnSnapshot, menuBarOnlyMode
         case nucleusId, personaId, eaId, isEAAuthenticated
     }
 
@@ -1415,6 +1417,9 @@ struct AppSettings: Codable {
 
         // Default to true if playSoundOnSnapshot doesn't exist in saved settings
         playSoundOnSnapshot = try container.decodeIfPresent(Bool.self, forKey: .playSoundOnSnapshot) ?? true
+
+        // Default to false if menuBarOnlyMode doesn't exist in saved settings
+        menuBarOnlyMode = try container.decodeIfPresent(Bool.self, forKey: .menuBarOnlyMode) ?? false
 
         nucleusId = try container.decodeIfPresent(String.self, forKey: .nucleusId)
         personaId = try container.decodeIfPresent(String.self, forKey: .personaId)

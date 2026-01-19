@@ -386,15 +386,35 @@ struct MenuBarView: View {
     // MARK: - Helpers
 
     private func openMainWindow() {
-        NSApp.setActivationPolicy(.regular)
+        // Check if we're in menu bar only mode
+        let menuBarOnlyMode = UserDefaults.standard.bool(forKey: "menuBarOnlyMode")
+
+        if menuBarOnlyMode {
+            // User wants to use the full app, so disable menu bar only mode
+            UserDefaults.standard.set(false, forKey: "menuBarOnlyMode")
+
+            // Update the setting in the view model
+            Task { @MainActor in
+                viewModel.settings.menuBarOnlyMode = false
+                await viewModel.saveSettings()
+            }
+
+            // Show the dock icon permanently
+            NSApp.setActivationPolicy(.regular)
+
+            logInfo("Disabled menu bar only mode - user opened full app", category: .general)
+        }
+
         NSApp.activate(ignoringOtherApps: true)
 
         if let window = NSApp.windows.first(where: { $0.title.contains("BF6") || $0.isKeyWindow == false }) {
             window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
         } else {
             // Create new window if needed
             for window in NSApp.windows {
                 window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
             }
         }
     }

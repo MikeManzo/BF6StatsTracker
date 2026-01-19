@@ -128,12 +128,52 @@ struct BF6StatsTrackerApp: App {
 // MARK: - App Delegate
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
-    
+    private var windowCloseObserver: NSObjectProtocol?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Configure the app to support both window and menu bar
-        NSApp.setActivationPolicy(.regular)
+        // Configure the app based on menu bar only mode setting
+        let menuBarOnlyMode = UserDefaults.standard.bool(forKey: "menuBarOnlyMode")
+
+        if menuBarOnlyMode {
+            // Hide dock icon and run as menu bar only app
+            NSApp.setActivationPolicy(.accessory)
+
+            // Monitor window close events to hide dock icon again
+            windowCloseObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.willCloseNotification,
+                object: nil,
+                queue: .main
+            ) { /*[weak self]*/ notification in
+                guard let window = notification.object as? NSWindow else { return }
+
+                // Only hide dock icon for main content windows (not settings or about)
+                if window.contentViewController != nil && !window.title.contains("Settings") && !window.title.contains("About") {
+                    // Wait a bit to ensure the window is fully closed
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // Check if any main windows are still visible
+                        let hasVisibleMainWindows = NSApp.windows.contains { window in
+                            window.isVisible &&
+                            window.contentViewController != nil &&
+                            !window.title.contains("Settings") &&
+                            !window.title.contains("About")
+                        }
+
+                        // If no main windows are visible and we're in menu bar only mode, hide the dock icon
+                        if !hasVisibleMainWindows && UserDefaults.standard.bool(forKey: "menuBarOnlyMode") {
+                            NSApp.setActivationPolicy(.accessory)
+                            logInfo("Hiding dock icon - returning to menu bar only mode", category: .general)
+                        }
+                    }
+                }
+            }
+        } else {
+            // Show dock icon and run as regular app
+            NSApp.setActivationPolicy(.regular)
+        }
+
+        logInfo("App started with activation policy: \(menuBarOnlyMode ? "accessory (menu bar only)" : "regular")", category: .general)
     }
-    
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
             // Reopen the main window if all windows are closed
@@ -143,9 +183,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         return true
     }
-    
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         // Keep running in menu bar when window is closed
         return false
+    }
+
+    deinit {
+        if let observer = windowCloseObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 }
