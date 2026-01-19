@@ -619,38 +619,34 @@ struct TodayVsYesterdayView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if currentSnapshot != nil {
-                    // Header
-                    header
+        VStack(alignment: .leading, spacing: 20) {
+            if currentSnapshot != nil {
+                // Header
+                header
 
-                    // Main comparison cards
-                    mainStatsGrid
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                // Main comparison cards
+                mainStatsGrid
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    // Maps Played
-                    mapsPlayedSection
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                // Maps Played
+                mapsPlayedSection
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    // Combat performance breakdown
-                    combatBreakdown
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                // Combat performance breakdown
+                combatBreakdown
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    // 7-day trend (full width) - show if we have at least 2 days of data
-                    if last7Days.count >= 2 {
-                        kdKdaTrendView
-                        .padding(.horizontal)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                } else {
-                    // No data state
-                    emptyState
+                // 7-day trend (full width) - show if we have at least 2 days of data
+                if last7Days.count >= 2 {
+                    kdKdaTrendView
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+            } else {
+                // No data state
+                emptyState
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onDisappear {
             // Reset animation state when view disappears so it animates again on next view
             hasAnimated = false
@@ -723,7 +719,6 @@ struct TodayVsYesterdayView: View {
                 )
             }
         }
-        .padding(.horizontal)
     }
 
     // MARK: - Main Stats Grid
@@ -775,7 +770,7 @@ struct TodayVsYesterdayView: View {
                 rightYesterdayValue: previousDeltaKDA,
                 icon: "chart.line.uptrend.xyaxis",
                 accentColor: .orange,
-                format: "%.2f",
+                format: "%.1f",
                 leftYesterdaySummary: yesterdayKD,
                 rightYesterdaySummary: yesterdayKDA
             )
@@ -795,14 +790,12 @@ struct TodayVsYesterdayView: View {
                 rightSuffix: "%"
             )
         }
-        .padding(.horizontal)
     }
 
     // MARK: - Maps Played Section
 
     private var mapsPlayedSection: some View {
         MapsPlayedCard()
-            .padding(.horizontal)
     }
 
     // MARK: - K/D & KDA Trend View
@@ -1014,7 +1007,6 @@ struct TodayVsYesterdayView: View {
             Text("Combat Breakdown")
                 .font(.headline)
                 .fontWeight(.bold)
-                .padding(.horizontal)
 
             VStack(spacing: 12) {
                 // Headshots
@@ -1082,7 +1074,6 @@ struct TodayVsYesterdayView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))
             )
-            .padding(.horizontal)
             .onAppear {
                 if !hasAnimated {
                     // Mark as animated after a delay to ensure all bars have started

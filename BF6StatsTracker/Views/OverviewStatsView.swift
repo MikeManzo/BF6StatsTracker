@@ -122,7 +122,6 @@ struct OverviewStatsView: View {
                         RankCard(stats: stats)
                     }
                 }
-                .padding(.horizontal)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(height: 160)
