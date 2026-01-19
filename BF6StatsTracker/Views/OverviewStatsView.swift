@@ -368,42 +368,46 @@ struct RankCard: View {
                 .foregroundStyle(stats.isSRank ? Theme.bf6Orange.opacity(0.12) : Theme.bf6Orange.opacity(0.1))
                 .offset(x: -10, y: 0)
 
-            // Card content
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 6) {
-                        Image(systemName: stats.isSRank ? "crown.fill" : "chevron.up.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(Theme.bf6Orange)
-
-                        Text("RANK (Estimated)")
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(Theme.textSecondary)
-
-                        // Info icon with tooltip
-                        Image(systemName: "info.circle")
-                            .font(.caption2)
-                            .foregroundStyle(Theme.textSecondary.opacity(0.6))
-                            .help("Rank is estimated from XP. Accurate for S001-S050 range. High S-ranks (S150+) may be less accurate due to season XP resets.")
-
-                        Spacer()
-                    }
-
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text(stats.rankString)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.textPrimary)
-
-                        Spacer()
-                    }
-
-                    Text("XP: \((stats.xpData?.first?.total ?? 0).formatted())")
+            // Card content - matching StatCard structure
+            VStack(alignment: .leading, spacing: 12) {
+                // Header (matches StatCard headerView)
+                HStack(spacing: 6) {
+                    Image(systemName: stats.isSRank ? "crown.fill" : "chevron.up.circle.fill")
                         .font(.caption)
+                        .foregroundStyle(Theme.bf6Orange)
+
+                    Text("RANK (Estimated)")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
                         .foregroundStyle(Theme.textSecondary)
+
+                    // Info icon with tooltip
+                    Image(systemName: "info.circle")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.textSecondary.opacity(0.6))
+                        .help("Rank is estimated from XP. Accurate for S001-S050 range. High S-ranks (S150+) may be less accurate due to season XP resets.")
+
+                    Spacer()
                 }
 
-                Spacer()
+                // Value (matches StatCard valueView)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(stats.rankString)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .fontDesign(.rounded)
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Spacer()
+                }
+
+                // Subtitle (matches StatCard subtitleView)
+                Text("XP: \((stats.xpData?.first?.total ?? 0).formatted())")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+
+                // Spacer for trend (matches StatCard padding when no trend)
+                Color.clear
+                    .frame(height: 16)
             }
             .padding(16)
         }
