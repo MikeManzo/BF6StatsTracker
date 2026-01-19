@@ -33,13 +33,14 @@ struct SettingsView: View {
     @State private var compactMode: Bool = false
     @State private var selectedColorScheme: AppColorScheme = .orange
     @State private var debugMode: Bool = false
+    @State private var playSoundOnSnapshot: Bool = true
     @State private var showClearHistoryConfirmation = false
     @State private var accountToDelete: StoredEAAccount?
     @State private var showDeleteAccountAlert = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // Header with Save Button
             HStack {
                 Text("Settings")
                     .font(.title2)
@@ -47,6 +48,26 @@ struct SettingsView: View {
                     .foregroundColor(Theme.textPrimary)
 
                 Spacer()
+
+                // macOS-style Save Button
+                Button {
+                    saveSettings()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.body)
+                        Text("Save")
+                            .font(.body)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Theme.accent)
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .help("Save settings and close")
 
                 Button {
                     dismiss()
@@ -56,6 +77,7 @@ struct SettingsView: View {
                         .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
+                .help("Close without saving")
             }
             .padding()
             .background(Theme.overlayColor)
@@ -191,16 +213,20 @@ struct SettingsView: View {
 
                             Divider()
 
-                            Toggle("Compact Mode", isOn: $compactMode)
+                            HStack {
+                                Toggle("Compact Mode", isOn: $compactMode)
+                                    .foregroundColor(Theme.textPrimary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                                
+                                Toggle("Show Notifications", isOn: $showNotifications)
+                                    .foregroundColor(Theme.textPrimary)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
+                                                        
+                            Toggle("Play Sound on when new data is available", isOn: $playSoundOnSnapshot)
                                 .foregroundColor(Theme.textPrimary)
-
-                            Toggle("Show Notifications", isOn: $showNotifications)
-                                .foregroundColor(Theme.textPrimary)
-
-                            Divider()
-
-                            Toggle("Debug Mode (Synthetic Snapshots)", isOn: $debugMode)
-                                .foregroundColor(Theme.textPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
                         }
                     }
                     
@@ -259,26 +285,18 @@ struct SettingsView: View {
                                 .foregroundColor(Theme.bf6Red.opacity(0.8))
                         }
                     }
+                    
+                    SettingsSection(title: "Debug Options", icon: "ladybug.slash") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle("Debug Mode (Synthetic Snapshots)", isOn: $debugMode)
+                                .foregroundColor(Theme.textPrimary)
 
-                    // Save Button
-                    Button {
-                        saveSettings()
-                    } label: {
-                        Text("Save Settings")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [Theme.bf6Blue, Theme.bf6Purple],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .cornerRadius(12)
+                            Text("Used for testing snapshots")
+                                .font(.caption)
+                                .foregroundColor(Theme.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding()
             }
@@ -315,6 +333,7 @@ struct SettingsView: View {
         compactMode = viewModel.settings.compactMode
         selectedColorScheme = viewModel.settings.selectedColorScheme
         debugMode = viewModel.settings.debugMode
+        playSoundOnSnapshot = viewModel.settings.playSoundOnSnapshot
         Theme.setAccentScheme(selectedColorScheme)
     }
 
@@ -325,6 +344,7 @@ struct SettingsView: View {
         viewModel.settings.compactMode = compactMode
         viewModel.settings.selectedColorScheme = selectedColorScheme
         viewModel.settings.debugMode = debugMode
+        viewModel.settings.playSoundOnSnapshot = playSoundOnSnapshot
         Theme.setAccentScheme(selectedColorScheme)
 
         Task {

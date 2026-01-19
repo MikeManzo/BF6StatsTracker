@@ -26,7 +26,10 @@ class SoundNotificationService: ObservableObject {
     private init() {}
 
     /// Play a sound when a match is completed and snapshot is saved
-    func playMatchCompletionSound() {
+    func playMatchCompletionSound(settings: AppSettings) {
+        // Only play sound if the user has enabled it in settings
+        guard settings.playSoundOnSnapshot else { return }
+
         // Using "Glass" - a satisfying, clear notification sound
         // Other good options: "Submarine", "Pop", "Tink", "Purr"
         NSSound(named: "Glass")?.play()

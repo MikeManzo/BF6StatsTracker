@@ -101,7 +101,7 @@ class HistoryManager: ObservableObject {
     /// A match is considered completed when BOTH conditions are met:
     /// 1. matchesPlayed has increased by at least 1
     /// 2. timePlayed has increased (any amount)
-    func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil, playSoundNotification: Bool = true) {
+    func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil, playSoundNotification: Bool = true, settings: AppSettings? = nil) {
         guard let context = modelContext else { return }
 
         let newSnapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId, progressionMode: progressionMode)
@@ -123,8 +123,8 @@ class HistoryManager: ObservableObject {
             }
 
             // Play sound notification if enabled
-            if playSoundNotification {
-                SoundNotificationService.shared.playMatchCompletionSound()
+            if playSoundNotification, let settings = settings {
+                SoundNotificationService.shared.playMatchCompletionSound(settings: settings)
             }
         }
 
