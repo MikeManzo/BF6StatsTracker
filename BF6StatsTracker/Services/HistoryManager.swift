@@ -426,41 +426,23 @@ class HistoryManager: ObservableObject {
         return deltas.reversed() // Return in chronological order (oldest first)
     }
 
-    /// Calculate W/L ratio trend - returns daily W/L ratios based on deltas
+    /// Calculate win rate trend - returns all-time cumulative win rate from snapshots over time
     func getWLTrend(days: Int = 7) -> [(Date, Double)] {
-        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let snapshots = getSnapshots(from: startDate, to: Date())
+        // Get snapshots sorted chronologically (oldest first)
+        let snapshots = getRecentSnapshots(limit: 100)
+            .sorted { $0.timestamp < $1.timestamp }
 
-        // Convert cumulative W/L to daily W/L ratios based on deltas
-        guard snapshots.count >= 2 else {
-            return snapshots.map { snapshot -> (Date, Double) in
-                let wlRatio = snapshot.losses > 0 ? Double(snapshot.wins) / Double(snapshot.losses) : Double(snapshot.wins)
-                return (snapshot.timestamp, wlRatio)
-            }
+        guard !snapshots.isEmpty else { return [] }
+
+        // Calculate all-time win rate at each snapshot
+        // Win rate = (wins / matchesPlayed) * 100
+        let winRateTrend = snapshots.compactMap { snapshot -> (Date, Double)? in
+            guard snapshot.matchesPlayed > 0 else { return nil }
+            let winRate = (Double(snapshot.wins) / Double(snapshot.matchesPlayed)) * 100.0
+            return (snapshot.timestamp, winRate)
         }
 
-        var dailyWLs: [(Date, Double)] = []
-        // Snapshots are in reverse order (newest first at index 0)
-        for i in 0..<snapshots.count - 1 {
-            let newer = snapshots[i]      // Newer snapshot (earlier index)
-            let older = snapshots[i + 1]  // Older snapshot (later index)
-            let winDelta = newer.wins - older.wins
-            let lossDelta = newer.losses - older.losses
-
-            // Calculate daily W/L ratio
-            let dailyWL: Double
-            if lossDelta > 0 {
-                dailyWL = Double(winDelta) / Double(lossDelta)
-            } else if winDelta > 0 {
-                dailyWL = Double(winDelta) // All wins, no losses
-            } else {
-                dailyWL = 0.0 // No games played
-            }
-
-            dailyWLs.append((newer.timestamp, max(0, dailyWL)))
-        }
-
-        return dailyWLs.reversed() // Return in chronological order (oldest first)
+        return winRateTrend
     }
 
     /// Get performance summary for period
@@ -544,13 +526,30 @@ class HistoryManager: ObservableObject {
         return calculateTrend(values: values)
     }
 
-    /// Calculate trend for W/L ratio
+    /// Calculate trend for W/L ratio (win rate)
+    /// Uses more sensitive threshold since all-time win rate changes slowly
     func calculateWLTrend(days: Int = 7) -> TrendDirection {
         let wlData = getWLTrend(days: days)
-        guard !wlData.isEmpty else { return .stable }
+        guard wlData.count >= 2 else { return .stable }
 
         let values = wlData.map { $0.1 }
-        return calculateTrend(values: values)
+
+        // For win rate, compare oldest value to most recent value
+        // (all-time win rate should show consistent direction)
+        let oldestValue = values.first!
+        let newestValue = values.last!
+
+        let difference = newestValue - oldestValue
+
+        // Use absolute difference threshold of 0.1% for win rate
+        // (since it's already a percentage and changes slowly)
+        if difference > 0.1 {
+            return .improving
+        } else if difference < -0.1 {
+            return .declining
+        } else {
+            return .stable
+        }
     }
 
     func loadRecentData() {  // Made public for refresh after clearing
