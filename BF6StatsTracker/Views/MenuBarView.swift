@@ -316,6 +316,11 @@ struct MenuBarView: View {
 
             Divider()
 
+            // Menu Bar Mode Toggle
+            MenuBarModeToggle(viewModel: viewModel)
+
+            Divider()
+
             // Quit Button
             Button {
                 NSApplication.shared.terminate(nil)
@@ -426,6 +431,116 @@ struct MenuBarView: View {
             return String(format: "%.1fK", Double(xp) / 1_000.0)
         } else {
             return "\(xp)"
+        }
+    }
+}
+
+// MARK: - Menu Bar Mode Toggle
+
+struct MenuBarModeToggle: View {
+    @ObservedObject var viewModel: StatsViewModel
+    @State private var isMenuBarOnly: Bool = false
+    @State private var isHovering: Bool = false
+    @State private var isInitialized: Bool = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            // Icon
+            Image(systemName: isMenuBarOnly ? "menubar.rectangle" : "macwindow.badge.plus")
+                .font(.subheadline)
+                .foregroundColor(isMenuBarOnly ? Theme.bf6Orange : Theme.bf6Blue)
+                .frame(width: 20)
+
+            // Label and description
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Menu Bar Only")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+
+                Text(isMenuBarOnly ? "Enabled" : "Disabled")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
+
+            Spacer()
+
+            // Toggle Switch
+            Toggle("", isOn: $isMenuBarOnly)
+                .labelsHidden()
+                .toggleStyle(SwitchToggleStyle(tint: Theme.bf6Orange))
+                .scaleEffect(0.8)
+                .onChange(of: isMenuBarOnly) { oldValue, newValue in
+                    // Only handle changes after initialization to prevent restart loop
+                    if isInitialized {
+                        handleToggleChange(newValue)
+                    }
+                }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isHovering ? Theme.overlayColor.opacity(0.8) : Theme.overlayColor.opacity(0.4))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isMenuBarOnly ? Theme.bf6Orange.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovering = hovering
+            }
+        }
+        .help(isMenuBarOnly ? "Disable to show dock icon and use full app" : "Enable to hide dock icon and use menu bar only")
+        .onAppear {
+            // Load current state without triggering onChange
+            isMenuBarOnly = UserDefaults.standard.bool(forKey: "menuBarOnlyMode")
+            // Mark as initialized after a brief delay to allow the view to settle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isInitialized = true
+            }
+        }
+    }
+
+    private func handleToggleChange(_ newValue: Bool) {
+        // Save to UserDefaults
+        UserDefaults.standard.set(newValue, forKey: "menuBarOnlyMode")
+
+        // Update view model
+        Task { @MainActor in
+            viewModel.settings.menuBarOnlyMode = newValue
+            await viewModel.saveSettings()
+        }
+
+        if newValue {
+            // Enabling menu bar only mode - need to restart
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                restartApplication()
+            }
+        } else {
+            // Disabling menu bar only mode - show dock icon immediately
+            NSApp.setActivationPolicy(.regular)
+            logInfo("Disabled menu bar only mode", category: .general)
+        }
+    }
+
+    private func restartApplication() {
+        guard let bundleURL = Bundle.main.bundleURL as URL? else {
+            logError("Failed to get bundle URL for restart", category: .error)
+            return
+        }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+
+        NSWorkspace.shared.openApplication(at: bundleURL, configuration: configuration) { app, error in
+            if let error = error {
+                logError("Failed to relaunch app: \(error)", category: .error)
+            } else {
+                DispatchQueue.main.async {
+                    NSApplication.shared.terminate(nil)
+                }
+            }
         }
     }
 }
