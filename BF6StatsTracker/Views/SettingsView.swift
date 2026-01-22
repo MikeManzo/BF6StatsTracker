@@ -35,6 +35,7 @@ struct SettingsView: View {
     @State private var debugMode: Bool = false
     @State private var playSoundOnSnapshot: Bool = true
     @State private var menuBarOnlyMode: Bool = false
+    @State private var appearanceMode: AppearanceMode = .auto
     @State private var showClearHistoryConfirmation = false
     @State private var accountToDelete: StoredEAAccount?
     @State private var showDeleteAccountAlert = false
@@ -137,6 +138,26 @@ struct SettingsView: View {
                                                 .foregroundColor(Theme.bf6Red)
                                         }
                                         .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Appearance Settings
+                    SettingsSection(title: "Appearance", icon: "paintpalette.fill") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Choose your preferred appearance mode")
+                                .font(.subheadline)
+                                .foregroundColor(Theme.textSecondary)
+
+                            HStack(spacing: 12) {
+                                ForEach(AppearanceMode.allCases) { mode in
+                                    AppearanceModeButton(
+                                        mode: mode,
+                                        isSelected: appearanceMode == mode
+                                    ) {
+                                        appearanceMode = mode
                                     }
                                 }
                             }
@@ -364,6 +385,7 @@ struct SettingsView: View {
         debugMode = viewModel.settings.debugMode
         playSoundOnSnapshot = viewModel.settings.playSoundOnSnapshot
         menuBarOnlyMode = viewModel.settings.menuBarOnlyMode
+        appearanceMode = viewModel.settings.appearanceMode
         Theme.setAccentScheme(selectedColorScheme)
     }
 
@@ -378,6 +400,7 @@ struct SettingsView: View {
         viewModel.settings.debugMode = debugMode
         viewModel.settings.playSoundOnSnapshot = playSoundOnSnapshot
         viewModel.settings.menuBarOnlyMode = menuBarOnlyMode
+        viewModel.settings.appearanceMode = appearanceMode
         Theme.setAccentScheme(selectedColorScheme)
 
         Task {
@@ -732,6 +755,142 @@ struct EAAccountCard: View {
         }
 
         return dateString
+    }
+}
+
+// MARK: - Appearance Mode Button
+
+struct AppearanceModeButton: View {
+    let mode: AppearanceMode
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 12) {
+                // Image representation
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Theme.cardBackground)
+                        .frame(width: 120, height: 80)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(isSelected ? Theme.accent : Theme.borderColor, lineWidth: isSelected ? 3 : 1)
+                        )
+
+                    // Mode-specific preview
+                    modePreview
+                }
+
+                // Label
+                Text(mode.rawValue)
+                    .font(.subheadline)
+                    .fontWeight(isSelected ? .semibold : .regular)
+                    .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var modePreview: some View {
+        switch mode {
+        case .light:
+            // Light mode preview
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(Color.white)
+                    .frame(height: 50)
+                    .overlay(
+                        VStack {
+                            HStack {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 8, height: 8)
+                                Spacer()
+                            }
+                            .padding(6)
+                            Spacer()
+                        }
+                    )
+
+                Rectangle()
+                    .fill(Color.gray.opacity(0.1))
+                    .frame(height: 30)
+            }
+            .cornerRadius(8)
+            .frame(width: 100, height: 60)
+            .overlay(
+                Image(systemName: "sun.max.fill")
+                    .foregroundColor(.orange)
+                    .font(.title3)
+            )
+
+        case .dark:
+            // Dark mode preview
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(Color(white: 0.15))
+                    .frame(height: 50)
+                    .overlay(
+                        VStack {
+                            HStack {
+                                Circle()
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(width: 8, height: 8)
+                                Spacer()
+                            }
+                            .padding(6)
+                            Spacer()
+                        }
+                    )
+
+                Rectangle()
+                    .fill(Color.black.opacity(0.3))
+                    .frame(height: 30)
+            }
+            .cornerRadius(8)
+            .frame(width: 100, height: 60)
+            .overlay(
+                Image(systemName: "moon.fill")
+                    .foregroundColor(.blue)
+                    .font(.title3)
+            )
+
+        case .auto:
+            // Auto mode preview - split light/dark
+            HStack(spacing: 0) {
+                // Light half
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(height: 50)
+
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(height: 30)
+                }
+
+                // Dark half
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color(white: 0.15))
+                        .frame(height: 50)
+
+                    Rectangle()
+                        .fill(Color.black.opacity(0.3))
+                        .frame(height: 30)
+                }
+            }
+            .cornerRadius(8)
+            .frame(width: 100, height: 60)
+            .overlay(
+                Image(systemName: "circle.lefthalf.filled")
+                    .foregroundColor(.purple)
+                    .font(.title3)
+            )
+        }
     }
 }
 

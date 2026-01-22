@@ -1338,6 +1338,23 @@ struct MutatorSparseBoolean: Codable {
     }
 }
 
+// MARK: - Appearance Mode
+enum AppearanceMode: String, Codable, CaseIterable, Identifiable {
+    case light = "Light"
+    case dark = "Dark"
+    case auto = "Auto"
+
+    var id: String { rawValue }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        case .auto: return nil  // nil means system default
+        }
+    }
+}
+
 // MARK: - App Settings
 struct AppSettings: Codable {
     var playerName: String
@@ -1351,6 +1368,7 @@ struct AppSettings: Codable {
     var debugMode: Bool
     var playSoundOnSnapshot: Bool
     var menuBarOnlyMode: Bool
+    var appearanceMode: AppearanceMode
 
     // EA Identity fields - populated from EAIdentityKit
     var nucleusId: String?        // pidId - Master account identifier
@@ -1370,6 +1388,7 @@ struct AppSettings: Codable {
         self.debugMode = false
         self.playSoundOnSnapshot = true
         self.menuBarOnlyMode = false
+        self.appearanceMode = .auto
         self.nucleusId = nil
         self.personaId = nil
         self.eaId = nil
@@ -1397,7 +1416,7 @@ struct AppSettings: Codable {
     enum CodingKeys: String, CodingKey {
         case playerName, platform, autoRefresh, refreshInterval, tilePositions
         case showNotifications, compactMode, selectedColorScheme, debugMode
-        case playSoundOnSnapshot, menuBarOnlyMode
+        case playSoundOnSnapshot, menuBarOnlyMode, appearanceMode
         case nucleusId, personaId, eaId, isEAAuthenticated
     }
 
@@ -1420,6 +1439,9 @@ struct AppSettings: Codable {
 
         // Default to false if menuBarOnlyMode doesn't exist in saved settings
         menuBarOnlyMode = try container.decodeIfPresent(Bool.self, forKey: .menuBarOnlyMode) ?? false
+
+        // Default to auto if appearanceMode doesn't exist in saved settings
+        appearanceMode = try container.decodeIfPresent(AppearanceMode.self, forKey: .appearanceMode) ?? .auto
 
         nucleusId = try container.decodeIfPresent(String.self, forKey: .nucleusId)
         personaId = try container.decodeIfPresent(String.self, forKey: .personaId)

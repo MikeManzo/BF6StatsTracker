@@ -59,6 +59,7 @@ struct BF6StatsTrackerApp: App {
                 .environmentObject(viewModel)
                 .environmentObject(historyManager)
                 .frame(minWidth: 1200, minHeight: 800)
+                .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
                 .onAppear {
                     isWindowVisible = true
                     // Initialize SwiftData managers with context
@@ -104,11 +105,13 @@ struct BF6StatsTrackerApp: App {
         Settings {
             SettingsView()
                 .environmentObject(viewModel)
+                .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
         }
 
         // About Window
         Window("About BF6 Stats Tracker", id: "about") {
             AboutView()
+                .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)

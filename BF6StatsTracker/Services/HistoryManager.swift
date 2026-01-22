@@ -499,13 +499,34 @@ class HistoryManager: ObservableObject {
         }
     }
 
+    /// Calculate trend for delta-based stats (kills, assists, deaths)
+    /// These are daily deltas, so positive values = increasing, negative = decreasing
+    /// For cumulative stats, if deltas are consistently positive, that's improving
+    private func calculateDeltaTrend(values: [Double]) -> TrendDirection {
+        guard values.count >= 2 else { return .stable }
+
+        // Calculate average delta
+        let avgDelta = values.reduce(0, +) / Double(values.count)
+
+        // If average delta is positive and significant, we're improving
+        // Even if deltas are decreasing, as long as they're positive we're still gaining
+        if avgDelta > 0.5 {
+            return .improving
+        } else if avgDelta < -0.5 {
+            return .declining
+        } else {
+            return .stable
+        }
+    }
+
     /// Calculate trend for kills (using Int values)
     func calculateKillsTrend(days: Int = 7) -> TrendDirection {
         let killsData = getKillsTrend(days: days)
         guard !killsData.isEmpty else { return .stable }
 
         let values = killsData.map { Double($0.1) }
-        return calculateTrend(values: values)
+        // Use delta trend: positive deltas = improving (gaining kills)
+        return calculateDeltaTrend(values: values)
     }
 
     /// Calculate trend for assists (using Int values)
@@ -514,7 +535,8 @@ class HistoryManager: ObservableObject {
         guard !assistsData.isEmpty else { return .stable }
 
         let values = assistsData.map { Double($0.1) }
-        return calculateTrend(values: values)
+        // Use delta trend: positive deltas = improving (gaining assists)
+        return calculateDeltaTrend(values: values)
     }
 
     /// Calculate trend for K/D ratio
@@ -523,6 +545,7 @@ class HistoryManager: ObservableObject {
         guard !kdData.isEmpty else { return .stable }
 
         let values = kdData.map { $0.1 }
+        // Use standard trend: compare recent K/D performance vs older K/D performance
         return calculateTrend(values: values)
     }
 
