@@ -539,14 +539,27 @@ class HistoryManager: ObservableObject {
         return calculateDeltaTrend(values: values)
     }
 
-    /// Calculate trend for K/D ratio
+    /// Calculate trend for K/D ratio (absolute - is overall K/D increasing over time?)
     func calculateKDTrend(days: Int = 7) -> TrendDirection {
-        let kdData = getKDTrend(days: days)
-        guard !kdData.isEmpty else { return .stable }
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let snapshots = getSnapshots(from: startDate, to: Date())
 
-        let values = kdData.map { $0.1 }
-        // Use standard trend: compare recent K/D performance vs older K/D performance
-        return calculateTrend(values: values)
+        guard snapshots.count >= 2 else { return .stable }
+
+        // Snapshots are in reverse order (newest first)
+        let newestKD = snapshots.first!.kdRatio  // Current cumulative K/D
+        let oldestKD = snapshots.last!.kdRatio   // K/D from `days` ago
+
+        let difference = newestKD - oldestKD
+
+        // Use absolute threshold since all-time K/D changes slowly
+        if difference > 0.01 {
+            return .improving
+        } else if difference < -0.01 {
+            return .declining
+        } else {
+            return .stable
+        }
     }
 
     /// Calculate trend for W/L ratio (win rate)
