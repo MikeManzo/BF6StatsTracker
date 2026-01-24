@@ -345,6 +345,161 @@ struct TodayVsYesterdayView: View {
         )
     }
 
+    // MARK: - Combat Breakdown Averages
+
+    /// Today's average performance per match
+    private var todayAveragePerformance: CombatAverages? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let snapshots = historyManager.getAllSnapshots()
+
+        // Get today's snapshots
+        let todaySnapshots = snapshots.filter { snapshot in
+            calendar.isDate(snapshot.timestamp, inSameDayAs: Date())
+        }.sorted { $0.timestamp < $1.timestamp }
+
+        guard let lastToday = todaySnapshots.last else { return nil }
+
+        // Get baseline (last snapshot before today, or first snapshot of today if no previous day)
+        let beforeTodaySnapshots = snapshots.filter { $0.timestamp < today }
+            .sorted { $0.timestamp > $1.timestamp }
+
+        let baseline: StatsSnapshot
+        if let lastBeforeToday = beforeTodaySnapshots.first {
+            baseline = lastBeforeToday
+        } else if let firstToday = todaySnapshots.first, todaySnapshots.count > 1 {
+            baseline = firstToday
+        } else {
+            // Only one snapshot, use its rate-based stats directly
+            return CombatAverages(
+                headshotsPerMatch: 0,
+                assistsPerMatch: 0,
+                accuracy: lastToday.accuracy,
+                killsPerMinute: lastToday.killsPerMinute,
+                winRate: lastToday.matchesPlayed > 0 ? (Double(lastToday.wins) / Double(lastToday.matchesPlayed)) * 100.0 : 0,
+                scorePerMatch: 0,
+                matchesPlayed: 0
+            )
+        }
+
+        let deltaMatches = lastToday.matchesPlayed - baseline.matchesPlayed
+        guard deltaMatches > 0 else {
+            // No matches played today yet, return rate-based stats
+            return CombatAverages(
+                headshotsPerMatch: 0,
+                assistsPerMatch: 0,
+                accuracy: lastToday.accuracy,
+                killsPerMinute: lastToday.killsPerMinute,
+                winRate: 0,
+                scorePerMatch: 0,
+                matchesPlayed: 0
+            )
+        }
+
+        let deltaHeadshots = lastToday.headshots - baseline.headshots
+        let deltaAssists = lastToday.assists - baseline.assists
+        let deltaScore = lastToday.totalScore - baseline.totalScore
+        let deltaWins = lastToday.wins - baseline.wins
+
+        return CombatAverages(
+            headshotsPerMatch: Double(deltaHeadshots) / Double(deltaMatches),
+            assistsPerMatch: Double(deltaAssists) / Double(deltaMatches),
+            accuracy: lastToday.accuracy,
+            killsPerMinute: lastToday.killsPerMinute,
+            winRate: (Double(deltaWins) / Double(deltaMatches)) * 100.0,
+            scorePerMatch: Double(deltaScore) / Double(deltaMatches),
+            matchesPlayed: deltaMatches
+        )
+    }
+
+    /// Yesterday's average performance per match
+    private var yesterdayAveragePerformance: CombatAverages? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        let dayBeforeYesterday = calendar.date(byAdding: .day, value: -2, to: today) ?? today
+
+        let snapshots = historyManager.getAllSnapshots()
+
+        // Get yesterday's snapshots
+        let yesterdaySnapshots = snapshots.filter { snapshot in
+            calendar.isDate(snapshot.timestamp, inSameDayAs: yesterday)
+        }.sorted { $0.timestamp < $1.timestamp }
+
+        guard let lastYesterday = yesterdaySnapshots.last else { return nil }
+
+        // Get baseline from day before yesterday
+        let dayBeforeSnapshots = snapshots.filter { snapshot in
+            calendar.isDate(snapshot.timestamp, inSameDayAs: dayBeforeYesterday)
+        }.sorted { $0.timestamp < $1.timestamp }
+
+        guard let lastDayBefore = dayBeforeSnapshots.last else { return nil }
+
+        let deltaMatches = lastYesterday.matchesPlayed - lastDayBefore.matchesPlayed
+        guard deltaMatches > 0 else { return nil }
+
+        let deltaHeadshots = lastYesterday.headshots - lastDayBefore.headshots
+        let deltaAssists = lastYesterday.assists - lastDayBefore.assists
+        let deltaScore = lastYesterday.totalScore - lastDayBefore.totalScore
+        let deltaWins = lastYesterday.wins - lastDayBefore.wins
+
+        return CombatAverages(
+            headshotsPerMatch: Double(deltaHeadshots) / Double(deltaMatches),
+            assistsPerMatch: Double(deltaAssists) / Double(deltaMatches),
+            accuracy: lastYesterday.accuracy,
+            killsPerMinute: lastYesterday.killsPerMinute,
+            winRate: (Double(deltaWins) / Double(deltaMatches)) * 100.0,
+            scorePerMatch: Double(deltaScore) / Double(deltaMatches),
+            matchesPlayed: deltaMatches
+        )
+    }
+
+    /// Cumulative historical average (fallback when yesterday's data is unavailable)
+    private var historicalAveragePerformance: CombatAverages? {
+        let snapshots = historyManager.getAllSnapshots()
+        guard let latest = snapshots.first, let oldest = snapshots.last else { return nil }
+
+        // Need at least some match history
+        let totalMatches = latest.matchesPlayed - oldest.matchesPlayed
+        guard totalMatches > 0 else {
+            // Use the latest snapshot's rate-based stats
+            return CombatAverages(
+                headshotsPerMatch: latest.matchesPlayed > 0 ? Double(latest.headshots) / Double(latest.matchesPlayed) : 0,
+                assistsPerMatch: latest.matchesPlayed > 0 ? Double(latest.assists) / Double(latest.matchesPlayed) : 0,
+                accuracy: latest.accuracy,
+                killsPerMinute: latest.killsPerMinute,
+                winRate: latest.matchesPlayed > 0 ? (Double(latest.wins) / Double(latest.matchesPlayed)) * 100.0 : 0,
+                scorePerMatch: latest.matchesPlayed > 0 ? Double(latest.totalScore) / Double(latest.matchesPlayed) : 0,
+                matchesPlayed: latest.matchesPlayed
+            )
+        }
+
+        let deltaHeadshots = latest.headshots - oldest.headshots
+        let deltaAssists = latest.assists - oldest.assists
+        let deltaScore = latest.totalScore - oldest.totalScore
+        let deltaWins = latest.wins - oldest.wins
+
+        return CombatAverages(
+            headshotsPerMatch: Double(deltaHeadshots) / Double(totalMatches),
+            assistsPerMatch: Double(deltaAssists) / Double(totalMatches),
+            accuracy: latest.accuracy,
+            killsPerMinute: latest.killsPerMinute,
+            winRate: (Double(deltaWins) / Double(totalMatches)) * 100.0,
+            scorePerMatch: Double(deltaScore) / Double(totalMatches),
+            matchesPlayed: totalMatches
+        )
+    }
+
+    /// The comparison baseline - yesterday if available, otherwise historical average
+    private var comparisonBaseline: CombatAverages? {
+        yesterdayAveragePerformance ?? historicalAveragePerformance
+    }
+
+    /// Whether we're comparing against yesterday or historical average
+    private var isComparingToYesterday: Bool {
+        yesterdayAveragePerformance != nil
+    }
+
     private var last7Days: [DailyPerformance] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -1009,87 +1164,190 @@ struct TodayVsYesterdayView: View {
 
     // MARK: - Combat Breakdown
 
+    @State private var showCombatBreakdownInfo = false
+
     private var combatBreakdown: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Combat Breakdown")
-                .font(.headline)
-                .fontWeight(.bold)
+            // Header with info button
+            HStack {
+                Text("Combat Breakdown")
+                    .font(.headline)
+                    .fontWeight(.bold)
 
-            VStack(spacing: 12) {
-                // Headshots
-                AnimatedComparisonProgressBar(
-                    todayValue: Double(deltaHeadshots),
-                    yesterdayValue: Double(yesterdayData?.deltaHeadshots ?? 1),
-                    label: "🎯 Headshots",
-                    accentColor: .purple,
-                    delay: 0.0,
-                    shouldAnimate: !hasAnimated
-                )
+                Button {
+                    showCombatBreakdownInfo = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Learn about this section")
+                .popover(isPresented: $showCombatBreakdownInfo, arrowEdge: .bottom) {
+                    combatBreakdownInfoPopover
+                }
 
-                // Accuracy
-                AnimatedComparisonProgressBar(
-                    todayValue: currentSnapshot?.accuracy ?? 0,
-                    yesterdayValue: yesterdayData?.dailyAccuracy ?? 1.0,
-                    label: "🎪 Accuracy",
-                    accentColor: .orange,
-                    delay: 0.1,
-                    shouldAnimate: !hasAnimated
-                )
+                Spacer()
 
-                // KPM
-                AnimatedComparisonProgressBar(
-                    todayValue: currentSnapshot?.killsPerMinute ?? 0,
-                    yesterdayValue: yesterdayData?.dailyKPM ?? 1.0,
-                    label: "⚡ Kills Per Minute",
-                    accentColor: .yellow,
-                    delay: 0.2,
-                    shouldAnimate: !hasAnimated
-                )
-
-                // Assists
-                AnimatedComparisonProgressBar(
-                    todayValue: Double(deltaAssists),
-                    yesterdayValue: Double(yesterdayData?.deltaAssists ?? 1),
-                    label: "🤝 Assists",
-                    accentColor: .cyan,
-                    delay: 0.3,
-                    shouldAnimate: !hasAnimated
-                )
-
-                // Win Rate
-                AnimatedComparisonProgressBar(
-                    todayValue: currentSnapshot?.matchesPlayed ?? 0 > 0 ? (Double(currentSnapshot?.wins ?? 0) / Double(currentSnapshot?.matchesPlayed ?? 1)) * 100.0 : 0.0,
-                    yesterdayValue: yesterdayData?.dailyWinRate ?? 1.0,
-                    label: "🏆 Win Rate",
-                    accentColor: .green,
-                    delay: 0.4,
-                    shouldAnimate: !hasAnimated
-                )
-
-                // Score
-                AnimatedComparisonProgressBar(
-                    todayValue: Double(deltaScore) / 1000,
-                    yesterdayValue: Double(yesterdayData?.deltaScore ?? 1000) / 1000,
-                    label: "🎖️ Score (thousands)",
-                    accentColor: .blue,
-                    delay: 0.5,
-                    shouldAnimate: !hasAnimated
-                )
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor))
-            )
-            .onAppear {
-                if !hasAnimated {
-                    // Mark as animated after a delay to ensure all bars have started
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-                        hasAnimated = true
-                    }
+                // Show comparison context
+                HStack(spacing: 4) {
+                    Image(systemName: isComparingToYesterday ? "calendar" : "chart.bar")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(isComparingToYesterday ? "vs Yesterday" : "vs Historical Avg")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
+
+            if let todayAvg = todayAveragePerformance, let baselineAvg = comparisonBaseline {
+                VStack(spacing: 12) {
+                    // Headshots per match
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.headshotsPerMatch,
+                        yesterdayValue: baselineAvg.headshotsPerMatch,
+                        label: "🎯 Headshots / Match",
+                        accentColor: .purple,
+                        delay: 0.0,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Accuracy
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.accuracy,
+                        yesterdayValue: baselineAvg.accuracy,
+                        label: "🎪 Accuracy",
+                        accentColor: .orange,
+                        delay: 0.1,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // KPM
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.killsPerMinute,
+                        yesterdayValue: baselineAvg.killsPerMinute,
+                        label: "⚡ Kills Per Minute",
+                        accentColor: .yellow,
+                        delay: 0.2,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Assists per match
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.assistsPerMatch,
+                        yesterdayValue: baselineAvg.assistsPerMatch,
+                        label: "🤝 Assists / Match",
+                        accentColor: .cyan,
+                        delay: 0.3,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Win Rate
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.winRate,
+                        yesterdayValue: baselineAvg.winRate,
+                        label: "🏆 Win Rate",
+                        accentColor: .green,
+                        delay: 0.4,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Score per match
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.scorePerMatch / 1000,
+                        yesterdayValue: baselineAvg.scorePerMatch / 1000,
+                        label: "🎖️ Score / Match (K)",
+                        accentColor: .blue,
+                        delay: 0.5,
+                        shouldAnimate: !hasAnimated
+                    )
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                )
+                .onAppear {
+                    if !hasAnimated {
+                        // Mark as animated after a delay to ensure all bars have started
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                            hasAnimated = true
+                        }
+                    }
+                }
+            } else {
+                // No data available
+                VStack(spacing: 8) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                    Text("Play some matches to see your combat breakdown")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                )
+            }
         }
+    }
+
+    private var combatBreakdownInfoPopover: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "info.circle.fill")
+                    .foregroundStyle(.blue)
+                Text("Combat Breakdown")
+                    .font(.headline)
+                    .fontWeight(.bold)
+            }
+
+            Divider()
+
+            Text("This section shows your **average performance per match** for today compared to a baseline.")
+                .font(.subheadline)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Label {
+                    Text("**vs Yesterday**: Compares today's averages to yesterday's averages")
+                        .font(.caption)
+                } icon: {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(.orange)
+                }
+
+                Label {
+                    Text("**vs Historical**: When yesterday's data isn't available, compares to your overall historical average")
+                        .font(.caption)
+                } icon: {
+                    Image(systemName: "chart.bar")
+                        .foregroundStyle(.purple)
+                }
+            }
+
+            Divider()
+
+            Text("Why averages?")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+
+            Text("Comparing averages per match gives a fair comparison regardless of how many matches you've played. Playing 3 matches today vs 10 yesterday? The averages normalize for that difference.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                Spacer()
+                Button("Got it") {
+                    showCombatBreakdownInfo = false
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding()
+        .frame(width: 320)
     }
 
     // MARK: - Empty State
@@ -1211,6 +1469,18 @@ struct DailyPerformanceData {
     let dailyHeadshotPercent: Double
     let dailyKPM: Double
     let dailyWinRate: Double
+}
+
+/// Average combat performance metrics per match
+/// Used for normalized comparisons in Combat Breakdown
+struct CombatAverages {
+    let headshotsPerMatch: Double
+    let assistsPerMatch: Double
+    let accuracy: Double
+    let killsPerMinute: Double
+    let winRate: Double
+    let scorePerMatch: Double
+    let matchesPlayed: Int
 }
 
 #Preview {
