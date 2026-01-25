@@ -19,6 +19,7 @@ import SwiftUI
 import Charts
 
 struct TodayVsYesterdayView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var historyManager: HistoryManager
     @State private var hasAnimated = false
     @State private var showSingleSnapshotInfo = false
@@ -857,7 +858,7 @@ struct TodayVsYesterdayView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "flame.fill")
                         .font(.title3)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(accentColor)
 
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("\(streakDays) day\(streakDays == 1 ? "" : "s")")
@@ -873,11 +874,11 @@ struct TodayVsYesterdayView: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Theme.warning.opacity(0.1))
+                        .fill(accentColor.opacity(0.1))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Theme.warning.opacity(0.3), lineWidth: 1)
+                        .strokeBorder(accentColor.opacity(0.3), lineWidth: 1)
                 )
             }
         }
@@ -1281,7 +1282,7 @@ struct TodayVsYesterdayView: View {
                     Image(systemName: "chart.bar.xaxis")
                         .font(.largeTitle)
                         .foregroundStyle(.secondary)
-                    Text("Play some matches to see your combat breakdown")
+                    Text("No snapshot data for today.  Play some matches to see your combat breakdown")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

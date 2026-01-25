@@ -170,6 +170,8 @@ struct SettingsView: View {
                     SettingsSection(title: "Auto Refresh", icon: "arrow.clockwise") {
                         VStack(spacing: 16) {
                             Toggle("Enable Auto Refresh", isOn: $autoRefresh)
+                                .toggleStyle(.switch)
+                                .tint(themeManager.accent)
                                 .foregroundColor(Theme.textPrimary)
 
                             if autoRefresh {
@@ -239,15 +241,21 @@ struct SettingsView: View {
 
                             HStack {
                                 Toggle("Compact Mode", isOn: $compactMode)
+                                    .toggleStyle(.switch)
+                                    .tint(themeManager.accent)
                                     .foregroundColor(Theme.textPrimary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                                                
+
                                 Toggle("Show Notifications", isOn: $showNotifications)
+                                    .toggleStyle(.switch)
+                                    .tint(themeManager.accent)
                                     .foregroundColor(Theme.textPrimary)
                                     .frame(maxWidth: .infinity, alignment: .trailing)
                             }
-                                                        
+
                             Toggle("Play Sound on when new data is available", isOn: $playSoundOnSnapshot)
+                                .toggleStyle(.switch)
+                                .tint(themeManager.accent)
                                 .foregroundColor(Theme.textPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -258,6 +266,8 @@ struct SettingsView: View {
                     SettingsSection(title: "Menu Bar", icon: "menubar.rectangle") {
                         VStack(alignment: .leading, spacing: 12) {
                             Toggle("Menu Bar Only Mode", isOn: $menuBarOnlyMode)
+                                .toggleStyle(.switch)
+                                .tint(themeManager.accent)
                                 .foregroundColor(Theme.textPrimary)
 
                             Text("Hides the desktop icon and runs the app exclusively in the menu bar. You can still access the main window from the menu bar icon.")
@@ -340,7 +350,9 @@ struct SettingsView: View {
                     
                     SettingsSection(title: "Debug Options", icon: "ladybug.slash") {
                         VStack(alignment: .leading, spacing: 12) {
-                            Toggle("Debug Mode (Synthetic Snapshots)", isOn: $debugMode)
+                            Toggle("Add Synthetic Snapshot data", isOn: $debugMode)
+                                .toggleStyle(.switch)
+                                .tint(themeManager.accent)
                                 .foregroundColor(Theme.textPrimary)
 
                             Text("Used for testing snapshots")
