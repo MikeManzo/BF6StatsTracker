@@ -81,7 +81,7 @@ struct XPCalculatorView: View {
 
             Text("Estimate your XP gain based on match performance and progression mode")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
@@ -136,12 +136,12 @@ struct XPCalculatorView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "flag.checkered")
-                            .foregroundColor(.orange)
+                            .foregroundColor(Theme.warning)
                             .font(.caption)
 
                         Text("Match Result")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Toggle(isOn: $didWin) {
@@ -173,7 +173,7 @@ struct XPCalculatorView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Estimated XP")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Text("\(Int(result.totalXP))")
                         .font(.system(size: 48, weight: .bold, design: .rounded))
@@ -181,7 +181,7 @@ struct XPCalculatorView: View {
 
                     Text("Total Experience Points")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -191,7 +191,7 @@ struct XPCalculatorView: View {
 
                     Text("≈ \(result.matchesForNextRank) more matches for next rank")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                         .multilineTextAlignment(.trailing)
                 }
             }
@@ -310,7 +310,7 @@ struct XPCalculatorView: View {
                 HStack {
                     Text("AI XP Factor:")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Spacer()
 
@@ -323,27 +323,27 @@ struct XPCalculatorView: View {
                 HStack {
                     Text("Match Bonus:")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Spacer()
 
                     Text("\(Int(mode.matchBonusXpFactor * 100))%")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.success)
                 }
 
                 HStack {
                     Text("Win Bonus:")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Spacer()
 
                     Text("\(Int(mode.winBonusXpFactor * 100))%")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.success)
                 }
             }
         }
@@ -364,11 +364,11 @@ struct XPCalculatorView: View {
             HStack(spacing: 4) {
                 Text("Rank \(currentRank)")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Image(systemName: "arrow.right")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Text("Rank \(nextRank)")
                     .font(.caption)
@@ -458,7 +458,7 @@ struct ModeSelectorCard: View {
 
                 Text(mode.xpDescription)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                     .lineLimit(2)
             }
             .padding()
@@ -485,12 +485,12 @@ struct XPInputField: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(.orange)
+                    .foregroundColor(Theme.warning)
                     .font(.caption)
 
                 Text(label)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             TextField("0", text: $value)
@@ -525,7 +525,7 @@ struct XPBreakdownRow: View {
 
             Text(label)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Spacer()
 

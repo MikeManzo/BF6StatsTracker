@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct DailyPerformanceView: View {
+    @Environment(\.accentColor) private var accentColor
     let dailyPerformance: DailyPerformance
     let yesterdayPerformance: DailyPerformance?
     let showComparison: Bool
@@ -102,7 +103,7 @@ struct DailyPerformanceView: View {
                         previous: yesterdayPerformance?.dailyKD
                     ) : nil,
                     icon: "chart.line.uptrend.xyaxis",
-                    color: Theme.accent
+                    color: accentColor
                 )
 
                 QuickStatCard(
@@ -183,7 +184,7 @@ struct DailyPerformanceView: View {
                         label: "Resupplies",
                         value: "\(dailyPerformance.deltaResupplies)",
                         icon: "shippingbox.fill",
-                        color: Theme.accent
+                        color: accentColor
                     )
                 }
             }
@@ -331,6 +332,7 @@ struct QuickStatCard: View {
 }
 
 struct DailyStatCard: View {
+    @Environment(\.accentColor) private var accentColor
     let label: String
     let value: String
     let percentage: String?
@@ -342,7 +344,7 @@ struct DailyStatCard: View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(Theme.accent)
+                .foregroundColor(accentColor)
 
             Text(label)
                 .font(.caption)

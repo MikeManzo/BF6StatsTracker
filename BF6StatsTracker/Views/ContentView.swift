@@ -177,10 +177,10 @@ struct ContentView: View {
                     if viewModel.isEAAuthenticated {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                             .background(
                                 Circle()
-                                    .fill(.white)
+                                    .fill(Theme.selectedText)
                                     .frame(width: 16, height: 16)
                             )
                             .offset(x: 4, y: 4)
@@ -206,11 +206,11 @@ struct ContentView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "star.fill")
                                     .font(.caption2)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(Theme.warning)
 
                                 Text("\(formatXP(xp.total)) XP")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                             }
                         }
                         .buttonStyle(.plain)
@@ -242,26 +242,26 @@ struct ContentView: View {
 
                 HStack(spacing: 8) {
                     Image(systemName: "star.fill")
-                        .foregroundColor(.yellow)
+                        .foregroundColor(Theme.warning)
                     Text("\(formatXP(xp.total)) Total XP")
                         .font(.body)
-                        .foregroundColor(.primary)
+                        .foregroundColor(Theme.textPrimary)
                 }
 
                 HStack(spacing: 8) {
                     Image(systemName: "target")
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.info)
                     Text("\(formatXP(xp.performance)) Performance")
                         .font(.body)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 HStack(spacing: 8) {
                     Image(systemName: "trophy.fill")
-                        .foregroundColor(.orange)
+                        .foregroundColor(Theme.warning)
                     Text("\(formatXP(xp.accolades)) Accolades")
                         .font(.body)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
         }
@@ -521,7 +521,7 @@ struct ContentView: View {
 
                 Text("Preparing your battlefield data...")
                     .font(.body)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .onAppear {
@@ -567,7 +567,7 @@ struct ContentView: View {
 
                 Text("Track your Battlefield 6 statistics in real-time")
                     .font(.title3)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             // Features
@@ -614,7 +614,7 @@ struct ContentView: View {
 
                     Text("or")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     // EA Login Button (Secondary)
                     Button {
@@ -668,7 +668,7 @@ struct ContentView: View {
 
                     Text("or")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     // Manual Search Button (Secondary)
                     Button {
@@ -701,7 +701,7 @@ struct ContentView: View {
             VStack(spacing: 4) {
                 Text("Powered by GameTools.Network API")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 Text("EA Identity via EAIdentityKit")
                     .font(.caption2)
                     .foregroundColor(.secondary.opacity(0.7))
@@ -754,7 +754,7 @@ struct CleanStatCard: View {
 
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .textCase(.uppercase)
         }
         .frame(minWidth: 60)
@@ -912,7 +912,7 @@ struct PlayerAvatarView: View {
             } else {
                 Image(systemName: "person.fill")
                     .font(.system(size: size * 0.4, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
             }
         }
         .task {

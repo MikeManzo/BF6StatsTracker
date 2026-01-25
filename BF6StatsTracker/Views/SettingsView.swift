@@ -20,6 +20,7 @@ import SwiftData
 
 struct SettingsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
     @StateObject private var accountStore = EAAccountStore.shared
 
@@ -62,10 +63,10 @@ struct SettingsView: View {
                             .font(.body)
                             .fontWeight(.medium)
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.selectedText)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(Theme.accent)
+                    .background(themeManager.accent)
                     .cornerRadius(8)
                 }
                 .buttonStyle(.plain)
@@ -181,11 +182,11 @@ struct SettingsView: View {
 
                                         Text("\(Int(refreshInterval / 60)) minutes")
                                             .font(.subheadline)
-                                            .foregroundColor(Theme.accent)
+                                            .foregroundColor(themeManager.accent)
                                     }
 
                                     Slider(value: $refreshInterval, in: 60...1800, step: 60)
-                                        .tint(Theme.accent)
+                                        .tint(themeManager.accent)
 
                                     HStack {
                                         Text("1 min")
@@ -386,7 +387,7 @@ struct SettingsView: View {
         playSoundOnSnapshot = viewModel.settings.playSoundOnSnapshot
         menuBarOnlyMode = viewModel.settings.menuBarOnlyMode
         appearanceMode = viewModel.settings.appearanceMode
-        Theme.setAccentScheme(selectedColorScheme)
+        themeManager.setColorScheme(selectedColorScheme)
     }
 
     private func saveSettings() {
@@ -401,7 +402,7 @@ struct SettingsView: View {
         viewModel.settings.playSoundOnSnapshot = playSoundOnSnapshot
         viewModel.settings.menuBarOnlyMode = menuBarOnlyMode
         viewModel.settings.appearanceMode = appearanceMode
-        Theme.setAccentScheme(selectedColorScheme)
+        themeManager.setColorScheme(selectedColorScheme)
 
         Task {
             await viewModel.saveSettings()
@@ -571,6 +572,7 @@ struct EAIdentityRow: View {
 // MARK: - Settings Section
 
 struct SettingsSection<Content: View>: View {
+    @Environment(\.accentColor) private var accentColor
     let title: String
     let icon: String
     @ViewBuilder let content: Content
@@ -579,7 +581,7 @@ struct SettingsSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(Theme.accent)
+                    .foregroundColor(accentColor)
 
                 Text(title)
                     .font(.headline)
@@ -617,7 +619,7 @@ struct ColorSchemeButton: View {
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.selectedText)
                             .font(.title3)
                             .background(
                                 Circle()
@@ -626,7 +628,7 @@ struct ColorSchemeButton: View {
                             )
                     } else {
                         Image(systemName: scheme.iconName)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.selectedText)
                             .font(.title3)
                     }
                 }
@@ -697,10 +699,10 @@ struct EAAccountCard: View {
                     onDelete()
                 } label: {
                     Image(systemName: "trash")
-                        .foregroundColor(.red)
+                        .foregroundColor(Theme.error)
                         .font(.caption)
                         .frame(width: 24, height: 24)
-                        .background(Color.red.opacity(0.1))
+                        .background(Theme.error.opacity(0.1))
                         .cornerRadius(6)
                 }
                 .buttonStyle(.plain)
@@ -761,6 +763,7 @@ struct EAAccountCard: View {
 // MARK: - Appearance Mode Button
 
 struct AppearanceModeButton: View {
+    @Environment(\.accentColor) private var accentColor
     let mode: AppearanceMode
     let isSelected: Bool
     let action: () -> Void
@@ -775,7 +778,7 @@ struct AppearanceModeButton: View {
                         .frame(width: 120, height: 80)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(isSelected ? Theme.accent : Theme.borderColor, lineWidth: isSelected ? 3 : 1)
+                                .stroke(isSelected ? accentColor : Theme.borderColor, lineWidth: isSelected ? 3 : 1)
                         )
 
                     // Mode-specific preview
@@ -823,7 +826,7 @@ struct AppearanceModeButton: View {
             .frame(width: 100, height: 60)
             .overlay(
                 Image(systemName: "sun.max.fill")
-                    .foregroundColor(.orange)
+                    .foregroundColor(Theme.warning)
                     .font(.title3)
             )
 
@@ -854,7 +857,7 @@ struct AppearanceModeButton: View {
             .frame(width: 100, height: 60)
             .overlay(
                 Image(systemName: "moon.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Theme.info)
                     .font(.title3)
             )
 
@@ -887,7 +890,7 @@ struct AppearanceModeButton: View {
             .frame(width: 100, height: 60)
             .overlay(
                 Image(systemName: "circle.lefthalf.filled")
-                    .foregroundColor(.purple)
+                    .foregroundColor(Theme.bf6Purple)
                     .font(.title3)
             )
         }

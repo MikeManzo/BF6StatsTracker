@@ -313,7 +313,7 @@ struct VehicleCard: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(vehicle.kills)")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.red)
+                        .foregroundColor(Theme.error)
                     
                     Text("kills")
                         .font(.caption2)

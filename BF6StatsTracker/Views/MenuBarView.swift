@@ -71,7 +71,7 @@ struct MenuBarView: View {
 
                 Image(systemName: "person.fill")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(Theme.textPrimary)
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -89,7 +89,7 @@ struct MenuBarView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "star.fill")
                             .font(.caption2)
-                            .foregroundColor(.yellow)
+                            .foregroundColor(Theme.warning)
                         Text("\(formatXP(xp.total)) XP")
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -107,7 +107,7 @@ struct MenuBarView: View {
             // Last Updated
             VStack(alignment: .trailing, spacing: 2) {
                 Circle()
-                    .fill(viewModel.isLoading ? Color.yellow : Theme.bf6Green)
+                    .fill(viewModel.isLoading ? Theme.warning : Theme.success)
                     .frame(width: 8, height: 8)
 
                 Text(viewModel.formatTimeAgo(viewModel.lastUpdated))
@@ -163,7 +163,7 @@ struct MenuBarView: View {
                     icon: "trophy.fill",
                     label: "Wins",
                     value: stats.wins.formatted(),
-                    color: .yellow,
+                    color: Theme.warning,
                     tooltip: "Total matches won"
                 )
 

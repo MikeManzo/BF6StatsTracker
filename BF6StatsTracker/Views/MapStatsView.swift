@@ -82,7 +82,7 @@ struct MapStatsView: View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "map.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Theme.info)
                     .font(.title2)
 
                 Text("Map Performance")
@@ -95,11 +95,11 @@ struct MapStatsView: View {
                 HStack(spacing: 4) {
                     Button(action: { viewMode = .grid }) {
                         Image(systemName: "square.grid.2x2")
-                            .foregroundColor(viewMode == .grid ? .blue : .secondary)
+                            .foregroundColor(viewMode == .grid ? Theme.info : Theme.textSecondary)
                     }
                     Button(action: { viewMode = .list }) {
                         Image(systemName: "list.bullet")
-                            .foregroundColor(viewMode == .list ? .blue : .secondary)
+                            .foregroundColor(viewMode == .list ? Theme.info : Theme.textSecondary)
                     }
                 }
                 .buttonStyle(.plain)
@@ -116,7 +116,7 @@ struct MapStatsView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.blue.opacity(0.2))
+                        .background(Theme.info.opacity(0.2))
                         .cornerRadius(8)
                 }
             }
@@ -150,14 +150,14 @@ struct MapStatsView: View {
                         VStack(spacing: 4) {
                             Image(systemName: showingComparison ? "chart.bar.fill" : "chart.bar")
                                 .font(.title3)
-                                .foregroundColor(.cyan)
+                                .foregroundColor(Theme.info)
 
                             Text("Compare")
                                 .font(.caption2)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .background(Color.cyan.opacity(showingComparison ? 0.2 : 0.1))
+                        .background(Theme.info.opacity(showingComparison ? 0.2 : 0.1))
                         .cornerRadius(8)
                     }
                     .buttonStyle(.plain)
@@ -167,7 +167,7 @@ struct MapStatsView: View {
             // Search bar
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 TextField("Search maps...", text: $searchText)
                     .textFieldStyle(.plain)
@@ -175,7 +175,7 @@ struct MapStatsView: View {
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
             }
@@ -204,7 +204,7 @@ struct MapStatsView: View {
                 .annotation(position: .top) {
                     Text(String(format: "%.0f%%", map.winRate))
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
             .frame(height: 200)
@@ -227,11 +227,11 @@ struct MapStatsView: View {
         VStack(spacing: 16) {
             Image(systemName: "map")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("No Map Data Available")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("Play some matches to see your map performance")
                 .font(.caption)
@@ -298,7 +298,7 @@ struct MapPerformanceCard: View {
                             .frame(width: 80, height: 50)
                             .overlay(
                                 Image(systemName: "map")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                             )
                     case .empty:
                         RoundedRectangle(cornerRadius: 8)
@@ -320,7 +320,7 @@ struct MapPerformanceCard: View {
                     HStack(spacing: 8) {
                         Label("\(map.matchesPlayed) matches", systemImage: "flag.checkered")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
 
                         if map.matchesPlayed > 0 {
                             WinRateBadge(winRate: map.winRate)
@@ -350,7 +350,7 @@ struct MapPerformanceCard: View {
 
                         Text("Win")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
             }
@@ -392,7 +392,7 @@ struct MapPerformanceCard: View {
                 HStack {
                     Text("W/L Record")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Spacer()
 
@@ -404,11 +404,11 @@ struct MapPerformanceCard: View {
                 GeometryReader { geometry in
                     HStack(spacing: 2) {
                         Rectangle()
-                            .fill(Color.green)
+                            .fill(Theme.success)
                             .frame(width: geometry.size.width * CGFloat(map.wins) / CGFloat(max(map.matchesPlayed, 1)))
 
                         Rectangle()
-                            .fill(Color.red)
+                            .fill(Theme.error)
                             .frame(width: geometry.size.width * CGFloat(map.losses) / CGFloat(max(map.matchesPlayed, 1)))
                     }
                 }
@@ -456,7 +456,7 @@ struct CompactMapRow: View {
                         .overlay(
                             Image(systemName: "map")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         )
                 @unknown default:
                     RoundedRectangle(cornerRadius: 6)
@@ -476,7 +476,7 @@ struct CompactMapRow: View {
                     Label(map.timePlayed, systemImage: "clock.fill")
                 }
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             }
 
             Spacer()
@@ -489,7 +489,7 @@ struct CompactMapRow: View {
 
                 Text("Win Rate")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()
@@ -517,7 +517,7 @@ struct QuickMapStat: View {
         VStack(spacing: 4) {
             Text(title)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text(value)
                 .font(.title3)
@@ -526,7 +526,7 @@ struct QuickMapStat: View {
 
             Text(subtitle)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
@@ -556,7 +556,7 @@ struct DetailedStatItem: View {
             HStack(spacing: 4) {
                 Text(label)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 if let comparison = comparison {
                     Image(systemName: comparison == "above" ? "arrow.up" : "arrow.down")

@@ -80,10 +80,10 @@ struct EnhancedClassCard: View {
                             .font(.caption2)
                             .fontWeight(.semibold)
                     }
-                    .foregroundColor(.yellow)
+                    .foregroundColor(Theme.warning)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.yellow.opacity(0.2))
+                    .background(Theme.warning.opacity(0.2))
                     .cornerRadius(6)
                 }
             }
@@ -112,7 +112,7 @@ struct EnhancedClassCard: View {
                             .font(.caption)
                         Text("(\(String(format: "%.0f%%", timePlayedPercentage)) of total)")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                     .foregroundColor(Theme.textSecondary)
 
@@ -161,10 +161,10 @@ struct EnhancedClassCard: View {
                     HStack(spacing: 4) {
                         Image(systemName: "speedometer")
                             .font(.caption2)
-                            .foregroundColor(.orange)
+                            .foregroundColor(Theme.warning)
                         Text("Score/Min")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Text(String(format: "%.0f", classStats.scorePerMinute))
@@ -186,10 +186,10 @@ struct EnhancedClassCard: View {
                     HStack(spacing: 4) {
                         Image(systemName: "trophy.fill")
                             .font(.caption2)
-                            .foregroundColor(.yellow)
+                            .foregroundColor(Theme.warning)
                         Text("Win Rate")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Text(String(format: "%.1f%%", overallWinRate))
@@ -198,7 +198,7 @@ struct EnhancedClassCard: View {
 
                     Text("overall avg")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 // Deaths
@@ -206,10 +206,10 @@ struct EnhancedClassCard: View {
                     HStack(spacing: 4) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.caption2)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                         Text("Deaths")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Text("\(classStats.deaths.formatted())")
@@ -218,7 +218,7 @@ struct EnhancedClassCard: View {
 
                     Text("\(String(format: "%.1f", Double(classStats.deaths) / Double(max(1, classStats.kills)))) D/K")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
 
@@ -227,7 +227,7 @@ struct EnhancedClassCard: View {
                 HStack {
                     Text("Class Focus")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Spacer()
 
@@ -273,7 +273,7 @@ struct EnhancedClassCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(
-                    isSpecialized ? Color.yellow.opacity(0.4) : Theme.borderColor,
+                    isSpecialized ? Theme.warning.opacity(0.4) : Theme.borderColor,
                     lineWidth: isSpecialized ? 2 : 1
                 )
         )
@@ -323,7 +323,7 @@ enum PerformanceLevel {
 
         VStack(spacing: 20) {
             Text("Preview data requires actual ClassStats from API")
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .padding()
     }

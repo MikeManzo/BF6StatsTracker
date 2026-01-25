@@ -122,7 +122,7 @@ struct ServerBrowserView: View {
             // Title row
             HStack {
                 Image(systemName: "server.rack")
-                    .foregroundColor(.green)
+                    .foregroundColor(Theme.success)
                     .font(.title2)
 
                 Text("Server Browser")
@@ -153,7 +153,7 @@ struct ServerBrowserView: View {
                 // Refresh button
                 Button(action: { Task { await loadServers() } }) {
                     Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.success)
                         .rotationEffect(.degrees(isLoading ? 360 : 0))
                         .animation(isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isLoading)
                 }
@@ -206,7 +206,7 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.blue.opacity(0.2))
+                        .background(Theme.info.opacity(0.2))
                         .cornerRadius(8)
                 }
             }
@@ -231,7 +231,7 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(selectedRegion != .all ? Color.purple.opacity(0.2) : Theme.overlayColor)
+                        .background(selectedRegion != .all ? Theme.bf6Purple.opacity(0.2) : Theme.overlayColor)
                         .cornerRadius(8)
                 }
 
@@ -253,7 +253,7 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(selectedMode != .all ? Color.orange.opacity(0.2) : Theme.overlayColor)
+                        .background(selectedMode != .all ? Theme.warning.opacity(0.2) : Theme.overlayColor)
                         .cornerRadius(8)
                 }
 
@@ -278,7 +278,7 @@ struct ServerBrowserView: View {
             // Search bar
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 TextField("Search servers, maps, modes...", text: $searchText)
                     .textFieldStyle(.plain)
@@ -286,7 +286,7 @@ struct ServerBrowserView: View {
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -302,12 +302,12 @@ struct ServerBrowserView: View {
     private var activeFiltersBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                .foregroundColor(.cyan)
+                .foregroundColor(Theme.info)
                 .font(.caption)
 
             Text("Active filters:")
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             if selectedRegion != .all {
                 FilterChip(text: selectedRegion.rawValue, color: .purple) {
@@ -342,11 +342,11 @@ struct ServerBrowserView: View {
                 showEmptyServers = true
             }
             .font(.caption2)
-            .foregroundColor(.cyan)
+            .foregroundColor(Theme.info)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(Color.cyan.opacity(0.1))
+        .background(Theme.info.opacity(0.1))
     }
 
     // MARK: - Server List
@@ -383,7 +383,7 @@ struct ServerBrowserView: View {
 
             Text("Loading servers...")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -392,7 +392,7 @@ struct ServerBrowserView: View {
         VStack(spacing: 16) {
             Image(systemName: "server.rack")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("No Servers Available")
                 .font(.headline)
@@ -400,12 +400,12 @@ struct ServerBrowserView: View {
             VStack(spacing: 8) {
                 Text("The BF6 servers list is currently empty.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                     .multilineTextAlignment(.center)
 
                 Text("This may be because:")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                     .padding(.top, 4)
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -432,7 +432,7 @@ struct ServerBrowserView: View {
                     .font(.caption)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(Color.green.opacity(0.2))
+                    .background(Theme.success.opacity(0.2))
                     .cornerRadius(8)
             }
             .buttonStyle(.plain)
@@ -453,14 +453,14 @@ struct ServerBrowserView: View {
         VStack(spacing: 16) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("No Servers Match Filters")
                 .font(.headline)
 
             Text("Try adjusting your filters or search terms")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
 
             Button("Clear Filters") {
@@ -473,7 +473,7 @@ struct ServerBrowserView: View {
             .font(.caption)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(Color.cyan.opacity(0.2))
+            .background(Theme.info.opacity(0.2))
             .cornerRadius(8)
             .buttonStyle(.plain)
         }
@@ -553,16 +553,16 @@ struct EnhancedServerCard: View {
                     HStack(spacing: 12) {
                         Label(server.map, systemImage: "map.fill")
                             .font(.caption)
-                            .foregroundColor(.blue)
+                            .foregroundColor(Theme.info)
 
                         Label(server.mode, systemImage: "gamecontroller.fill")
                             .font(.caption)
-                            .foregroundColor(.purple)
+                            .foregroundColor(Theme.bf6Purple)
 
                         if let region = server.region.isEmpty ? nil : server.region {
                             Label(region, systemImage: "globe")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
                     }
 
@@ -575,10 +575,10 @@ struct EnhancedServerCard: View {
                                 Text(adventure)
                                     .font(.caption2)
                             }
-                            .foregroundColor(.yellow)
+                            .foregroundColor(Theme.warning)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.yellow.opacity(0.2))
+                            .background(Theme.warning.opacity(0.2))
                             .cornerRadius(4)
                         }
 
@@ -589,10 +589,10 @@ struct EnhancedServerCard: View {
                                 Text(subParam)
                                     .font(.caption2)
                             }
-                            .foregroundColor(.cyan)
+                            .foregroundColor(Theme.info)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.cyan.opacity(0.2))
+                            .background(Theme.info.opacity(0.2))
                             .cornerRadius(4)
                         }
                     }
@@ -609,7 +609,7 @@ struct EnhancedServerCard: View {
 
                     Text(server.isFull ? "FULL" : "\(server.slots.capacity - server.slots.inGame) slots")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     // Latency indicator
                     if let latency = server.latency {
@@ -629,7 +629,7 @@ struct EnhancedServerCard: View {
                             Text("\(server.slots.inQueue) queued")
                                 .font(.caption2)
                         }
-                        .foregroundColor(.orange)
+                        .foregroundColor(Theme.warning)
                     }
                 }
             }
@@ -668,11 +668,11 @@ struct EnhancedServerCard: View {
                             .font(.caption)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 4)
-                            .background(Color.green.opacity(0.2))
+                            .background(Theme.success.opacity(0.2))
                             .cornerRadius(6)
                     }
                 }
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             }
             .buttonStyle(.plain)
 
@@ -729,13 +729,13 @@ struct EnhancedServerCard: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "arrow.triangle.2.circlepath")
-                                    .foregroundColor(.cyan)
+                                    .foregroundColor(Theme.info)
                                     .font(.caption)
 
                                 Text("Map Rotation")
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                             }
 
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -745,14 +745,14 @@ struct EnhancedServerCard: View {
                                             .font(.caption2)
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 4)
-                                            .background(Color.blue.opacity(0.2))
+                                            .background(Theme.info.opacity(0.2))
                                             .cornerRadius(4)
                                     }
 
                                     if rotation.count > 10 {
                                         Text("+\(rotation.count - 10) more")
                                             .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(Theme.textSecondary)
                                     }
                                 }
                             }
@@ -764,18 +764,18 @@ struct EnhancedServerCard: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Image(systemName: "info.circle")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(Theme.info)
                                     .font(.caption)
 
                                 Text("Server Info")
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                             }
 
                             Text(info)
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                                 .lineLimit(3)
                         }
                     }
@@ -823,7 +823,7 @@ struct ServerStatBadge: View {
 
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -867,7 +867,7 @@ struct PlatformBreakdownBadge: View {
 
             Text("•")
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             PlatformCount(
                 platform: .playstation,
@@ -877,7 +877,7 @@ struct PlatformBreakdownBadge: View {
 
             Text("•")
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             PlatformCount(
                 platform: .xbox,
@@ -942,14 +942,14 @@ struct ServerDetailRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .foregroundColor(.cyan)
+                .foregroundColor(Theme.info)
                 .font(.caption)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Text(value)
                     .font(.caption)
@@ -975,7 +975,7 @@ struct ServerDetailRowWithColor: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Text(value)
                     .font(.caption)

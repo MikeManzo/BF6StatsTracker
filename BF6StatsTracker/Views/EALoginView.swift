@@ -40,7 +40,7 @@ struct EALoginView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -69,7 +69,7 @@ struct EALoginView: View {
 
                         Text("Enter your EA GamerID to fetch your Battlefield 6 stats.")
                             .font(.body)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     }
@@ -88,12 +88,12 @@ struct EALoginView: View {
                     if let error = errorMessage ?? viewModel.eaAuthError {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(.red)
+                                .foregroundColor(Theme.error)
                             Text(error)
-                                .foregroundColor(.red)
+                                .foregroundColor(Theme.error)
                         }
                         .padding()
-                        .background(Color.red.opacity(0.1))
+                        .background(Theme.error.opacity(0.1))
                         .cornerRadius(8)
                     }
 
@@ -145,21 +145,21 @@ struct EALoginView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Image(systemName: "info.circle.fill")
-                                .foregroundColor(.blue)
+                                .foregroundColor(Theme.info)
                             Text("How It Works")
                                 .font(.headline)
                         }
 
                         Text("Enter your EA GamerID (username) to fetch your account information. No password or authentication required.")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
 
                         Text("Your GamerID is your public EA username.")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                     .padding()
-                    .background(Color.blue.opacity(0.1))
+                    .background(Theme.info.opacity(0.1))
                     .cornerRadius(12)
 
                     Spacer()

@@ -58,14 +58,14 @@ struct DraggableTileContainer: View {
         VStack(spacing: 20) {
             Image(systemName: "person.3.fill")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             
             Text("No Class Data Available")
                 .font(.title2)
                 .fontWeight(.semibold)
             
             Text("Search for a player to see their class statistics")
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             
             Button {
                 Task {
@@ -75,7 +75,7 @@ struct DraggableTileContainer: View {
                 Label("Refresh", systemImage: "arrow.clockwise")
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
-                    .background(Color.blue)
+                    .background(Theme.info)
                     .cornerRadius(8)
             }
             .buttonStyle(.plain)

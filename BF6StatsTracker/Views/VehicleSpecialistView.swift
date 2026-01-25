@@ -40,7 +40,7 @@ struct VehicleSpecialistView: View {
 
                         Text("Master of mechanized warfare")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Spacer()
@@ -66,7 +66,7 @@ struct VehicleSpecialistView: View {
                     }
                 } else {
                     Text("No vehicle stats available")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
             .padding()
@@ -186,7 +186,7 @@ struct VehicleSpecialistView: View {
 
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(height: 100)
@@ -345,13 +345,13 @@ struct VehicleSpecialistView: View {
 
                     if selectedVehicle?.vehicleId == vehicle.vehicleId {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                     }
                 }
 
                 Text(vehicle.type)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Divider()
 
@@ -364,7 +364,7 @@ struct VehicleSpecialistView: View {
 
                         Text("kills")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Spacer()
@@ -373,11 +373,11 @@ struct VehicleSpecialistView: View {
                         Text(formatDistance(vehicle.distanceTraveled))
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.blue)
+                            .foregroundColor(Theme.info)
 
                         Text("distance")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
             }
@@ -402,7 +402,7 @@ struct VehicleSpecialistView: View {
 
                     Text(vehicle.type)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -414,7 +414,7 @@ struct VehicleSpecialistView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -448,11 +448,11 @@ struct VehicleSpecialistView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(vehicle.kills)")
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
-                                .foregroundColor(.red)
+                                .foregroundColor(Theme.error)
 
                             Text("Total Kills")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
 
                         Spacer()
@@ -460,11 +460,11 @@ struct VehicleSpecialistView: View {
                         VStack(alignment: .trailing, spacing: 4) {
                             Text("\(vehicle.roadKills)")
                                 .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundColor(.orange)
+                                .foregroundColor(Theme.warning)
 
                             Text("Road Kills")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
                     }
 
@@ -473,7 +473,7 @@ struct VehicleSpecialistView: View {
                         HStack {
                             Text("\(Int(roadKillPercent))% of kills are road kills")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
 
                             Spacer()
 
@@ -481,10 +481,10 @@ struct VehicleSpecialistView: View {
                                 Text("Aggressive Driver")
                                     .font(.caption2)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.orange)
+                                    .foregroundColor(Theme.warning)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 2)
-                                    .background(Color.orange.opacity(0.2))
+                                    .background(Theme.warning.opacity(0.2))
                                     .cornerRadius(4)
                             }
                         }
@@ -500,7 +500,7 @@ struct VehicleSpecialistView: View {
                     VStack(spacing: 4) {
                         Image(systemName: "burst.fill")
                             .font(.title2)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
 
                         Text(formatNumber(vehicle.damage))
                             .font(.title3)
@@ -509,7 +509,7 @@ struct VehicleSpecialistView: View {
 
                         Text("Damage Dealt")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Divider()
@@ -517,7 +517,7 @@ struct VehicleSpecialistView: View {
                     VStack(spacing: 4) {
                         Image(systemName: "shield.slash.fill")
                             .font(.title2)
-                            .foregroundColor(.orange)
+                            .foregroundColor(Theme.warning)
 
                         Text(formatNumber(vehicle.damageTo))
                             .font(.title3)
@@ -526,7 +526,7 @@ struct VehicleSpecialistView: View {
 
                         Text("Damage Taken")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     // Survivability rating
@@ -561,7 +561,7 @@ struct VehicleSpecialistView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "steeringwheel")
                         .font(.system(size: 40))
-                        .foregroundColor(.purple)
+                        .foregroundColor(Theme.bf6Purple)
 
                     Text("\(vehicle.driverAssists)")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -569,14 +569,14 @@ struct VehicleSpecialistView: View {
 
                     Text("Driver Assists")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     let totalAssists = vehicle.driverAssists + vehicle.passengerAssists
                     if totalAssists > 0 {
                         let driverPercent = Double(vehicle.driverAssists) / Double(totalAssists) * 100
                         Text("\(Int(driverPercent))% of assists")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -585,13 +585,13 @@ struct VehicleSpecialistView: View {
                 .cornerRadius(8)
 
                 Image(systemName: "arrow.left.and.right")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 // Passenger
                 VStack(spacing: 8) {
                     Image(systemName: "person.2.fill")
                         .font(.system(size: 40))
-                        .foregroundColor(.yellow)
+                        .foregroundColor(Theme.warning)
 
                     Text("\(vehicle.passengerAssists)")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -599,14 +599,14 @@ struct VehicleSpecialistView: View {
 
                     Text("Passenger Assists")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     let totalAssists = vehicle.driverAssists + vehicle.passengerAssists
                     if totalAssists > 0 {
                         let passengerPercent = Double(vehicle.passengerAssists) / Double(totalAssists) * 100
                         Text("\(Int(passengerPercent))% of assists")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -706,7 +706,7 @@ struct VehicleSpecialistView: View {
 
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

@@ -35,7 +35,7 @@ struct LastCompletedMatchView: View {
             // Header
             HStack {
                 Image(systemName: "clock.badge.checkmark")
-                    .foregroundColor(.green)
+                    .foregroundColor(Theme.success)
                     .font(.title3)
 
                 Text("Most Recent Performance")
@@ -48,12 +48,12 @@ struct LastCompletedMatchView: View {
                     VStack(alignment: .trailing, spacing: 2) {
                         HStack(spacing: 4) {
                             Image(systemName: "circle.fill")
-                                .foregroundColor(.green)
+                                .foregroundColor(Theme.success)
                                 .font(.caption)
 
                             Text("Computed Data")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
 
                         Text(formatTimestamp(stats.timestamp))
@@ -72,7 +72,7 @@ struct LastCompletedMatchView: View {
         .padding()
         .background(
             LinearGradient(
-                colors: [Color.green.opacity(0.1), Theme.overlayColor],
+                colors: [Theme.success.opacity(0.1), Theme.overlayColor],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -80,7 +80,7 @@ struct LastCompletedMatchView: View {
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.green.opacity(0.3), lineWidth: 1)
+                .stroke(Theme.success.opacity(0.3), lineWidth: 1)
         )
     }
 
@@ -148,7 +148,7 @@ struct LastCompletedMatchView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "target")
-                    .foregroundColor(.green)
+                    .foregroundColor(Theme.success)
 
                 Text("Combat Performance")
                     .font(.subheadline)
@@ -165,7 +165,7 @@ struct LastCompletedMatchView: View {
 
                     Text("K/D")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
 
@@ -228,7 +228,7 @@ struct LastCompletedMatchView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "person.3.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Theme.info)
 
                 Text("Team Support")
                     .font(.subheadline)
@@ -264,7 +264,7 @@ struct LastCompletedMatchView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "trophy.fill")
-                    .foregroundColor(.yellow)
+                    .foregroundColor(Theme.warning)
 
                 Text("Match Result")
                     .font(.subheadline)
@@ -280,12 +280,12 @@ struct LastCompletedMatchView: View {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                             .frame(width: 20)
 
                         Text("Victory")
                             .font(.subheadline)
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                             .fontWeight(.semibold)
 
                         Spacer()
@@ -294,12 +294,12 @@ struct LastCompletedMatchView: View {
                     HStack {
                         Image(systemName: "xmark.circle.fill")
                             .font(.caption)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                             .frame(width: 20)
 
                         Text("Defeat")
                             .font(.subheadline)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                             .fontWeight(.semibold)
 
                         Spacer()
@@ -356,11 +356,11 @@ struct LastCompletedMatchView: View {
         VStack(spacing: 12) {
             Image(systemName: "gamecontroller")
                 .font(.system(size: 40))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("No Completed Match Data")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("Complete a match to see your last game stats")
                 .font(.caption)

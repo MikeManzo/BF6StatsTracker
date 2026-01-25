@@ -45,7 +45,7 @@ struct EnhancedStatChip: View {
 
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -282,7 +282,7 @@ struct AchievementBadge: View {
             // Icon
             Image(systemName: icon)
                 .font(.system(size: size * 0.5, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(Theme.selectedText)
         }
     }
 }
@@ -343,7 +343,7 @@ struct RichTooltip: View {
                 HStack {
                     Text(detail.0)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                     Spacer()
                     Text(detail.1)
                         .font(.caption)

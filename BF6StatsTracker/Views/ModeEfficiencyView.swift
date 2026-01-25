@@ -82,7 +82,7 @@ struct ModeEfficiencyView: View {
 
             Text("Compare progression modes to find the most efficient XP gain")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
@@ -153,7 +153,7 @@ struct ModeEfficiencyView: View {
 
             Text("Loading progression modes...")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(40)
@@ -215,7 +215,7 @@ struct ModeEfficiencyView: View {
 
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
     }
@@ -267,7 +267,7 @@ struct ModeEfficiencyCard: View {
 
                     Text(mode.progressionMode)
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -313,7 +313,7 @@ struct ModeEfficiencyCard: View {
             // Description
             Text(mode.xpDescription)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .padding(.top, 4)
         }
         .padding()
@@ -338,7 +338,7 @@ struct ModeEfficiencyCard: View {
 
             Text("Efficiency")
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .padding(8)
         .background(colorForEfficiency(efficiency).opacity(0.15))
@@ -356,7 +356,7 @@ struct ModeEfficiencyCard: View {
 
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Spacer()
 

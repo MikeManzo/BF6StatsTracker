@@ -39,6 +39,11 @@ class StatsViewModel: ObservableObject {
     @Published var settings: AppSettings = AppSettings()
     @Published var tilePositions: [String: TilePosition] = [:]
 
+    /// The current accent color from settings - reactive and propagates to all views
+    var accentColor: Color {
+        settings.selectedColorScheme.primaryColor
+    }
+
     @Published var selectedMainTab: MainTab = .overview
     @Published var selectedSubTab: StatTab? = nil
     @Published var selectedClass: BF6Class?

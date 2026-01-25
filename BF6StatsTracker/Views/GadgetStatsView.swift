@@ -241,14 +241,14 @@ struct GadgetCard: View {
                     if gadget.kills > 0 {
                         Text("\(gadget.kills)")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                         Text("kills")
                             .font(.caption2)
                             .foregroundColor(Theme.textSecondary)
                     } else {
                         Text("\(gadget.uses)")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundColor(.blue)
+                            .foregroundColor(Theme.info)
                         Text("uses")
                             .font(.caption2)
                             .foregroundColor(Theme.textSecondary)

@@ -116,7 +116,7 @@ struct AccountSelectionView: View {
 
                     Image(systemName: "person.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.selectedText)
                 }
 
                 // Account info
@@ -222,7 +222,7 @@ struct AccountSelectionView: View {
                         endPoint: .trailing
                     )
                 )
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.selectedText)
                 .cornerRadius(10)
             }
             .buttonStyle(.plain)

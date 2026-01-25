@@ -55,7 +55,7 @@ struct ProgressionBadge: View {
 
                 Text(mode.xpDescription)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             Spacer()
@@ -110,7 +110,7 @@ struct ProgressionBadge: View {
 
             Text("Unknown Mode")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -127,7 +127,7 @@ struct ProgressionBadge: View {
         return Text(displayText)
             .font(.caption2)
             .fontWeight(.bold)
-            .foregroundColor(.white)
+            .foregroundColor(Theme.selectedText)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(pillColorForXP(aiXpFactor))
@@ -138,7 +138,7 @@ struct ProgressionBadge: View {
         Text("UNRANKED")
             .font(.caption2)
             .fontWeight(.bold)
-            .foregroundColor(.white)
+            .foregroundColor(Theme.selectedText)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(Color.gray)
@@ -198,7 +198,7 @@ struct ProgressionInfoPopover: View {
             // Header
             HStack {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Theme.info)
 
                 Text("Match Type Information")
                     .font(.headline)
@@ -210,7 +210,7 @@ struct ProgressionInfoPopover: View {
             // Mode Name
             HStack {
                 Text("Mode:")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 Spacer()
                 Text(progressionMode.displayName)
                     .fontWeight(.semibold)
@@ -219,7 +219,7 @@ struct ProgressionInfoPopover: View {
             // Stats Tracking
             HStack {
                 Text("Stats Tracked:")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 Spacer()
                 Text(progressionMode.persistStats ? "Yes" : "No")
                     .fontWeight(.semibold)
@@ -229,7 +229,7 @@ struct ProgressionInfoPopover: View {
             // AI XP Factor
             HStack {
                 Text("AI Kill XP:")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 Spacer()
                 Text("\(Int(progressionMode.aiXpFactor * 100))%")
                     .fontWeight(.semibold)
@@ -238,7 +238,7 @@ struct ProgressionInfoPopover: View {
             // Match Bonus
             HStack {
                 Text("Match Bonus:")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 Spacer()
                 Text("\(Int(progressionMode.matchBonusXpFactor * 100))%")
                     .fontWeight(.semibold)
@@ -247,7 +247,7 @@ struct ProgressionInfoPopover: View {
             // Win Bonus
             HStack {
                 Text("Win Bonus:")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 Spacer()
                 Text("\(Int(progressionMode.winBonusXpFactor * 100))%")
                     .fontWeight(.semibold)
@@ -258,7 +258,7 @@ struct ProgressionInfoPopover: View {
             // Description
             Text(progressionMode.xpDescription)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .italic()
         }
         .padding()

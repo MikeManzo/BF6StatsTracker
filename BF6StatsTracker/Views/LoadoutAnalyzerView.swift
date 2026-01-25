@@ -59,7 +59,7 @@ struct LoadoutAnalyzerView: View {
     private var header: some View {
         HStack {
             Image(systemName: "chart.bar.doc.horizontal")
-                .foregroundColor(.orange)
+                .foregroundColor(Theme.warning)
                 .font(.title2)
 
             Text("Loadout Analyzer")
@@ -78,7 +78,7 @@ struct LoadoutAnalyzerView: View {
 
                     Text("Effectiveness")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
@@ -137,7 +137,7 @@ struct LoadoutAnalyzerView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
+                    .foregroundColor(Theme.warning)
                 Text("Your Best Loadout")
                     .font(.headline)
             }
@@ -185,7 +185,7 @@ struct LoadoutAnalyzerView: View {
 
                             Text(bestWeapon.type)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
 
                             HStack(spacing: 12) {
                                 StatPill(label: "Kills", value: "\(bestWeapon.kills)", color: .red)
@@ -200,11 +200,11 @@ struct LoadoutAnalyzerView: View {
             }
         }
         .padding()
-        .background(Color.orange.opacity(0.1))
+        .background(Theme.warning.opacity(0.1))
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.orange.opacity(0.3), lineWidth: 2)
+                .stroke(Theme.warning.opacity(0.3), lineWidth: 2)
         )
     }
 
@@ -232,7 +232,7 @@ struct LoadoutAnalyzerView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "lightbulb.fill")
-                    .foregroundColor(.yellow)
+                    .foregroundColor(Theme.warning)
                 Text("Quick Tips")
                     .font(.headline)
             }
@@ -369,7 +369,7 @@ struct LoadoutAnalyzerView: View {
                 }
             } else {
                 Text("No gadget data available")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
     }
@@ -471,7 +471,7 @@ struct PerformanceBar: View {
             HStack {
                 Text(label)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Spacer()
 
@@ -506,7 +506,7 @@ struct StatPill: View {
         HStack(spacing: 4) {
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             Text(value)
                 .font(.caption)
                 .fontWeight(.semibold)
@@ -563,7 +563,7 @@ struct EnhancedWeaponRecommendationRow: View {
 
                 Text(reason)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 HStack(spacing: 8) {
                     StatPill(label: "Acc", value: String(format: "%.0f%%", weapon.accuracy), color: .cyan)
@@ -574,7 +574,7 @@ struct EnhancedWeaponRecommendationRow: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .padding()
         .background(Theme.overlayColor)
@@ -610,10 +610,10 @@ struct EnhancedClassLoadoutCard: View {
 
                         Text("Top \(percentile)%")
                             .font(.caption2)
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.green.opacity(0.2))
+                            .background(Theme.success.opacity(0.2))
                             .cornerRadius(4)
                     }
 
@@ -647,7 +647,7 @@ struct MiniPerformanceBar: View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .frame(width: 80, alignment: .leading)
 
             GeometryReader { geometry in
@@ -688,7 +688,7 @@ struct GadgetPerformanceCard: View {
                     Label("\(gadget.uses) uses", systemImage: "hand.tap")
                 }
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
             }
 
             Spacer()
@@ -696,11 +696,11 @@ struct GadgetPerformanceCard: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(String(format: "%.2f", gadget.killsPerMinute))
                     .font(.headline)
-                    .foregroundColor(.orange)
+                    .foregroundColor(Theme.warning)
 
                 Text("K/Min")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()
@@ -744,7 +744,7 @@ struct PlaystyleInsightCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "person.fill")
-                    .foregroundColor(.cyan)
+                    .foregroundColor(Theme.info)
                 Text("Your Playstyle")
                     .font(.headline)
             }
@@ -753,15 +753,15 @@ struct PlaystyleInsightCard: View {
                 Text(playstyle)
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(.cyan)
+                    .foregroundColor(Theme.info)
 
                 Text(playstyleDescription)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()
-        .background(Color.cyan.opacity(0.1))
+        .background(Theme.info.opacity(0.1))
         .cornerRadius(16)
     }
 }
@@ -779,7 +779,7 @@ struct StrengthsWeaknessesCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                         Text("Strengths")
                             .font(.subheadline)
                             .fontWeight(.semibold)
@@ -800,7 +800,7 @@ struct StrengthsWeaknessesCard: View {
                         }
                     }
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -808,7 +808,7 @@ struct StrengthsWeaknessesCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.orange)
+                            .foregroundColor(Theme.warning)
                         Text("Focus Areas")
                             .font(.subheadline)
                             .fontWeight(.semibold)
@@ -829,7 +829,7 @@ struct StrengthsWeaknessesCard: View {
                         }
                     }
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -847,7 +847,7 @@ struct ImprovementRoadmapCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "map.fill")
-                    .foregroundColor(.purple)
+                    .foregroundColor(Theme.bf6Purple)
                 Text("Improvement Roadmap")
                     .font(.headline)
             }
@@ -876,7 +876,7 @@ struct ImprovementRoadmapCard: View {
             }
         }
         .padding()
-        .background(Color.purple.opacity(0.1))
+        .background(Theme.bf6Purple.opacity(0.1))
         .cornerRadius(16)
     }
 }
@@ -914,7 +914,7 @@ struct RoadmapStep: View {
 
                 Text(task)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             Spacer()

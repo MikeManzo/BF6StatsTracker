@@ -24,6 +24,7 @@ struct BF6StatsTrackerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var viewModel = StatsViewModel()
     @StateObject private var historyManager = HistoryManager.shared
+    @StateObject private var themeManager = ThemeManager.shared
     @State private var isWindowVisible = true
     @Environment(\.openWindow) private var openWindow
 
@@ -58,6 +59,8 @@ struct BF6StatsTrackerApp: App {
             ContentView()
                 .environmentObject(viewModel)
                 .environmentObject(historyManager)
+                .environmentObject(themeManager)
+                .environment(\.accentColor, themeManager.accent)
                 .frame(minWidth: 1200, minHeight: 800)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
                 .onAppear {
@@ -67,6 +70,11 @@ struct BF6StatsTrackerApp: App {
                     HistoryManager.shared.setup(modelContext: context)
                     MapTracker.shared.setup(modelContext: context)
                     logSuccess("SwiftData managers initialized", category: .success)
+                    // Sync theme manager with settings
+                    themeManager.setColorScheme(viewModel.settings.selectedColorScheme)
+                }
+                .onChange(of: viewModel.settings.selectedColorScheme) { _, newScheme in
+                    themeManager.setColorScheme(newScheme)
                 }
         }
         .windowStyle(.hiddenTitleBar)
@@ -105,12 +113,16 @@ struct BF6StatsTrackerApp: App {
         Settings {
             SettingsView()
                 .environmentObject(viewModel)
+                .environmentObject(themeManager)
+                .environment(\.accentColor, themeManager.accent)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
         }
 
         // About Window
         Window("About BF6 Stats Tracker", id: "about") {
             AboutView()
+                .environmentObject(themeManager)
+                .environment(\.accentColor, themeManager.accent)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
         }
         .windowResizability(.contentSize)
@@ -120,6 +132,8 @@ struct BF6StatsTrackerApp: App {
         MenuBarExtra {
             MenuBarView()
                 .environmentObject(viewModel)
+                .environmentObject(themeManager)
+                .environment(\.accentColor, themeManager.accent)
         } label: {
             Image("MenuBarIcon")
                 .renderingMode(.template)

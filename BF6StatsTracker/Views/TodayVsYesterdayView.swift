@@ -873,11 +873,11 @@ struct TodayVsYesterdayView: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.orange.opacity(0.1))
+                        .fill(Theme.warning.opacity(0.1))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color.orange.opacity(0.3), lineWidth: 1)
+                        .strokeBorder(Theme.warning.opacity(0.3), lineWidth: 1)
                 )
             }
         }
@@ -977,7 +977,7 @@ struct TodayVsYesterdayView: View {
                         // K/D value
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(.orange)
+                                .fill(Theme.warning)
                                 .frame(width: 8, height: 8)
                             Text(String(format: "%.2f", last7Days.last?.dailyKD ?? 0))
                                 .font(.title3)
@@ -991,7 +991,7 @@ struct TodayVsYesterdayView: View {
                         // KDA value
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(.cyan)
+                                .fill(Theme.info)
                                 .frame(width: 8, height: 8)
                             Text(String(format: "%.2f", last7Days.last?.computedDailyKDA ?? 0))
                                 .font(.title3)
@@ -1047,7 +1047,7 @@ struct TodayVsYesterdayView: View {
                     .interpolationMethod(.catmullRom)
                     .symbol {
                         Circle()
-                            .fill(.orange)
+                            .fill(Theme.warning)
                             .stroke(.white, lineWidth: 1.5)
                             .frame(width: 8, height: 8)
                     }
@@ -1065,7 +1065,7 @@ struct TodayVsYesterdayView: View {
                     .interpolationMethod(.catmullRom)
                     .symbol {
                         Circle()
-                            .fill(.cyan)
+                            .fill(Theme.info)
                             .stroke(.white, lineWidth: 1.5)
                             .frame(width: 8, height: 8)
                     }
@@ -1091,7 +1091,7 @@ struct TodayVsYesterdayView: View {
                 // K/D legend
                 HStack(spacing: 6) {
                     Rectangle()
-                        .fill(.orange)
+                        .fill(Theme.warning)
                         .frame(width: 20, height: 3)
                         .cornerRadius(1.5)
                     Text("K/D")
@@ -1102,7 +1102,7 @@ struct TodayVsYesterdayView: View {
                 // KDA legend
                 HStack(spacing: 6) {
                     Rectangle()
-                        .fill(.cyan)
+                        .fill(Theme.info)
                         .frame(width: 20, height: 3)
                         .cornerRadius(1.5)
                     Text("KDA")

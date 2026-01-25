@@ -41,7 +41,7 @@ struct WeaponMasteryView: View {
 
                         Text("Deep dive into weapon performance and playstyle")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Spacer()
@@ -60,7 +60,7 @@ struct WeaponMasteryView: View {
                     }
                 } else {
                     Text("No weapon stats available")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
             .padding()
@@ -167,13 +167,13 @@ struct WeaponMasteryView: View {
 
                     if selectedWeapon?.weaponId == weapon.weaponId {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                     }
                 }
 
                 Text(displayTypeName(weapon.type))
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Divider()
 
@@ -186,7 +186,7 @@ struct WeaponMasteryView: View {
 
                         Text("kills")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Spacer()
@@ -195,11 +195,11 @@ struct WeaponMasteryView: View {
                         Text(String(format: "%.1f%%", weapon.headshotPercentage))
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
 
                         Text("headshot")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
             }
@@ -224,7 +224,7 @@ struct WeaponMasteryView: View {
 
                     Text(displayTypeName(weapon.type))
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -236,7 +236,7 @@ struct WeaponMasteryView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -268,43 +268,43 @@ struct WeaponMasteryView: View {
                 VStack(spacing: 8) {
                     Text("Combat Style")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     HStack(spacing: 20) {
                         VStack(spacing: 4) {
                             Text("\(weapon.hipfireKills)")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .foregroundColor(.blue)
+                                .foregroundColor(Theme.info)
 
                             Text("Hipfire")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
 
                             if weapon.kills > 0 {
                                 Text("\(Int(Double(weapon.hipfireKills) / Double(weapon.kills) * 100))%")
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                             }
                         }
 
                         Image(systemName: "arrow.left.and.right")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
 
                         VStack(spacing: 4) {
                             Text("\(weapon.scopedKills)")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .foregroundColor(.purple)
+                                .foregroundColor(Theme.bf6Purple)
 
                             Text("Scoped")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
 
                             if weapon.kills > 0 {
                                 Text("\(Int(Double(weapon.scopedKills) / Double(weapon.kills) * 100))%")
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                             }
                         }
                     }
@@ -329,7 +329,7 @@ struct WeaponMasteryView: View {
                 VStack(spacing: 8) {
                     Text("Accuracy")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Text(String(format: "%.1f%%", weapon.accuracy))
                         .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -343,7 +343,7 @@ struct WeaponMasteryView: View {
 
                             Text("Hits")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
 
                         VStack(alignment: .leading, spacing: 2) {
@@ -353,7 +353,7 @@ struct WeaponMasteryView: View {
 
                             Text("Fired")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
                     }
 
@@ -383,7 +383,7 @@ struct WeaponMasteryView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "scope")
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
 
                         Text("Headshots")
                             .font(.subheadline)
@@ -396,15 +396,15 @@ struct WeaponMasteryView: View {
 
                         Text("(\(Int(weapon.headshotPercentage))%)")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     ProgressView(value: weapon.headshotPercentage, total: 100)
-                        .tint(.red)
+                        .tint(Theme.error)
 
                     HStack {
                         Image(systemName: "figure.stand")
-                            .foregroundColor(.blue)
+                            .foregroundColor(Theme.info)
 
                         Text("Body Shots")
                             .font(.subheadline)
@@ -418,11 +418,11 @@ struct WeaponMasteryView: View {
                         let bodyPercent = weapon.kills > 0 ? Double(weapon.bodyKills) / Double(weapon.kills) * 100 : 0
                         Text("(\(Int(bodyPercent))%)")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     ProgressView(value: bodyPercent(weapon: weapon), total: 100)
-                        .tint(.blue)
+                        .tint(Theme.info)
                 }
 
                 Divider()
@@ -431,7 +431,7 @@ struct WeaponMasteryView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "bolt.fill")
                         .font(.title2)
-                        .foregroundColor(.yellow)
+                        .foregroundColor(Theme.warning)
 
                     Text("\(weapon.multiKills)")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -439,12 +439,12 @@ struct WeaponMasteryView: View {
 
                     Text("Multi-Kills")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     if weapon.kills > 0 {
                         Text("\(Int(Double(weapon.multiKills) / Double(weapon.kills) * 100))% of kills")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -537,7 +537,7 @@ struct WeaponMasteryView: View {
 
             Text(description)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

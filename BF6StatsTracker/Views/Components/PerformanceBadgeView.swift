@@ -105,7 +105,7 @@ struct PerformanceBadgeView: View {
 
                     Image(systemName: badge.icon)
                         .font(.title3)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.selectedText)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

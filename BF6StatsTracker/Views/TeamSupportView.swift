@@ -37,7 +37,7 @@ struct TeamSupportView: View {
 
                     Text("Your contribution to team success")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -117,7 +117,7 @@ struct TeamSupportView: View {
                 }
             } else {
                 Text("No support stats available")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()
@@ -178,17 +178,17 @@ struct TeamSupportView: View {
 
                 Text("total")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             HStack {
                 Image(systemName: "arrow.down.right")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Text(String(format: "%.1f per match", perMatch))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             Text(description)
@@ -267,11 +267,11 @@ struct TeamSupportView: View {
 
                         Text("\(Int(squadPercent))% of revives on squad")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     ProgressView(value: squadPercent, total: 100)
-                        .tint(.orange)
+                        .tint(Theme.warning)
                 }
             }
             .padding()
@@ -296,7 +296,7 @@ struct TeamSupportView: View {
 
                 Text("(\(Int(percentage))%)")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             GeometryReader { geometry in
@@ -324,7 +324,7 @@ struct TeamSupportView: View {
 
             Text("Time played per class - Support class excels at team support")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             LazyVGrid(columns: [
                 GridItem(.flexible()),
@@ -362,13 +362,13 @@ struct TeamSupportView: View {
             HStack {
                 Text(formatPlaytime(classStats.timePlayed))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Spacer()
 
                 Text("\(classStats.kills) kills")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()

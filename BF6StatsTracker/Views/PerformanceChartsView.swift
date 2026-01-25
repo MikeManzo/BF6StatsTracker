@@ -98,7 +98,7 @@ struct PerformanceChartsView: View {
     private var header: some View {
         HStack {
             Image(systemName: "chart.xyaxis.line")
-                .foregroundColor(.purple)
+                .foregroundColor(Theme.bf6Purple)
                 .font(.title2)
 
             Text("Performance Analytics")
@@ -120,8 +120,8 @@ struct PerformanceChartsView: View {
                         .fontWeight(.medium)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(selectedPeriod == period ? Color.purple : Theme.overlayColor)
-                        .foregroundColor(selectedPeriod == period ? .black : Theme.textPrimary)
+                        .background(selectedPeriod == period ? Theme.bf6Purple : Theme.overlayColor)
+                        .foregroundColor(selectedPeriod == period ? Theme.selectedText : Theme.textPrimary)
                         .cornerRadius(8)
                 }
             }
@@ -141,7 +141,7 @@ struct PerformanceChartsView: View {
         return VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "chart.bar.doc.horizontal")
-                    .foregroundColor(.purple)
+                    .foregroundColor(Theme.bf6Purple)
                 Text("Period Summary")
                     .font(.headline)
                     .foregroundColor(Theme.textPrimary)
@@ -272,8 +272,8 @@ struct PerformanceChartsView: View {
 
                         // Legend
                         HStack(spacing: 16) {
-                            LegendItem(color: .green, text: "Best")
-                            LegendItem(color: .red, text: "Worst")
+                            LegendItem(color: Theme.success, text: "Best")
+                            LegendItem(color: Theme.error, text: "Worst")
                             LegendItem(color: Theme.bf6Orange, text: "Average", isDashed: true)
                         }
                         .font(.caption2)
@@ -348,7 +348,7 @@ struct PerformanceChartsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "waveform.path.ecg")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Theme.info)
                 Text("Rolling Averages & Trend")
                     .font(.headline)
                     .foregroundColor(Theme.textPrimary)
@@ -375,7 +375,7 @@ struct PerformanceChartsView: View {
                             x: .value("Time", snapshot.timestamp),
                             y: .value("K/D", snapshot.kdRatio)
                         )
-                        .foregroundStyle(Color.gray.opacity(0.3))
+                        .foregroundStyle(Theme.textSecondary.opacity(0.3))
                         .symbolSize(20)
                     }
 
@@ -385,7 +385,7 @@ struct PerformanceChartsView: View {
                             x: .value("Date", data.0),
                             y: .value("7-Day Avg", data.1)
                         )
-                        .foregroundStyle(Color.blue.gradient)
+                        .foregroundStyle(Theme.bf6Blue.gradient)
                         .lineStyle(StrokeStyle(lineWidth: 3))
                     }
 
@@ -396,7 +396,7 @@ struct PerformanceChartsView: View {
                                 x: .value("Date", data.0),
                                 y: .value("30-Day Avg", data.1)
                             )
-                            .foregroundStyle(Color.purple.gradient)
+                            .foregroundStyle(Theme.bf6Purple.gradient)
                             .lineStyle(StrokeStyle(lineWidth: 3, dash: [5, 3]))
                         }
                     }
@@ -541,7 +541,7 @@ struct PerformanceChartsView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "camera.aperture")
-                    .foregroundColor(.cyan)
+                    .foregroundColor(Theme.info)
                 Text("Snapshot Delta: Kills vs Deaths")
                     .font(.headline)
                     .foregroundColor(Theme.textPrimary)
@@ -569,7 +569,7 @@ struct PerformanceChartsView: View {
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol {
                             Circle()
-                                .fill(.green)
+                                .fill(Theme.success)
                                 .frame(width: 8, height: 8)
                         }
                     }
@@ -585,7 +585,7 @@ struct PerformanceChartsView: View {
                         .lineStyle(StrokeStyle(lineWidth: 3, dash: [5, 5]))
                         .symbol {
                             Rectangle()
-                                .fill(.red)
+                                .fill(Theme.error)
                                 .frame(width: 8, height: 8)
                         }
                     }
@@ -614,7 +614,7 @@ struct PerformanceChartsView: View {
                     HStack(spacing: 16) {
                         HStack(spacing: 4) {
                             Circle()
-                                .fill(.green)
+                                .fill(Theme.success)
                                 .frame(width: 8, height: 8)
                             Text("Kills")
                                 .font(.caption)
@@ -622,7 +622,7 @@ struct PerformanceChartsView: View {
                         }
                         HStack(spacing: 4) {
                             Rectangle()
-                                .fill(.red)
+                                .fill(Theme.error)
                                 .frame(width: 8, height: 8)
                             Text("Deaths")
                                 .font(.caption)
@@ -693,7 +693,7 @@ struct PerformanceChartsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "clock.fill")
-                    .foregroundColor(.orange)
+                    .foregroundColor(Theme.warning)
                 Text("Performance by Time of Day")
                     .font(.headline)
                     .foregroundColor(Theme.textPrimary)
@@ -805,7 +805,7 @@ struct PerformanceChartsView: View {
                 if let bestHour = hourlyData.filter({ $0.sessionCount > 0 }).max(by: { $0.avgKD < $1.avgKD }) {
                     HStack {
                         Image(systemName: "star.fill")
-                            .foregroundColor(.yellow)
+                            .foregroundColor(Theme.warning)
                         Text("Peak Performance: \(bestHour.hour):00 - \(bestHour.hour + 1):00 (K/D: \(String(format: "%.2f", bestHour.avgKD)))")
                             .font(.caption)
                             .foregroundColor(Theme.textPrimary)
@@ -825,7 +825,7 @@ struct PerformanceChartsView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "arrow.left.arrow.right")
-                    .foregroundColor(.purple)
+                    .foregroundColor(Theme.bf6Purple)
                 Text("Performance Comparisons")
                     .font(.headline)
                     .foregroundColor(Theme.textPrimary)
@@ -930,7 +930,7 @@ struct PerformanceChartsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "hammer.fill")
-                    .foregroundColor(.orange)
+                    .foregroundColor(Theme.warning)
                 Text("Weapon Usage")
                     .font(.headline)
                 Spacer()
@@ -961,7 +961,7 @@ struct PerformanceChartsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "chart.bar.xaxis")
-                    .foregroundColor(.purple)
+                    .foregroundColor(Theme.bf6Purple)
                 Text("Multi-Stat Comparison")
                     .font(.headline)
                 Spacer()
@@ -984,7 +984,7 @@ struct PerformanceChartsView: View {
     private var noDataView: some View {
         Text("No data available")
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(Theme.textSecondary)
             .frame(height: 100)
             .frame(maxWidth: .infinity)
     }
@@ -1241,7 +1241,7 @@ struct ComparisonCard: View {
         VStack(spacing: 8) {
             if isWinner {
                 Image(systemName: "crown.fill")
-                    .foregroundColor(.yellow)
+                    .foregroundColor(Theme.warning)
                     .font(.caption)
             } else {
                 Spacer()
@@ -1311,7 +1311,7 @@ struct RadarStatRow: View {
             HStack {
                 Text(label)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Spacer()
 

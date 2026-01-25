@@ -109,7 +109,7 @@ struct SessionHistoryView: View {
     private var header: some View {
         HStack {
             Image(systemName: "clock.arrow.circlepath")
-                .foregroundColor(.cyan)
+                .foregroundColor(Theme.info)
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -125,10 +125,10 @@ struct SessionHistoryView: View {
                         Text("snapshots")
                             .font(.caption)
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                     Text("•")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                         .font(.caption)
 
                     HStack(spacing: 4) {
@@ -138,7 +138,7 @@ struct SessionHistoryView: View {
                             .font(.caption)
                             .fontWeight(.semibold)
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                 }
             }
 
@@ -153,10 +153,10 @@ struct SessionHistoryView: View {
                     } label: {
                         Label("Create Synthetic", systemImage: "flask")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.selectedText)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color.purple)
+                            .background(Theme.bf6Purple)
                             .cornerRadius(8)
                     }
                     .buttonStyle(.plain)
@@ -169,10 +169,10 @@ struct SessionHistoryView: View {
                 } label: {
                     Label("Import", systemImage: "square.and.arrow.down")
                         .font(.caption)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.selectedText)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.green)
+                        .background(Theme.success)
                         .cornerRadius(8)
                 }
                 .buttonStyle(.plain)
@@ -185,10 +185,10 @@ struct SessionHistoryView: View {
                     } label: {
                         Label("Export", systemImage: "square.and.arrow.up")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.selectedText)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color.blue)
+                            .background(Theme.info)
                             .cornerRadius(8)
                     }
                     .buttonStyle(.plain)
@@ -220,10 +220,10 @@ struct SessionHistoryView: View {
                     } label: {
                         Label("Delete", systemImage: "trash")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.selectedText)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color.red)
+                            .background(Theme.error)
                             .cornerRadius(8)
                     }
                     .menuStyle(.borderlessButton)
@@ -238,7 +238,7 @@ struct SessionHistoryView: View {
     private var searchBar: some View {
         HStack {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             TextField("Search by EA ID, date, or stats...", text: $searchText)
                 .textFieldStyle(.plain)
@@ -248,7 +248,7 @@ struct SessionHistoryView: View {
                     searchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -373,16 +373,16 @@ struct SessionHistoryView: View {
         VStack(spacing: 20) {
             Image(systemName: "tray")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text(searchText.isEmpty ? "No snapshots recorded yet" : "No snapshots match your search")
                 .font(.title3)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             if searchText.isEmpty {
                 Text("Snapshots are automatically saved when you refresh your stats")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                     .multilineTextAlignment(.center)
             }
         }
@@ -610,31 +610,31 @@ struct SnapshotRow: View {
 
                 Text(snapshot.timestamp, style: .time)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 // Player Name badge
                 HStack(spacing: 4) {
                     Image(systemName: "person.fill")
                         .font(.system(size: 8))
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.success)
                     Text(snapshot.playerName)
                         .font(.system(size: 9))
                         .fontWeight(.medium)
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.success)
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(Color.green.opacity(0.1))
+                .background(Theme.success.opacity(0.1))
                 .cornerRadius(4)
 
                 // Storage size
                 HStack(spacing: 4) {
                     Image(systemName: "internaldrive")
                         .font(.system(size: 8))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                     Text(snapshot.formattedStorageSize)
                         .font(.system(size: 9))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
             .frame(width: 120, alignment: .leading)
@@ -644,8 +644,8 @@ struct SnapshotRow: View {
             // Core stats - show delta values
             if let deltaStats = getDeltaStats() {
                 HStack(spacing: 8) {
-                    StatChip(label: "K/D", value: String(format: "%.2f", deltaStats.kdRatio), color: deltaStats.kdRatio >= 1.0 ? .green : .orange)
-                    StatChip(label: "Kills", value: formatDelta(deltaStats.kills), color: .red)
+                    StatChip(label: "K/D", value: String(format: "%.2f", deltaStats.kdRatio), color: deltaStats.kdRatio >= 1.0 ? Theme.success : Theme.warning)
+                    StatChip(label: "Kills", value: formatDelta(deltaStats.kills), color: Theme.error)
                     StatChip(label: "Deaths", value: formatDelta(deltaStats.deaths), color: Theme.textSecondary)
                     StatChip(label: "Assists", value: formatDelta(deltaStats.assists), color: .cyan)
                     StatChip(label: "Wins", value: formatDelta(deltaStats.wins), color: .blue)
@@ -678,10 +678,10 @@ struct SnapshotRow: View {
                 onDelete()
             } label: {
                 Image(systemName: "trash")
-                    .foregroundColor(.red)
+                    .foregroundColor(Theme.error)
                     .font(.title3)
                     .frame(width: 32, height: 32)
-                    .background(Color.red.opacity(0.1))
+                    .background(Theme.error.opacity(0.1))
                     .cornerRadius(8)
             }
             .buttonStyle(.plain)
@@ -838,7 +838,7 @@ struct StatChip: View {
 
             Text(label)
                 .font(.system(size: 10))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -883,10 +883,10 @@ struct DeleteByDateRangeView: View {
 
                 HStack {
                     Image(systemName: "info.circle")
-                        .foregroundColor(.orange)
+                        .foregroundColor(Theme.warning)
                     Text("\(snapshotsInRange.count) snapshot\(snapshotsInRange.count == 1 ? "" : "s") will be deleted")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .padding(.top, 8)
             }
@@ -947,7 +947,7 @@ struct DeleteByEAIDView: View {
                 if uniqueEAIDs.isEmpty {
                     Text("No EA IDs found in snapshots")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 } else {
                     Picker("EA ID", selection: $selectedEAID) {
                         Text("Select EA ID").tag("")
@@ -960,10 +960,10 @@ struct DeleteByEAIDView: View {
                     if !selectedEAID.isEmpty {
                         HStack {
                             Image(systemName: "info.circle")
-                                .foregroundColor(.orange)
+                                .foregroundColor(Theme.warning)
                             Text("\(snapshotsForEAID.count) snapshot\(snapshotsForEAID.count == 1 ? "" : "s") will be deleted")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
                         .padding(.top, 8)
                     }
@@ -1038,20 +1038,20 @@ struct ExportHistoryView: View {
 
                 HStack {
                     Image(systemName: "info.circle")
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.info)
                     Text("\(snapshots.count) snapshot\(snapshots.count == 1 ? "" : "s") will be exported")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .padding(.top, 8)
 
                 if let error = exportError {
                     HStack {
                         Image(systemName: "exclamationmark.triangle")
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                         Text(error)
                             .font(.caption)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                     }
                 }
             }
@@ -1308,10 +1308,10 @@ struct ImportHistoryView: View {
                 if let url = selectedFileURL {
                     HStack {
                         Image(systemName: "doc.text")
-                            .foregroundColor(.blue)
+                            .foregroundColor(Theme.info)
                         Text(url.lastPathComponent)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                             .lineLimit(1)
                         Spacer()
                     }
@@ -1330,7 +1330,7 @@ struct ImportHistoryView: View {
 
                         HStack {
                             Image(systemName: "info.circle")
-                                .foregroundColor(.blue)
+                                .foregroundColor(Theme.info)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Format Version: \(preview.version)")
                                     .font(.caption)
@@ -1345,11 +1345,11 @@ struct ImportHistoryView: View {
                                         .font(.caption)
                                 }
                             }
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                             Spacer()
                         }
                         .padding(8)
-                        .background(Color.blue.opacity(0.1))
+                        .background(Theme.info.opacity(0.1))
                         .cornerRadius(8)
                     }
                 }
@@ -1361,22 +1361,22 @@ struct ImportHistoryView: View {
 
                         HStack(alignment: .top) {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(.orange)
+                                .foregroundColor(Theme.warning)
                                 .font(.title3)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Warning: This will replace all existing data")
                                     .font(.headline)
-                                    .foregroundColor(.orange)
+                                    .foregroundColor(Theme.warning)
 
                                 Text("All current snapshots will be permanently deleted and replaced with the imported data. This action cannot be undone.")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Theme.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         .padding(12)
-                        .background(Color.orange.opacity(0.1))
+                        .background(Theme.warning.opacity(0.1))
                         .cornerRadius(8)
                     }
                 }
@@ -1385,14 +1385,14 @@ struct ImportHistoryView: View {
                 if let error = importError {
                     HStack(alignment: .top) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                         Text(error)
                             .font(.caption)
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(8)
-                    .background(Color.red.opacity(0.1))
+                    .background(Theme.error.opacity(0.1))
                     .cornerRadius(8)
                 }
 
@@ -1400,13 +1400,13 @@ struct ImportHistoryView: View {
                 if importSuccess {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                         Text("Import completed successfully!")
                             .font(.caption)
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                     }
                     .padding(8)
-                    .background(Color.green.opacity(0.1))
+                    .background(Theme.success.opacity(0.1))
                     .cornerRadius(8)
                 }
             }

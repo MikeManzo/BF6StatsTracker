@@ -46,7 +46,7 @@ struct UtilityEffectivenessView: View {
 
                     Text("Tactical equipment performance analysis")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -66,7 +66,7 @@ struct UtilityEffectivenessView: View {
                 }
             } else {
                 Text("No utility stats available")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()
@@ -145,7 +145,7 @@ struct UtilityEffectivenessView: View {
 
             Text(description)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
         }
@@ -278,13 +278,13 @@ struct UtilityEffectivenessView: View {
 
                     if selectedGadget?.gadgetId == gadget.gadgetId {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.success)
                     }
                 }
 
                 Text(gadget.type)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Divider()
 
@@ -297,7 +297,7 @@ struct UtilityEffectivenessView: View {
 
                         Text("kills")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
 
                     Spacer()
@@ -310,7 +310,7 @@ struct UtilityEffectivenessView: View {
 
                         Text("K/Use")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
             }
@@ -335,7 +335,7 @@ struct UtilityEffectivenessView: View {
 
                     Text(gadget.type)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -347,7 +347,7 @@ struct UtilityEffectivenessView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -379,7 +379,7 @@ struct UtilityEffectivenessView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "square.stack.3d.up.fill")
                         .font(.title)
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.info)
 
                     Text("\(gadget.uses)")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -387,11 +387,11 @@ struct UtilityEffectivenessView: View {
 
                     Text("Total Uses")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Text("\(gadget.spawns) spawns")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
@@ -402,7 +402,7 @@ struct UtilityEffectivenessView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "target")
                         .font(.title)
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.success)
 
                     let efficiency = getEfficiency(gadget)
                     Text(String(format: "%.3f", efficiency))
@@ -411,7 +411,7 @@ struct UtilityEffectivenessView: View {
 
                     Text("Kills per Use")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Text(getEfficiencyRating(efficiency))
                         .font(.caption2)
@@ -501,7 +501,7 @@ struct UtilityEffectivenessView: View {
 
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding()
@@ -522,7 +522,7 @@ struct UtilityEffectivenessView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "burst.fill")
-                            .foregroundColor(.red)
+                            .foregroundColor(Theme.error)
 
                         Text("Total Damage")
                             .font(.subheadline)
@@ -535,11 +535,11 @@ struct UtilityEffectivenessView: View {
                     }
 
                     ProgressView(value: Double(gadget.damage), total: Double(max(gadget.damage, gadget.assistsDamage)))
-                        .tint(.red)
+                        .tint(Theme.error)
 
                     HStack {
                         Image(systemName: "hand.thumbsup.fill")
-                            .foregroundColor(.blue)
+                            .foregroundColor(Theme.info)
 
                         Text("Assist Damage")
                             .font(.subheadline)
@@ -552,7 +552,7 @@ struct UtilityEffectivenessView: View {
                     }
 
                     ProgressView(value: Double(gadget.assistsDamage), total: Double(max(gadget.damage, gadget.assistsDamage)))
-                        .tint(.blue)
+                        .tint(Theme.info)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -562,7 +562,7 @@ struct UtilityEffectivenessView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "flame.fill")
                         .font(.title)
-                        .foregroundColor(.orange)
+                        .foregroundColor(Theme.warning)
 
                     Text(String(format: "%.1f", gadget.dpm))
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -570,7 +570,7 @@ struct UtilityEffectivenessView: View {
 
                     Text("Damage per Minute")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)

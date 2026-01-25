@@ -37,7 +37,7 @@ struct IntelligenceView: View {
 
                     Text("Battlefield awareness and reconnaissance")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
 
                 Spacer()
@@ -63,7 +63,7 @@ struct IntelligenceView: View {
                 }
             } else {
                 Text("No intelligence stats available")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
         }
         .padding()
@@ -106,7 +106,7 @@ struct IntelligenceView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "eye.circle.fill")
                         .font(.system(size: 48))
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.info)
 
                     Text("\(stats.enemiesSpotted)")
                         .font(.system(size: 40, weight: .bold, design: .rounded))
@@ -115,7 +115,7 @@ struct IntelligenceView: View {
                     Text("Enemies Spotted")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Divider()
 
@@ -124,11 +124,11 @@ struct IntelligenceView: View {
                         Text(String(format: "%.1f", spotsPerMatch))
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.blue)
+                            .foregroundColor(Theme.info)
 
                         Text("per match")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -164,7 +164,7 @@ struct IntelligenceView: View {
                     let spotToKillRatio = stats.kills > 0 ? Double(stats.enemiesSpotted) / Double(stats.kills) : 0
                     HStack {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundColor(.orange)
+                            .foregroundColor(Theme.warning)
                             .frame(width: 24)
 
                         Text("Spot/Kill Ratio")
@@ -176,7 +176,7 @@ struct IntelligenceView: View {
                         Text(String(format: "%.2f", spotToKillRatio))
                             .font(.subheadline)
                             .fontWeight(.bold)
-                            .foregroundColor(.orange)
+                            .foregroundColor(Theme.warning)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -226,14 +226,14 @@ struct IntelligenceView: View {
                 HStack {
                     Text("Spotting contribution to team actions")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Spacer()
 
                     Text("\(Int(spottingPercent))%")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.info)
                 }
 
                 GeometryReader { geometry in
@@ -242,7 +242,7 @@ struct IntelligenceView: View {
                             .fill(Color.secondary.opacity(0.2))
 
                         Rectangle()
-                            .fill(Color.blue)
+                            .fill(Theme.info)
                             .frame(width: geometry.size.width * (spottingPercent / 100))
                     }
                 }
@@ -269,7 +269,7 @@ struct IntelligenceView: View {
                     HStack {
                         Image(systemName: "person.fill")
                             .font(.title2)
-                            .foregroundColor(.purple)
+                            .foregroundColor(Theme.bf6Purple)
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Human Opponents")
@@ -278,7 +278,7 @@ struct IntelligenceView: View {
 
                             Text("vs AI Targets")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
 
                         Spacer()
@@ -287,11 +287,11 @@ struct IntelligenceView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(String(format: "%.1f", stats.humanPercentage))
                             .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .foregroundColor(.purple)
+                            .foregroundColor(Theme.bf6Purple)
 
                         Text("%")
                             .font(.title)
-                            .foregroundColor(.purple)
+                            .foregroundColor(Theme.bf6Purple)
                     }
 
                     Text(getHumanPercentRating(stats.humanPercentage))
@@ -308,7 +308,7 @@ struct IntelligenceView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("This represents the difficulty of your targets")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
 
                         Text("Higher % = More PvP combat")
                             .font(.caption2)
@@ -332,7 +332,7 @@ struct IntelligenceView: View {
                         HStack {
                             Text("Human Kills")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
 
                             Spacer()
 
@@ -340,11 +340,11 @@ struct IntelligenceView: View {
                             Text("\(humanKills)")
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.purple)
+                                .foregroundColor(Theme.bf6Purple)
                         }
 
                         ProgressView(value: stats.humanPercentage, total: 100)
-                            .tint(.purple)
+                            .tint(Theme.bf6Purple)
                     }
 
                     // AI kills
@@ -352,7 +352,7 @@ struct IntelligenceView: View {
                         HStack {
                             Text("AI Kills")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
 
                             Spacer()
 
@@ -360,11 +360,11 @@ struct IntelligenceView: View {
                             Text("\(aiKills)")
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.blue)
+                                .foregroundColor(Theme.info)
                         }
 
                         ProgressView(value: 100 - stats.humanPercentage, total: 100)
-                            .tint(.blue)
+                            .tint(Theme.info)
                     }
 
                     Divider()
@@ -373,7 +373,7 @@ struct IntelligenceView: View {
                     VStack(spacing: 4) {
                         Text("Awareness Score")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
 
                         let awarenessScore = calculateAwarenessScore(stats: stats)
                         Text("\(Int(awarenessScore))")
@@ -383,7 +383,7 @@ struct IntelligenceView: View {
 
                         Text(getAwarenessRating(awarenessScore))
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -461,7 +461,7 @@ struct IntelligenceView: View {
 
             Text(subtitle)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding()
@@ -480,12 +480,12 @@ struct IntelligenceView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Current Win Rate")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Text(String(format: "%.1f%%", stats.wlRatio))
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.success)
                 }
 
                 Divider()
@@ -493,13 +493,13 @@ struct IntelligenceView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Spots per Win")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     let spotsPerWin = stats.wins > 0 ? Double(stats.enemiesSpotted) / Double(stats.wins) : 0
                     Text(String(format: "%.1f", spotsPerWin))
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.info)
                 }
 
                 Spacer()
@@ -571,7 +571,7 @@ struct IntelligenceView: View {
 
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding()

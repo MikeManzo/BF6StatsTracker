@@ -60,7 +60,7 @@ struct LogViewerView: View {
                 // Log count
                 Text("\(viewModel.filteredLogs.count) entries")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Theme.backgroundSecondary)
@@ -69,7 +69,7 @@ struct LogViewerView: View {
 
             Text("Real-time application logs using Apple's Unified Logging System")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
@@ -84,7 +84,7 @@ struct LogViewerView: View {
                 // Search field
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                     TextField("Search logs...", text: $viewModel.searchText)
                         .textFieldStyle(.plain)
                 }
@@ -128,7 +128,7 @@ struct LogViewerView: View {
                     .padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.red)
+                .tint(Theme.error)
 
                 // Copy all
                 Button(action: { viewModel.copyAllToClipboard() }) {
@@ -160,7 +160,7 @@ struct LogViewerView: View {
                 // Level filters
                 Text("Level:")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 ForEach(LogLevel.allCases, id: \.self) { level in
                     LogFilterChip(
@@ -253,16 +253,16 @@ struct LogViewerView: View {
         VStack(spacing: 16) {
             Image(systemName: "tray")
                 .font(.system(size: 48))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("No logs to display")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             if !viewModel.searchText.isEmpty || viewModel.selectedLevels.count < LogLevel.allCases.count || viewModel.selectedCategories.count < LogCategory.allCases.count {
                 Text("Try adjusting your filters")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
 
                 Button("Clear Filters") {
                     viewModel.searchText = ""
@@ -298,7 +298,7 @@ struct LogRowView: View {
             // Timestamp
             Text(entry.displayTimestamp)
                 .font(.system(.caption, design: .monospaced))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
                 .frame(width: 80, alignment: .leading)
 
             // Level indicator
@@ -334,7 +334,7 @@ struct LogRowView: View {
             Button(action: { viewModel.copyToClipboard(entry) }) {
                 Image(systemName: "doc.on.doc")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
             .buttonStyle(.plain)
             .help("Copy to clipboard")

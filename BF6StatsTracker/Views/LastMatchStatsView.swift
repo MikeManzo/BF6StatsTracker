@@ -33,7 +33,7 @@ struct LastMatchStatsView: View {
             // Header
             HStack {
                 Image(systemName: "clock.arrow.circlepath")
-                    .foregroundColor(.orange)
+                    .foregroundColor(Theme.warning)
                     .font(.title3)
 
                 Text("Last Match Performance")
@@ -46,12 +46,12 @@ struct LastMatchStatsView: View {
                     VStack(alignment: .trailing, spacing: 2) {
                         HStack(spacing: 4) {
                             Image(systemName: "circle.fill")
-                                .foregroundColor(.green)
+                                .foregroundColor(Theme.success)
                                 .font(.caption)
 
                             Text("Live Data")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Theme.textSecondary)
                         }
 
                         if let lastUpdated = lastUpdated {
@@ -72,7 +72,7 @@ struct LastMatchStatsView: View {
         .padding()
         .background(
             LinearGradient(
-                colors: [Color.orange.opacity(0.1), Theme.overlayColor],
+                colors: [Theme.warning.opacity(0.1), Theme.overlayColor],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -80,7 +80,7 @@ struct LastMatchStatsView: View {
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                .stroke(Theme.warning.opacity(0.3), lineWidth: 1)
         )
     }
 
@@ -169,7 +169,7 @@ struct LastMatchStatsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "target")
-                    .foregroundColor(.red)
+                    .foregroundColor(Theme.error)
 
                 Text("Combat Performance")
                     .font(.subheadline)
@@ -182,11 +182,11 @@ struct LastMatchStatsView: View {
                     Text("\(kills.total)")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.red)
+                        .foregroundColor(Theme.error)
 
                     Text("kills")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                 }
             }
 
@@ -251,7 +251,7 @@ struct LastMatchStatsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "person.3.fill")
-                    .foregroundColor(.green)
+                    .foregroundColor(Theme.success)
 
                 Text("Team Support")
                     .font(.subheadline)
@@ -281,7 +281,7 @@ struct LastMatchStatsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "flag.fill")
-                    .foregroundColor(.orange)
+                    .foregroundColor(Theme.warning)
 
                 Text("Objectives")
                     .font(.subheadline)
@@ -328,11 +328,11 @@ struct LastMatchStatsView: View {
         VStack(spacing: 12) {
             Image(systemName: "gamecontroller")
                 .font(.system(size: 40))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("No Active Match Data")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text("Start playing to see your current match stats")
                 .font(.caption)
@@ -360,7 +360,7 @@ struct LastMatchStatCard: View {
 
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
             }
 
             Text(value)
@@ -390,7 +390,7 @@ struct LastMatchStatItem: View {
 
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -407,12 +407,12 @@ struct LastMatchStatRow: View {
         HStack {
             Image(systemName: icon)
                 .font(.caption)
-                .foregroundColor(.orange)
+                .foregroundColor(Theme.warning)
                 .frame(width: 20)
 
             Text(label)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Spacer()
 

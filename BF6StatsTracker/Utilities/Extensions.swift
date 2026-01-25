@@ -56,6 +56,53 @@ enum AppColorScheme: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Theme Manager (Observable for Reactive Updates)
+
+/// ThemeManager provides reactive accent color that propagates changes to all views.
+/// Use via environment: @EnvironmentObject var themeManager: ThemeManager
+@MainActor
+class ThemeManager: ObservableObject {
+    static let shared = ThemeManager()
+
+    @Published var colorScheme: AppColorScheme = .orange
+
+    /// The current accent color based on the selected color scheme
+    var accent: Color {
+        colorScheme.primaryColor
+    }
+
+    /// Update the color scheme (called when settings change)
+    func setColorScheme(_ scheme: AppColorScheme) {
+        colorScheme = scheme
+        // Also update the static Theme.accent for backwards compatibility
+        Theme.setAccentScheme(scheme)
+    }
+
+    private init() {}
+}
+
+// MARK: - Accent Color Environment Key
+
+/// Environment key for reactive accent color access throughout the view hierarchy
+private struct AccentColorKey: EnvironmentKey {
+    static let defaultValue: Color = AppColorScheme.orange.primaryColor
+}
+
+extension EnvironmentValues {
+    /// The current accent color from settings. Use this instead of Theme.accent for reactive updates.
+    var accentColor: Color {
+        get { self[AccentColorKey.self] }
+        set { self[AccentColorKey.self] = newValue }
+    }
+}
+
+extension View {
+    /// Sets the accent color for this view and its descendants
+    func accentColor(_ color: Color) -> some View {
+        environment(\.accentColor, color)
+    }
+}
+
 // MARK: - Theme Colors (Light/Dark Mode Support)
 
 // Theme provides convenient access to Asset Catalog colors without name collisions.
@@ -82,13 +129,21 @@ enum Theme {
     static let bf6Purple = Color("BF6Purple")
     static let bf6Red = Color("BF6Red")
 
+    // Semantic Colors - Use these for consistent status/feedback colors
+    static let success = bf6Green
+    static let error = bf6Red
+    static let warning = bf6Orange
+    static let info = bf6Blue
+
     // Active accent color - dynamically updated based on selected color scheme
+    // NOTE: For reactive updates, use ThemeManager.shared.accent instead
     private static var _accentColor: AppColorScheme = .orange
 
     static func setAccentScheme(_ scheme: AppColorScheme) {
         _accentColor = scheme
     }
 
+    /// Static accent color (non-reactive). For reactive updates, use ThemeManager.shared.accent
     static var accent: Color {
         _accentColor.primaryColor
     }
@@ -272,13 +327,13 @@ struct GradientPresets {
     )
 
     static let forest = LinearGradient(
-        colors: [Theme.bf6Green, .teal],
+        colors: [Theme.bf6Green, Theme.info],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
     static let sunset = LinearGradient(
-        colors: [.yellow, Theme.bf6Orange, Theme.bf6Red],
+        colors: [Theme.warning, Theme.bf6Orange, Theme.bf6Red],
         startPoint: .leading,
         endPoint: .trailing
     )
@@ -337,13 +392,14 @@ extension KeyboardShortcut {
 // MARK: - Loading Indicator
 
 struct LoadingView: View {
+    @Environment(\.accentColor) private var accentColor
     @State private var isAnimating = false
 
     var body: some View {
         VStack(spacing: 16) {
             Circle()
                 .trim(from: 0, to: 0.7)
-                .stroke(Theme.accent, lineWidth: 3)
+                .stroke(accentColor, lineWidth: 3)
                 .frame(width: 40, height: 40)
                 .rotationEffect(.degrees(isAnimating ? 360 : 0))
                 .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)

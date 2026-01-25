@@ -53,7 +53,7 @@ struct AboutView: View {
 
                         Text("Version \(appVersion) (Build \(buildNumber))")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 .padding(.top, 20)
@@ -81,7 +81,7 @@ struct AboutView: View {
 
                         Text("2025")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.textSecondary)
                     }
                 }
                 .padding(.vertical, 12)
@@ -218,21 +218,21 @@ struct AboutView: View {
 
                     Text("BF6 Stats Tracker is an unofficial, fan-made application and is not affiliated with, endorsed by, or connected to Electronic Arts Inc. or DICE. All game content, trademarks, and copyrights are property of their respective owners.")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal)
                 .frame(maxWidth: .infinity)
-                .background(Color.orange.opacity(0.1))
+                .background(Theme.warning.opacity(0.1))
                 .cornerRadius(10)
 
                 // Footer
                 VStack(spacing: 4) {
                     Text("Made with ❤️ for the Battlefield community")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.textSecondary)
 
                     Text("2025")
                         .font(.caption2)
@@ -264,7 +264,7 @@ struct CopyrightRow: View {
 
             Text(copyright)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
 
             Text(license)
                 .font(.caption2)
@@ -295,7 +295,7 @@ struct APIAcknowledgement: View {
 
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -338,7 +338,7 @@ struct ThanksRow: View {
 
             Text(text)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.textSecondary)
         }
     }
 }
