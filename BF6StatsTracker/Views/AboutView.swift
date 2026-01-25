@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct AboutView: View {
+    @Environment(\.accentColor) private var accentColor
     @Environment(\.dismiss) private var dismiss
 
     // Get app version and build number from Info.plist
@@ -73,7 +74,7 @@ struct AboutView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [Theme.bf6Orange, Theme.bf6Red],
+                                    colors: [accentColor, Theme.bf6Red],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -305,12 +306,14 @@ struct APIAcknowledgement: View {
 struct TechBadge: View {
     let name: String
     let icon: String
+    
+    @Environment(\.accentColor) private var accentColor
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.body)
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(accentColor)
 
             Text(name)
                 .font(.caption)
@@ -320,7 +323,7 @@ struct TechBadge: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
-        .background(Theme.bf6Orange.opacity(0.1))
+        .background(accentColor.opacity(0.1))
         .cornerRadius(6)
     }
 }
@@ -328,12 +331,14 @@ struct TechBadge: View {
 struct ThanksRow: View {
     let icon: String
     let text: String
+    
+    @Environment(\.accentColor) private var accentColor
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.body)
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(accentColor)
                 .frame(width: 24)
 
             Text(text)

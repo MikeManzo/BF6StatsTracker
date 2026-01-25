@@ -19,6 +19,7 @@
 import SwiftUI
 
 struct UtilityEffectivenessView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedGadget: GadgetStats?
     @State private var sortBy: GadgetSortOption = .kills
@@ -293,7 +294,7 @@ struct UtilityEffectivenessView: View {
                         Text("\(gadget.kills)")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
 
                         Text("kills")
                             .font(.caption2)

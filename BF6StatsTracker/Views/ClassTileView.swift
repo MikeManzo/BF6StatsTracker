@@ -18,10 +18,12 @@
 import SwiftUI
 
 struct ClassTileView: View {
+    @Environment(\.accentColor) private var accentColor
+
     let classStats: ClassStats
     let position: TilePosition
     let onPositionChange: (TilePosition) -> Void
-    
+
     @State private var isHovered = false
     @State private var isExpanded = false
     
@@ -132,7 +134,7 @@ struct ClassTileView: View {
                 label: "K/D",
                 value: String(format: "%.2f", classStats.kdRatio),
                 icon: "chart.line.uptrend.xyaxis",
-                color: classStats.kdRatio >= 1.0 ? Theme.bf6Green : Theme.bf6Orange
+                color: classStats.kdRatio >= 1.0 ? Theme.bf6Green : accentColor
             )
 
             CompactStatItem(
@@ -165,7 +167,7 @@ struct ClassTileView: View {
                 VStack(spacing: 4) {
                     Text(String(format: "%.2f", classStats.kdRatio))
                         .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(classStats.kdRatio >= 1.0 ? Theme.bf6Green : Theme.bf6Orange)
+                        .foregroundColor(classStats.kdRatio >= 1.0 ? Theme.bf6Green : accentColor)
 
                     Text("K/D Ratio")
                         .font(.caption)
@@ -308,6 +310,8 @@ struct ExpandedStatCircle: View {
 // MARK: - Detail Stat Row
 
 struct DetailStatRow: View {
+    @Environment(\.accentColor) private var accentColor
+    
     let label: String
     let value: String
     let icon: String
@@ -316,7 +320,7 @@ struct DetailStatRow: View {
         HStack {
             Image(systemName: icon)
                 .font(.caption)
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(accentColor)
                 .frame(width: 20)
 
             Text(label)

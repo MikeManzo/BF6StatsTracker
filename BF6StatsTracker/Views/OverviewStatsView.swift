@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct OverviewStatsView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @EnvironmentObject var historyManager: HistoryManager
 
@@ -32,12 +33,12 @@ struct OverviewStatsView: View {
             if viewModel.hasPlayerData && !viewModel.hasCompleteData {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(Theme.bf6Orange)
+                        .foregroundColor(accentColor)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Incomplete Data")
                             .font(.headline)
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
 
                         Text("Missing: \(viewModel.missingDataSections.joined(separator: ", "))")
                             .font(.caption)
@@ -50,7 +51,7 @@ struct OverviewStatsView: View {
                         Text("\(Int(viewModel.dataCompletenessPercentage))%")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
 
                         Button(action: {
                             Task {
@@ -62,21 +63,21 @@ struct OverviewStatsView: View {
                                 Text("Retry")
                             }
                             .font(.caption)
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Theme.bf6Orange.opacity(0.2))
+                            .background(accentColor.opacity(0.2))
                             .cornerRadius(6)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding()
-                .background(Theme.bf6Orange.opacity(0.1))
+                .background(accentColor.opacity(0.1))
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Theme.bf6Orange.opacity(0.3), lineWidth: 1)
+                        .stroke(accentColor.opacity(0.3), lineWidth: 1)
                 )
             }
             // Top Stats Cards - Responsive Grid
@@ -204,7 +205,7 @@ struct OverviewStatsView: View {
                                 title: "Damage/Match",
                                 value: String(format: "%.0f", stats.damagePerMatch),
                                 icon: "bolt.fill",
-                                color: Theme.bf6Orange,
+                                color: accentColor,
                                 subtitle: "Avg per game"
                             )
                         }
@@ -316,13 +317,15 @@ struct TrendArrow: View {
 // MARK: - Section Header
 
 struct SectionHeader: View {
+    @Environment(\.accentColor) private var accentColor
+
     let title: String
     let icon: String
 
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(accentColor)
 
             Text(title)
                 .font(.headline)
@@ -358,6 +361,8 @@ struct StatRow: View {
 // MARK: - Rank Card with Decorative Icon
 
 struct RankCard: View {
+    @Environment(\.accentColor) private var accentColor
+
     let stats: PlayerStats
 
     var body: some View {
@@ -365,7 +370,7 @@ struct RankCard: View {
             // Decorative rank icon in background
             Image(systemName: stats.isSRank ? "crown.fill" : "shield.fill")
                 .font(.system(size: 70))
-                .foregroundStyle(stats.isSRank ? Theme.bf6Orange.opacity(0.12) : Theme.bf6Orange.opacity(0.1))
+                .foregroundStyle(stats.isSRank ? accentColor.opacity(0.12) : accentColor.opacity(0.1))
                 .offset(x: -10, y: 0)
 
             // Card content - matching StatCard structure
@@ -374,7 +379,7 @@ struct RankCard: View {
                 HStack(spacing: 6) {
                     Image(systemName: stats.isSRank ? "crown.fill" : "chevron.up.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(Theme.bf6Orange)
+                        .foregroundStyle(accentColor)
 
                     Text("RANK (Estimated)")
                         .font(.caption2)
@@ -416,7 +421,7 @@ struct RankCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(
-                    Theme.bf6Orange.opacity(0.2),
+                    accentColor.opacity(0.2),
                     lineWidth: 1
                 )
         )

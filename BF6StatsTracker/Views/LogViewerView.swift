@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct LogViewerView: View {
+    @Environment(\.accentColor) private var accentColor
     @StateObject private var viewModel = LogViewModel()
     @State private var selectedLogId: UUID?
 
@@ -48,7 +49,7 @@ struct LogViewerView: View {
             HStack {
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.title)
-                    .foregroundColor(Theme.bf6Orange)
+                    .foregroundColor(accentColor)
 
                 Text("System Logs")
                     .font(.title)
@@ -222,11 +223,11 @@ struct LogViewerView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(viewModel.filteredLogs.enumerated()), id: \.element.id) { index, entry in
-                        LogRowView(entry: entry, viewModel: viewModel)
+                        LogRowView(entry: entry, viewModel: viewModel, accentColor: accentColor)
                             .id(entry.id)
                             .background(
                                 selectedLogId == entry.id
-                                    ? Theme.bf6Orange.opacity(0.1)
+                                    ? accentColor.opacity(0.1)
                                     : (index.isMultiple(of: 2) ? Theme.backgroundSecondary.opacity(0.3) : Color.clear)
                             )
                             .onTapGesture {
@@ -292,6 +293,7 @@ struct LogViewerView: View {
 struct LogRowView: View {
     let entry: LogEntry
     let viewModel: LogViewModel
+    let accentColor: Color
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -319,7 +321,7 @@ struct LogRowView: View {
                 .foregroundColor(Theme.textPrimary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Theme.bf6Orange.opacity(0.2))
+                .background(accentColor.opacity(0.2))
                 .cornerRadius(4)
                 .frame(width: 140, alignment: .leading)
 

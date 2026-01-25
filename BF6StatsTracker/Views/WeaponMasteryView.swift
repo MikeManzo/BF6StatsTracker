@@ -20,6 +20,7 @@ import SwiftUI
 import Charts
 
 struct WeaponMasteryView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedWeapon: WeaponStats?
     @State private var selectedCategory: WeaponCategory?
@@ -31,7 +32,7 @@ struct WeaponMasteryView: View {
                 HStack {
                     Image(systemName: "scope")
                         .font(.title)
-                        .foregroundColor(Theme.bf6Orange)
+                        .foregroundColor(accentColor)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Weapon Mastery Analytics")
@@ -93,7 +94,7 @@ struct WeaponMasteryView: View {
                 .foregroundColor(selectedCategory == category ? Theme.selectedText : Theme.textPrimary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(selectedCategory == category ? Theme.bf6Orange : Theme.overlayColor)
+                .background(selectedCategory == category ? accentColor : Theme.overlayColor)
                 .cornerRadius(8)
         }
         .buttonStyle(.plain)
@@ -182,7 +183,7 @@ struct WeaponMasteryView: View {
                         Text("\(weapon.kills)")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
 
                         Text("kills")
                             .font(.caption2)
@@ -204,7 +205,7 @@ struct WeaponMasteryView: View {
                 }
             }
             .padding()
-            .background(selectedWeapon?.weaponId == weapon.weaponId ? Theme.bf6Orange.opacity(0.2) : Theme.overlayColor)
+            .background(selectedWeapon?.weaponId == weapon.weaponId ? accentColor.opacity(0.2) : Theme.overlayColor)
             .cornerRadius(8)
         }
         .buttonStyle(.plain)

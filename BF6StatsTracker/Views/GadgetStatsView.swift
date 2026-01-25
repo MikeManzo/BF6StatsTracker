@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct GadgetStatsView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedGadgetType: GadgetType?
     @State private var sortOption: GadgetSortOption = .kills
@@ -132,7 +133,7 @@ struct GadgetStatsView: View {
                 title: "All Types",
                 icon: "square.grid.2x2.fill",
                 isSelected: selectedGadgetType == nil,
-                color: Theme.bf6Orange
+                color: accentColor
             ) {
                 selectedGadgetType = nil
             }
@@ -210,130 +211,164 @@ struct GadgetTypeFilterButton: View {
 struct GadgetCard: View {
     let gadget: GadgetStats
     @State private var isExpanded = false
+    @Environment(\.accentColor) private var accentColor
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 12) {
-                // Gadget Image
-                AsyncGameImage(
-                    url: URL(string: gadget.image),
-                    placeholder: Image(systemName: "wrench.fill")
-                )
-                .frame(width: 60, height: 60)
-                .background(Theme.overlayColor)
-                .cornerRadius(12)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(gadget.gadgetName)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                    
-                    Text(gadget.type)
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                
-                Spacer()
-                
-                // Primary Stat
-                VStack(alignment: .trailing, spacing: 2) {
-                    if gadget.kills > 0 {
-                        Text("\(gadget.kills)")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundColor(Theme.error)
-                        Text("kills")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    } else {
-                        Text("\(gadget.uses)")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundColor(Theme.info)
-                        Text("uses")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-                }
-            }
+            headerSection
             
             Divider()
                 .padding(.vertical, 12)
             
-            // Stats Grid
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                GadgetStatItem(
-                    icon: "target",
-                    label: "Kills",
-                    value: "\(gadget.kills)",
-                    color: Theme.bf6Red
-                )
-                
-                GadgetStatItem(
-                    icon: "hand.tap.fill",
-                    label: "Uses",
-                    value: "\(gadget.uses)",
-                    color: Theme.bf6Blue
-                )
-                
-                GadgetStatItem(
-                    icon: "flame.fill",
-                    label: "Damage",
-                    value: gadget.damageDealt.formatted(.number.notation(.compactName)),
-                    color: Theme.bf6Orange
-                )
-                
-                GadgetStatItem(
-                    icon: "car.fill",
-                    label: "Vehicles",
-                    value: "\(gadget.vehiclesDestroyed)",
-                    color: Theme.bf6Green
-                )
-            }
+            statsGrid
             
-            // Expand Button
-            Button {
-                withAnimation(.spring(response: 0.3)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                HStack {
-                    Spacer()
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                    Spacer()
-                }
-                .padding(.top, 8)
-            }
-            .buttonStyle(.plain)
+            expandButton
             
-            // Expanded Details
             if isExpanded {
-                Divider()
-                    .padding(.vertical, 8)
-                
-                VStack(spacing: 8) {
-                    DetailRow(label: "Spawns from Gadget", value: "\(gadget.spawns)")
-                    DetailRow(label: "Time Used", value: formatTime(gadget.timePlayed))
-                    DetailRow(label: "Efficiency", value: calculateEfficiency())
-                }
+                expandedDetails
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Theme.cardBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Theme.overlayColor, lineWidth: 1)
-        )
+        .background(cardBackground)
+        .overlay(cardBorder)
     }
+    
+    // MARK: - Subviews
+    
+    private var headerSection: some View {
+        HStack(spacing: 12) {
+            gadgetImage
+            gadgetInfo
+            Spacer()
+            primaryStat
+        }
+    }
+    
+    private var gadgetImage: some View {
+        AsyncGameImage(
+            url: URL(string: gadget.image),
+            placeholder: Image(systemName: "wrench.fill")
+        )
+        .frame(width: 60, height: 60)
+        .background(Theme.overlayColor)
+        .cornerRadius(12)
+    }
+    
+    private var gadgetInfo: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(gadget.gadgetName)
+                .font(.headline)
+                .fontWeight(.bold)
+            
+            Text(gadget.type)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+        }
+    }
+    
+    private var primaryStat: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            if gadget.kills > 0 {
+                Text("\(gadget.kills)")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundColor(Theme.error)
+                Text("kills")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            } else {
+                Text("\(gadget.uses)")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundColor(Theme.info)
+                Text("uses")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
+        }
+    }
+    
+    private var statsGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible()),
+            GridItem(.flexible()),
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ], spacing: 12) {
+            GadgetStatItem(
+                icon: "target",
+                label: "Kills",
+                value: "\(gadget.kills)",
+                color: Theme.bf6Red
+            )
+            
+            GadgetStatItem(
+                icon: "hand.tap.fill",
+                label: "Uses",
+                value: "\(gadget.uses)",
+                color: Theme.bf6Blue
+            )
+            
+            GadgetStatItem(
+                icon: "flame.fill",
+                label: "Damage",
+                value: damageValue,
+                color: accentColor
+            )
+            
+            GadgetStatItem(
+                icon: "car.fill",
+                label: "Vehicles",
+                value: "\(gadget.vehiclesDestroyed)",
+                color: Theme.bf6Green
+            )
+        }
+    }
+    
+    private var damageValue: String {
+        gadget.damageDealt.formatted(.number.notation(.compactName))
+    }
+    
+    private var expandButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.3)) {
+                isExpanded.toggle()
+            }
+        } label: {
+            HStack {
+                Spacer()
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                Spacer()
+            }
+            .padding(.top, 8)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private var expandedDetails: some View {
+        Group {
+            Divider()
+                .padding(.vertical, 8)
+            
+            VStack(spacing: 8) {
+                DetailRow(label: "Spawns from Gadget", value: "\(gadget.spawns)")
+                DetailRow(label: "Time Used", value: formatTime(gadget.timePlayed))
+                DetailRow(label: "Efficiency", value: calculateEfficiency())
+            }
+        }
+    }
+    
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Theme.cardBackground)
+    }
+    
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .stroke(Theme.overlayColor, lineWidth: 1)
+    }
+    
+    // MARK: - Helper Methods
     
     private func formatTime(_ seconds: Int) -> String {
         let hours = seconds / 3600

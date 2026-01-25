@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct WeaponStatsView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedCategory: WeaponCategory?
     @State private var sortOption: WeaponSortOption = .kills
@@ -134,7 +135,7 @@ struct WeaponStatsView: View {
                     title: "All",
                     icon: "square.grid.2x2.fill",
                     isSelected: selectedCategory == nil,
-                    color: Theme.bf6Orange
+                    color: accentColor
                 ) {
                     selectedCategory = nil
                 }
@@ -199,7 +200,7 @@ struct WeaponStatsView: View {
     private func categoryColor(for category: WeaponCategory) -> Color {
         switch category {
         case .assaultRifles: return Theme.bf6Red
-        case .carbines: return Theme.bf6Orange
+        case .carbines: return accentColor
         case .smgs: return .yellow
         case .lmgs: return Theme.bf6Green
         case .dmrs: return .teal
@@ -244,95 +245,120 @@ struct CategoryPill: View {
 struct WeaponCard: View {
     let weapon: WeaponStats
     @State private var isHovered = false
+    @Environment(\.accentColor) private var accentColor
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 12) {
-                // Weapon Image
-                AsyncGameImage(
-                    url: URL(string: weapon.image),
-                    placeholder: Image(systemName: "scope")
-                )
-                .frame(width: 70, height: 50)
-                .background(Theme.overlayColor)
-                .cornerRadius(8)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(weapon.weaponName)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .lineLimit(1)
-                        .foregroundColor(Theme.textPrimary)
-
-                    Text(weapon.type)
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-
-                Spacer()
-
-                // Kills Badge
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(weapon.kills)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.bf6Red)
-
-                    Text("kills")
-                        .font(.caption2)
-                        .foregroundColor(Theme.textSecondary)
-                }
-            }
-
+            headerSection
+            
             Divider()
                 .padding(.vertical, 12)
-
-            // Stats Grid
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                WeaponStatItem(label: "Kills", value: "\(weapon.kills)", color: Theme.bf6Red)
-                WeaponStatItem(label: "Accuracy", value: String(format: "%.1f%%", weapon.accuracy), color: Theme.bf6Blue)
-                WeaponStatItem(label: "Headshots", value: "\(weapon.headshots)", color: .yellow)
-                WeaponStatItem(label: "HS %", value: String(format: "%.1f%%", weapon.headshotPercentage), color: Theme.bf6Purple)
-                WeaponStatItem(label: "KPM", value: String(format: "%.2f", weapon.killsPerMinute), color: Theme.bf6Orange)
-                WeaponStatItem(label: "Time", value: formatTime(weapon.timePlayed), color: Theme.textSecondary)
-            }
-
-            // Additional Stats (on hover)
+            
+            statsGrid
+            
             if isHovered {
-                Divider()
-                    .padding(.vertical, 8)
-
-                HStack {
-                    Label("\(weapon.shotsFired.formatted()) shots", systemImage: "burst.fill")
-                    Spacer()
-                    Label("\(weapon.shotsHit.formatted()) hits", systemImage: "target")
-                    Spacer()
-                    Label("\(weapon.multiKills) multi-kills", systemImage: "star.fill")
-                }
-                .font(.caption)
-                .foregroundColor(Theme.textSecondary)
+                additionalStats
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Theme.cardBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Theme.borderColor.opacity(isHovered ? 1.0 : 0.5), lineWidth: 1)
-        )
+        .background(cardBackground)
+        .overlay(cardBorder)
         .scaleEffect(isHovered ? 1.02 : 1.0)
         .animation(.spring(response: 0.3), value: isHovered)
         .onHover { hovering in
             isHovered = hovering
         }
     }
+    
+    // MARK: - Subviews
+    
+    private var headerSection: some View {
+        HStack(spacing: 12) {
+            weaponImage
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weapon.weaponName)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .lineLimit(1)
+                    .foregroundColor(Theme.textPrimary)
 
+                Text(weapon.type)
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+
+            Spacer()
+            
+            killsBadge
+        }
+    }
+    
+    private var weaponImage: some View {
+        AsyncGameImage(
+            url: URL(string: weapon.image),
+            placeholder: Image(systemName: "scope")
+        )
+        .frame(width: 70, height: 50)
+        .background(Theme.overlayColor)
+        .cornerRadius(8)
+    }
+    
+    private var killsBadge: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text("\(weapon.kills)")
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundColor(Theme.bf6Red)
+
+            Text("kills")
+                .font(.caption2)
+                .foregroundColor(Theme.textSecondary)
+        }
+    }
+    
+    private var statsGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible()),
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ], spacing: 12) {
+            WeaponStatItem(label: "Kills", value: "\(weapon.kills)", color: Theme.bf6Red)
+            WeaponStatItem(label: "Accuracy", value: String(format: "%.1f%%", weapon.accuracy), color: Theme.bf6Blue)
+            WeaponStatItem(label: "Headshots", value: "\(weapon.headshots)", color: .yellow)
+            WeaponStatItem(label: "HS %", value: String(format: "%.1f%%", weapon.headshotPercentage), color: Theme.bf6Purple)
+            WeaponStatItem(label: "KPM", value: String(format: "%.2f", weapon.killsPerMinute), color: accentColor)
+            WeaponStatItem(label: "Time", value: formatTime(weapon.timePlayed), color: Theme.textSecondary)
+        }
+    }
+    
+    private var additionalStats: some View {
+        VStack(spacing: 8) {
+            Divider()
+            
+            HStack {
+                Label("\(weapon.shotsFired.formatted()) shots", systemImage: "burst.fill")
+                Spacer()
+                Label("\(weapon.shotsHit.formatted()) hits", systemImage: "target")
+                Spacer()
+                Label("\(weapon.multiKills) multi-kills", systemImage: "star.fill")
+            }
+            .font(.caption)
+            .foregroundColor(Theme.textSecondary)
+        }
+    }
+    
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Theme.cardBackground)
+    }
+    
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .stroke(Theme.borderColor.opacity(isHovered ? 1.0 : 0.5), lineWidth: 1)
+    }
+
+    // MARK: - Helpers
+    
     private func formatTime(_ seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60

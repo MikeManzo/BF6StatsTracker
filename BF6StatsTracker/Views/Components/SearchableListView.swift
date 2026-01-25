@@ -20,6 +20,8 @@ import SwiftUI
 // MARK: - Searchable List View
 
 struct SearchableListView<Item: Identifiable, FilterType: Hashable, Content: View>: View {
+    @Environment(\.accentColor) private var accentColor
+
     let items: [Item]
     let searchPlaceholder: String
     let filters: [FilterOption<FilterType>]?
@@ -125,7 +127,7 @@ struct SearchableListView<Item: Identifiable, FilterType: Hashable, Content: Vie
                             title: "All",
                             icon: "square.grid.2x2.fill",
                             isSelected: selectedFilter == nil,
-                            color: Theme.bf6Orange
+                            color: accentColor
                         ) {
                             selectedFilter = nil
                         }

@@ -20,6 +20,7 @@ import Charts
 import SwiftData
 
 struct PerformanceChartsView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @StateObject private var historyManager = HistoryManager.shared
 
@@ -243,7 +244,7 @@ struct PerformanceChartsView: View {
                             // Average line
                             if avgKD > 0 {
                                 RuleMark(y: .value("Average", avgKD))
-                                    .foregroundStyle(Theme.bf6Orange)
+                                    .foregroundStyle(accentColor)
                                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                             }
                         }
@@ -274,7 +275,7 @@ struct PerformanceChartsView: View {
                         HStack(spacing: 16) {
                             LegendItem(color: Theme.success, text: "Best")
                             LegendItem(color: Theme.error, text: "Worst")
-                            LegendItem(color: Theme.bf6Orange, text: "Average", isDashed: true)
+                            LegendItem(color: accentColor, text: "Average", isDashed: true)
                         }
                         .font(.caption2)
                     }
@@ -307,7 +308,7 @@ struct PerformanceChartsView: View {
                                 // Average line
                                 if avgKD > 0 {
                                     RuleMark(y: .value("Average", avgKD))
-                                        .foregroundStyle(Theme.bf6Orange)
+                                        .foregroundStyle(accentColor)
                                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                                 }
                             }
@@ -472,12 +473,12 @@ struct PerformanceChartsView: View {
 
                     // Average line
                     RuleMark(y: .value("Average", avgKills))
-                        .foregroundStyle(Theme.bf6Orange)
+                        .foregroundStyle(accentColor)
                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                         .annotation(position: .top, alignment: .trailing) {
                             Text("Avg: \(Int(avgKills))")
                                 .font(.caption2)
-                                .foregroundColor(Theme.bf6Orange)
+                                .foregroundColor(accentColor)
                                 .padding(4)
                                 .background(Theme.cardBackground)
                                 .cornerRadius(4)
@@ -1029,7 +1030,7 @@ struct PerformanceChartsView: View {
     private func gradientForKills(_ kills: Int, avg: Double, max: Int) -> LinearGradient {
         let color: Color
         if Double(kills) >= avg * 1.2 { color = Theme.bf6Green }
-        else if Double(kills) >= avg * 0.8 { color = Theme.bf6Orange }
+        else if Double(kills) >= avg * 0.8 { color = accentColor }
         else { color = Theme.bf6Red }
 
         return LinearGradient(colors: [color, color.opacity(0.6)], startPoint: .top, endPoint: .bottom)

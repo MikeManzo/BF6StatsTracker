@@ -19,6 +19,7 @@ import SwiftUI
 import SwiftData
 
 struct MapsPlayedCard: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var historyManager: HistoryManager
 
     var body: some View {
@@ -62,7 +63,7 @@ struct MapsPlayedCard: View {
             // Map icon
             Image(systemName: "map.circle.fill")
                 .font(.system(size: 40))
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(accentColor)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(mapActivity.mapName)
@@ -88,11 +89,11 @@ struct MapsPlayedCard: View {
             Spacer()
         }
         .padding()
-        .background(Theme.bf6Orange.opacity(0.1))
+        .background(accentColor.opacity(0.1))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Theme.bf6Orange.opacity(0.3), lineWidth: 1)
+                .stroke(accentColor.opacity(0.3), lineWidth: 1)
         )
     }
 
@@ -102,7 +103,7 @@ struct MapsPlayedCard: View {
                 HStack(spacing: 12) {
                     // Map bullet
                     Circle()
-                        .fill(Theme.bf6Orange)
+                        .fill(accentColor)
                         .frame(width: 8, height: 8)
 
                     VStack(alignment: .leading, spacing: 2) {

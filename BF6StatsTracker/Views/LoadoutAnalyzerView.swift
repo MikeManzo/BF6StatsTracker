@@ -19,6 +19,7 @@ import SwiftUI
 import Charts
 
 struct LoadoutAnalyzerView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
 
     @State private var selectedCategory: LoadoutCategory = .overview
@@ -106,7 +107,7 @@ struct LoadoutAnalyzerView: View {
                         .foregroundColor(selectedCategory == category ? Theme.selectedText : Theme.textSecondary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(selectedCategory == category ? Theme.bf6Orange : Theme.overlayColor)
+                        .background(selectedCategory == category ? accentColor : Theme.overlayColor)
                         .cornerRadius(8)
                     }
                     .buttonStyle(.plain)

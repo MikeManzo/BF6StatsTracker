@@ -518,6 +518,8 @@ struct SessionHistoryView: View {
 // MARK: - Supporting Views
 
 struct DaySectionHeader: View {
+    @Environment(\.accentColor) private var accentColor
+
     let date: Date
     let snapshotCount: Int
     let isCollapsed: Bool
@@ -544,13 +546,13 @@ struct DaySectionHeader: View {
         Button(action: onToggle) {
             HStack {
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
-                    .foregroundColor(Theme.bf6Orange)
+                    .foregroundColor(accentColor)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .frame(width: 12)
 
                 Image(systemName: "calendar")
-                    .foregroundColor(Theme.bf6Orange)
+                    .foregroundColor(accentColor)
                     .font(.headline)
 
                 Text(dateText)
@@ -579,6 +581,8 @@ struct DaySectionHeader: View {
 }
 
 struct SnapshotRow: View {
+    @Environment(\.accentColor) private var accentColor
+
     let snapshot: StatsSnapshot
     let onDelete: () -> Void
     @State private var showingMapsDetail = false
@@ -765,7 +769,7 @@ struct SnapshotRow: View {
             HStack {
                 Image(systemName: "map.fill")
                     .font(.caption)
-                    .foregroundColor(Theme.bf6Orange)
+                    .foregroundColor(accentColor)
 
                 Text("Maps Played")
                     .font(.caption)
@@ -784,7 +788,7 @@ struct SnapshotRow: View {
                 ForEach(maps.prefix(6)) { mapActivity in
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(Theme.bf6Orange)
+                            .fill(accentColor)
                             .frame(width: 4, height: 4)
 
                         Text(mapActivity.mapName)
@@ -797,10 +801,10 @@ struct SnapshotRow: View {
                         Text("\(mapActivity.matchesPlayed)")
                             .font(.caption2)
                             .fontWeight(.semibold)
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Theme.bf6Orange.opacity(0.1))
+                            .background(accentColor.opacity(0.1))
                             .cornerRadius(4)
                     }
                 }

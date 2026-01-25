@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct XPCalculatorView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
 
     // Input fields
@@ -69,7 +70,7 @@ struct XPCalculatorView: View {
             HStack {
                 Image(systemName: "chart.bar.doc.horizontal")
                     .font(.title)
-                    .foregroundColor(Theme.bf6Orange)
+                    .foregroundColor(accentColor)
 
                 Text("XP Calculator")
                     .font(.title)
@@ -177,7 +178,7 @@ struct XPCalculatorView: View {
 
                     Text("\(Int(result.totalXP))")
                         .font(.system(size: 48, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.bf6Orange)
+                        .foregroundColor(accentColor)
 
                     Text("Total Experience Points")
                         .font(.caption2)
@@ -198,7 +199,7 @@ struct XPCalculatorView: View {
             .padding()
             .background(
                 LinearGradient(
-                    colors: [Theme.bf6Orange.opacity(0.2), Theme.backgroundSecondary],
+                    colors: [accentColor.opacity(0.2), Theme.backgroundSecondary],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -271,7 +272,7 @@ struct XPCalculatorView: View {
                 HStack {
                     HStack {
                         Image(systemName: "sum")
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
 
                         Text("Total XP")
                             .font(.subheadline)
@@ -283,7 +284,7 @@ struct XPCalculatorView: View {
                     Text("\(Int(result.totalXP))")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(Theme.bf6Orange)
+                        .foregroundColor(accentColor)
                 }
             }
 
@@ -377,7 +378,7 @@ struct XPCalculatorView: View {
             }
 
             ProgressView(value: progress, total: 1.0)
-                .tint(Theme.bf6Orange)
+                .tint(accentColor)
                 .frame(width: 120)
         }
     }
@@ -438,6 +439,8 @@ struct XPCalculation {
 // MARK: - Mode Selector Card
 
 struct ModeSelectorCard: View {
+    @Environment(\.accentColor) private var accentColor
+
     let mode: ProgressionMode
     let isSelected: Bool
     let action: () -> Void
@@ -463,11 +466,11 @@ struct ModeSelectorCard: View {
             }
             .padding()
             .frame(width: 160, height: 80)
-            .background(isSelected ? Theme.bf6Orange.opacity(0.2) : Theme.backgroundSecondary)
+            .background(isSelected ? accentColor.opacity(0.2) : Theme.backgroundSecondary)
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Theme.bf6Orange : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? accentColor : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)

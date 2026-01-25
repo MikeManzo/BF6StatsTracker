@@ -19,6 +19,7 @@
 import SwiftUI
 
 struct VehicleSpecialistView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedVehicle: VehicleStats?
     @State private var selectedCategory: VehicleCategory?
@@ -30,7 +31,7 @@ struct VehicleSpecialistView: View {
                 HStack {
                     Image(systemName: "car.fill")
                         .font(.title)
-                        .foregroundColor(Theme.bf6Orange)
+                        .foregroundColor(accentColor)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Vehicle Specialist Dashboard")
@@ -222,7 +223,7 @@ struct VehicleSpecialistView: View {
                 .foregroundColor(selectedCategory == category ? Theme.selectedText : Theme.textPrimary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(selectedCategory == category ? Theme.bf6Orange : Theme.overlayColor)
+                .background(selectedCategory == category ? accentColor : Theme.overlayColor)
                 .cornerRadius(8)
         }
         .buttonStyle(.plain)
@@ -360,7 +361,7 @@ struct VehicleSpecialistView: View {
                         Text("\(vehicle.kills)")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(Theme.bf6Orange)
+                            .foregroundColor(accentColor)
 
                         Text("kills")
                             .font(.caption2)
@@ -382,7 +383,7 @@ struct VehicleSpecialistView: View {
                 }
             }
             .padding()
-            .background(selectedVehicle?.vehicleId == vehicle.vehicleId ? Theme.bf6Orange.opacity(0.2) : Theme.overlayColor)
+            .background(selectedVehicle?.vehicleId == vehicle.vehicleId ? accentColor.opacity(0.2) : Theme.overlayColor)
             .cornerRadius(8)
         }
         .buttonStyle(.plain)

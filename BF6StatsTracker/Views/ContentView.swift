@@ -18,6 +18,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @StateObject private var accountStore = EAAccountStore.shared
     @State private var showingSearch = false
@@ -464,7 +465,7 @@ struct ContentView: View {
                         .padding(.vertical, 10)
                         .background(
                             viewModel.selectedSubTab == subTab ?
-                            Theme.bf6Orange.opacity(0.3) :
+                            accentColor.opacity(0.3) :
                             Color.clear
                         )
                         .cornerRadius(8)
@@ -493,7 +494,7 @@ struct ContentView: View {
                 // Background pulse circles
                 ForEach(0..<3) { index in
                     Circle()
-                        .stroke(Theme.bf6Orange.opacity(0.3), lineWidth: 3)
+                        .stroke(accentColor.opacity(0.3), lineWidth: 3)
                         .frame(width: 140, height: 140)
                         .scaleEffect(pulseScale(for: index))
                         .opacity(pulseOpacity(for: index))
@@ -504,7 +505,7 @@ struct ContentView: View {
                     .font(.system(size: 64, weight: .bold))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [Theme.bf6Orange, Theme.bf6Red],
+                            colors: [accentColor, Theme.bf6Red],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -603,7 +604,7 @@ struct ContentView: View {
                         .frame(minWidth: 280)
                         .background(
                             LinearGradient(
-                                colors: [Theme.bf6Orange, Theme.bf6Red],
+                                colors: [accentColor, Theme.bf6Red],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -657,7 +658,7 @@ struct ContentView: View {
                         .frame(minWidth: 280)
                         .background(
                             LinearGradient(
-                                colors: [Theme.bf6Orange, Theme.bf6Red],
+                                colors: [accentColor, Theme.bf6Red],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -865,6 +866,8 @@ extension NSBezierPath {
 // MARK: - Feature Row
 
 struct FeatureRow: View {
+    @Environment(\.accentColor) private var accentColor
+
     let icon: String
     let text: String
 
@@ -872,7 +875,7 @@ struct FeatureRow: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(accentColor)
                 .frame(width: 30)
 
             Text(text)

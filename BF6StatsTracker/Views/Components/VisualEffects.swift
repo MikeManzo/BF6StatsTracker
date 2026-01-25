@@ -290,6 +290,7 @@ struct AchievementBadge: View {
 // MARK: - BF6 Loading Indicator
 
 struct BF6LoadingIndicator: View {
+    @Environment(\.accentColor) private var accentColor
     @State private var rotation: Double = 0
     let size: CGFloat
 
@@ -304,7 +305,7 @@ struct BF6LoadingIndicator: View {
                 .trim(from: 0.2, to: 1.0)
                 .stroke(
                     AngularGradient(
-                        colors: [Theme.bf6Orange, Theme.bf6Red, Theme.bf6Orange],
+                        colors: [accentColor, Theme.bf6Red, accentColor],
                         center: .center
                     ),
                     style: StrokeStyle(lineWidth: 3, lineCap: .round)
@@ -315,7 +316,7 @@ struct BF6LoadingIndicator: View {
             // Inner icon
             Image(systemName: "chart.bar.fill")
                 .font(.system(size: size * 0.4))
-                .foregroundColor(Theme.bf6Orange)
+                .foregroundColor(accentColor)
         }
         .onAppear {
             withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {

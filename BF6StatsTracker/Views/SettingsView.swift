@@ -19,6 +19,7 @@ import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
@@ -266,15 +267,15 @@ struct SettingsView: View {
                             if menuBarOnlyMode {
                                 HStack(spacing: 8) {
                                     Image(systemName: "info.circle.fill")
-                                        .foregroundColor(Theme.bf6Orange)
+                                        .foregroundColor(accentColor)
                                         .font(.caption)
 
                                     Text("App will restart to apply this change")
                                         .font(.caption)
-                                        .foregroundColor(Theme.bf6Orange)
+                                        .foregroundColor(accentColor)
                                 }
                                 .padding(8)
-                                .background(Theme.bf6Orange.opacity(0.1))
+                                .background(accentColor.opacity(0.1))
                                 .cornerRadius(8)
                             }
                         }

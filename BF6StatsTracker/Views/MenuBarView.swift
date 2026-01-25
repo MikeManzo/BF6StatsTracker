@@ -18,8 +18,9 @@
 import SwiftUI
 
 struct MenuBarView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
-    
+
     var body: some View {
         VStack(spacing: 0) {
             if viewModel.hasPlayerData, let stats = viewModel.playerStats {
@@ -62,7 +63,7 @@ struct MenuBarView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Theme.bf6Orange, .yellow],
+                            colors: [accentColor, .yellow],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -155,7 +156,7 @@ struct MenuBarView: View {
                     icon: "chart.line.uptrend.xyaxis",
                     label: "K/D Ratio",
                     value: String(format: "%.2f", stats.kdRatio),
-                    color: stats.kdRatio >= 1 ? Theme.bf6Green : Theme.bf6Orange,
+                    color: stats.kdRatio >= 1 ? Theme.bf6Green : accentColor,
                     tooltip: "Kill/Death ratio - higher is better"
                 )
 
@@ -208,7 +209,7 @@ struct MenuBarView: View {
                             icon: "trophy.fill",
                             label: "Accolades",
                             value: formatXP(xp.accolades),
-                            color: Theme.bf6Orange,
+                            color: accentColor,
                             tooltip: "XP earned from accolades and achievements"
                         )
                     }
@@ -262,7 +263,7 @@ struct MenuBarView: View {
                 Text(String(format: "%.2f", classStats.kdRatio))
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(classStats.kdRatio >= 1 ? Theme.bf6Green : Theme.bf6Orange)
+                    .foregroundColor(classStats.kdRatio >= 1 ? Theme.bf6Green : accentColor)
             }
             .padding(10)
             .background(Theme.overlayColor)
@@ -438,6 +439,7 @@ struct MenuBarView: View {
 // MARK: - Menu Bar Mode Toggle
 
 struct MenuBarModeToggle: View {
+    @Environment(\.accentColor) private var accentColor
     @ObservedObject var viewModel: StatsViewModel
     @State private var isMenuBarOnly: Bool = false
     @State private var isHovering: Bool = false
@@ -448,7 +450,7 @@ struct MenuBarModeToggle: View {
             // Icon
             Image(systemName: isMenuBarOnly ? "menubar.rectangle" : "macwindow.badge.plus")
                 .font(.subheadline)
-                .foregroundColor(isMenuBarOnly ? Theme.bf6Orange : Theme.bf6Blue)
+                .foregroundColor(isMenuBarOnly ? accentColor : Theme.bf6Blue)
                 .frame(width: 20)
 
             // Label and description
@@ -468,7 +470,7 @@ struct MenuBarModeToggle: View {
             // Toggle Switch
             Toggle("", isOn: $isMenuBarOnly)
                 .labelsHidden()
-                .toggleStyle(SwitchToggleStyle(tint: Theme.bf6Orange))
+                .toggleStyle(SwitchToggleStyle(tint: accentColor))
                 .scaleEffect(0.8)
                 .onChange(of: isMenuBarOnly) { oldValue, newValue in
                     // Only handle changes after initialization to prevent restart loop
@@ -484,7 +486,7 @@ struct MenuBarModeToggle: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isMenuBarOnly ? Theme.bf6Orange.opacity(0.3) : Color.clear, lineWidth: 1)
+                .stroke(isMenuBarOnly ? accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
         )
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.2)) {

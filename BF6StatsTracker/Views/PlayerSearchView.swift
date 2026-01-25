@@ -19,6 +19,7 @@
 import SwiftUI
 
 struct PlayerSearchView: View {
+    @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var viewModel: StatsViewModel
     @Environment(\.dismiss) var dismiss
 
@@ -342,6 +343,8 @@ struct PlayerPreviewView: View {
     let platform: Platform
     let onReplace: () -> Void
     let onCancel: () -> Void
+    
+    @Environment(\.accentColor) private var accentColor
 
     var body: some View {
         VStack(spacing: 0) {
@@ -385,7 +388,7 @@ struct PlayerPreviewView: View {
                             title: "Rank",
                             value: "\(playerStats.rank)",
                             icon: "star.fill",
-                            color: Theme.bf6Orange
+                            color: accentColor
                         )
 
                         StatPreviewCard(
@@ -406,7 +409,7 @@ struct PlayerPreviewView: View {
                             title: "Win Rate",
                             value: playerStats.wlPercent,
                             icon: "trophy.fill",
-                            color: playerStats.wlRatio >= 50.0 ? Theme.bf6Green : Theme.bf6Orange
+                            color: playerStats.wlRatio >= 50.0 ? Theme.bf6Green : accentColor
                         )
 
                         StatPreviewCard(
