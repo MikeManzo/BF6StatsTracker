@@ -28,6 +28,8 @@
 		0000000000000020 /* LastCompletedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000022 /* LastCompletedMatchView.swift */; };
 		2719F33C2EF8819400C42191 /* DailyPerformanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */; };
 		2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33D2EF881AA00C42191 /* DailyPerformance.swift */; };
+		271CA0FE2F26DCD00037D232 /* AICoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271CA0FD2F26DCD00037D232 /* AICoachView.swift */; };
+		271CA1002F26DCF30037D232 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271CA0FF2F26DCF30037D232 /* LocalAIService.swift */; };
 		274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */; };
 		2747A79C2F037B7C001CF709 /* StoredEAAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */; };
 		2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2747A79D2F037BA5001CF709 /* EAAccountStore.swift */; };
@@ -96,6 +98,8 @@
 		1000000000000022 /* LastCompletedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastCompletedMatchView.swift; sourceTree = "<group>"; };
 		2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformanceView.swift; sourceTree = "<group>"; };
 		2719F33D2EF881AA00C42191 /* DailyPerformance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformance.swift; sourceTree = "<group>"; };
+		271CA0FD2F26DCD00037D232 /* AICoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachView.swift; sourceTree = "<group>"; };
+		271CA0FF2F26DCF30037D232 /* LocalAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIService.swift; sourceTree = "<group>"; };
 		274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatsViewModel+Logout.swift"; sourceTree = "<group>"; };
 		2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredEAAccount.swift; sourceTree = "<group>"; };
 		2747A79D2F037BA5001CF709 /* EAAccountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAAccountStore.swift; sourceTree = "<group>"; };
@@ -245,6 +249,7 @@
 				27E798062EE645F80002311A /* EAIdentityManager.swift */,
 				27E5437C2EE98E0800B01618 /* HistoryManager.swift */,
 				1000000000000016 /* ImageLoader.swift */,
+				271CA0FF2F26DCF30037D232 /* LocalAIService.swift */,
 				274F85512F141A9B000B1B90 /* LoggerService.swift */,
 				27C267BB2EEF35AF006168AA /* MapTracker.swift */,
 				27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */,
@@ -257,6 +262,7 @@
 			children = (
 				2749FA1D2F080A96004D2E1D /* AboutView.swift */,
 				2747A79F2F037BB8001CF709 /* AccountSelectionView.swift */,
+				271CA0FD2F26DCD00037D232 /* AICoachView.swift */,
 				1000000000000007 /* ClassTileView.swift */,
 				1000000000000002 /* ContentView.swift */,
 				2749FA122F045D97004D2E1D /* Components */,
@@ -432,6 +438,7 @@
 				2747A7A02F037BB8001CF709 /* AccountSelectionView.swift in Sources */,
 				0000000000000007 /* ClassTileView.swift in Sources */,
 				0000000000000008 /* WeaponStatsView.swift in Sources */,
+				271CA1002F26DCF30037D232 /* LocalAIService.swift in Sources */,
 				0000000000000009 /* GadgetStatsView.swift in Sources */,
 				0000000000000010 /* VehicleStatsView.swift in Sources */,
 				27E543812EE98E4100B01618 /* LoadoutAnalyzerView.swift in Sources */,
@@ -458,6 +465,7 @@
 				2749FA1E2F080A96004D2E1D /* AboutView.swift in Sources */,
 				2747A79C2F037B7C001CF709 /* StoredEAAccount.swift in Sources */,
 				0000000000000018 /* OverviewStatsView.swift in Sources */,
+				271CA0FE2F26DCD00037D232 /* AICoachView.swift in Sources */,
 				27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */,
 				0000000000000019 /* LastMatchStatsView.swift in Sources */,
 				0000000000000020 /* LastCompletedMatchView.swift in Sources */,

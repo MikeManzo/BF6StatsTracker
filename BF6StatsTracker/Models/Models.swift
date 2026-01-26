@@ -1376,6 +1376,9 @@ struct AppSettings: Codable {
     var eaId: String?             // Public username (EA ID)
     var isEAAuthenticated: Bool   // Whether user has logged in via EA
 
+    // Experimental features
+    var aiCoachEnabled: Bool      // Enable on-device AI coaching feature
+
     init() {
         self.playerName = ""
         self.platform = .pc
@@ -1393,6 +1396,7 @@ struct AppSettings: Codable {
         self.personaId = nil
         self.eaId = nil
         self.isEAAuthenticated = false
+        self.aiCoachEnabled = false
     }
 
     /// Update settings with EA identity information
@@ -1418,6 +1422,7 @@ struct AppSettings: Codable {
         case showNotifications, compactMode, selectedColorScheme, debugMode
         case playSoundOnSnapshot, menuBarOnlyMode, appearanceMode
         case nucleusId, personaId, eaId, isEAAuthenticated
+        case aiCoachEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -1447,6 +1452,9 @@ struct AppSettings: Codable {
         personaId = try container.decodeIfPresent(String.self, forKey: .personaId)
         eaId = try container.decodeIfPresent(String.self, forKey: .eaId)
         isEAAuthenticated = try container.decode(Bool.self, forKey: .isEAAuthenticated)
+
+        // Default to false if aiCoachEnabled doesn't exist in saved settings
+        aiCoachEnabled = try container.decodeIfPresent(Bool.self, forKey: .aiCoachEnabled) ?? false
     }
 }
 

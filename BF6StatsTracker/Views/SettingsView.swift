@@ -41,6 +41,7 @@ struct SettingsView: View {
     @State private var showClearHistoryConfirmation = false
     @State private var accountToDelete: StoredEAAccount?
     @State private var showDeleteAccountAlert = false
+    @State private var aiCoachEnabled: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -348,6 +349,72 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Experimental Features Section
+                    SettingsSection(title: "Experimental", icon: "flask.fill") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // AI Coach Toggle
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Toggle("AI Coach", isOn: $aiCoachEnabled)
+                                        .toggleStyle(.switch)
+                                        .tint(Theme.bf6Purple)
+                                        .foregroundColor(Theme.textPrimary)
+
+                                    Text("BETA")
+                                        .font(.caption2)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Theme.bf6Purple)
+                                        .cornerRadius(4)
+                                }
+
+                                Text("Enable on-device AI-powered coaching that analyzes your gameplay and provides personalized tips to improve your performance.")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+
+                                if aiCoachEnabled {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "cpu")
+                                                .foregroundColor(Theme.bf6Purple)
+                                                .font(.caption)
+
+                                            Text("Runs entirely on your Mac using Apple Silicon")
+                                                .font(.caption)
+                                                .foregroundColor(Theme.textSecondary)
+                                        }
+
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "memorychip")
+                                                .foregroundColor(Theme.bf6Purple)
+                                                .font(.caption)
+
+                                            Text("Uses ~2GB RAM only when AI Coach tab is open")
+                                                .font(.caption)
+                                                .foregroundColor(Theme.textSecondary)
+                                        }
+
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "lock.shield")
+                                                .foregroundColor(Theme.bf6Purple)
+                                                .font(.caption)
+
+                                            Text("Your data never leaves your device")
+                                                .font(.caption)
+                                                .foregroundColor(Theme.textSecondary)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(Theme.bf6Purple.opacity(0.1))
+                                    .cornerRadius(8)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
                     SettingsSection(title: "Debug Options", icon: "ladybug.slash") {
                         VStack(alignment: .leading, spacing: 12) {
                             Toggle("Add Synthetic Snapshot data", isOn: $debugMode)
@@ -400,6 +467,7 @@ struct SettingsView: View {
         playSoundOnSnapshot = viewModel.settings.playSoundOnSnapshot
         menuBarOnlyMode = viewModel.settings.menuBarOnlyMode
         appearanceMode = viewModel.settings.appearanceMode
+        aiCoachEnabled = viewModel.settings.aiCoachEnabled
         themeManager.setColorScheme(selectedColorScheme)
     }
 
@@ -415,6 +483,7 @@ struct SettingsView: View {
         viewModel.settings.playSoundOnSnapshot = playSoundOnSnapshot
         viewModel.settings.menuBarOnlyMode = menuBarOnlyMode
         viewModel.settings.appearanceMode = appearanceMode
+        viewModel.settings.aiCoachEnabled = aiCoachEnabled
         themeManager.setColorScheme(selectedColorScheme)
 
         Task {

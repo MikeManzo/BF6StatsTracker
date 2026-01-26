@@ -59,7 +59,22 @@ class StatsViewModel: ObservableObject {
         switch selectedMainTab {
         case .overview: return .overview
         case .history: return .history
+        case .aiCoach: return .aiCoach
         default: return selectedMainTab.defaultSubTab ?? .overview
+        }
+    }
+
+    /// Returns the list of visible main tabs based on settings
+    var visibleMainTabs: [MainTab] {
+        MainTab.allCases.filter { tab in
+            // Filter out experimental tabs if not enabled
+            if tab.isExperimental {
+                switch tab {
+                case .aiCoach: return settings.aiCoachEnabled
+                default: return false
+                }
+            }
+            return true
         }
     }
 
@@ -283,7 +298,7 @@ class StatsViewModel: ObservableObject {
     var currentPlayerIdentifier: PlayerIdentifier {
         PlayerIdentifier(from: settings)
     }
-    
+
     // MARK: - Data Loading
     
     func searchPlayer(name: String, platform: Platform) async {
@@ -798,6 +813,7 @@ enum MainTab: String, CaseIterable, Identifiable {
     case analysis = "Analysis"
     case teamplay = "Teamplay"
     case tools = "Tools"
+    case aiCoach = "AI Coach"
 
     var id: String { rawValue }
 
@@ -810,12 +826,13 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .analysis: return "chart.xyaxis.line"
         case .teamplay: return "person.3.fill"
         case .tools: return "wrench.and.screwdriver.fill"
+        case .aiCoach: return "brain.head.profile"
         }
     }
 
     var subTabs: [StatTab]? {
         switch self {
-        case .overview, .history:
+        case .overview, .history, .aiCoach:
             return nil // No sub-tabs for these
         case .combat:
             return [.weapons, .weaponMastery, .gadgets, .utility]
@@ -833,6 +850,14 @@ enum MainTab: String, CaseIterable, Identifiable {
     var defaultSubTab: StatTab? {
         subTabs?.first
     }
+
+    /// Whether this tab is an experimental feature
+    var isExperimental: Bool {
+        switch self {
+        case .aiCoach: return true
+        default: return false
+        }
+    }
 }
 
 // MARK: - Sub Tabs (Individual Views)
@@ -841,6 +866,7 @@ enum StatTab: String, CaseIterable, Identifiable {
     // Top-level tabs (no parent)
     case overview = "Overview"
     case history = "History"
+    case aiCoach = "AI Coach"
 
     // Combat sub-tabs
     case weapons = "Weapons"
@@ -874,6 +900,7 @@ enum StatTab: String, CaseIterable, Identifiable {
         switch self {
         case .overview: return "chart.bar.fill"
         case .history: return "clock.arrow.circlepath"
+        case .aiCoach: return "brain.head.profile"
         case .weapons: return "scope"
         case .weaponMastery: return "target"
         case .gadgets: return "wrench.and.screwdriver.fill"

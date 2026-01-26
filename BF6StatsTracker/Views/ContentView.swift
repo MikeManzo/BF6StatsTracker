@@ -122,6 +122,8 @@ struct ContentView: View {
                             ServerBrowserView()
                         case .logViewer:
                             LogViewerView()
+                        case .aiCoach:
+                            AICoachView()
                         }
                     }
                     .transition(.asymmetric(
@@ -398,7 +400,7 @@ struct ContentView: View {
 
     private var tabBarView: some View {
         HStack(spacing: 0) {
-            ForEach(Array(MainTab.allCases.enumerated()), id: \.element) { index, tab in
+            ForEach(Array(viewModel.visibleMainTabs.enumerated()), id: \.element) { index, tab in
                 Button {
                     withAnimation(.spring(response: 0.3)) {
                         viewModel.selectedMainTab = tab
@@ -407,8 +409,18 @@ struct ContentView: View {
                     }
                 } label: {
                     VStack(spacing: 4) {
-                        Image(systemName: tab.icon)
-                            .font(.title3)
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: tab.icon)
+                                .font(.title3)
+
+                            // Experimental badge
+                            if tab.isExperimental {
+                                Circle()
+                                    .fill(Theme.bf6Purple)
+                                    .frame(width: 6, height: 6)
+                                    .offset(x: 2, y: -2)
+                            }
+                        }
 
                         Text(tab.rawValue)
                             .font(.caption)
@@ -418,7 +430,7 @@ struct ContentView: View {
                     .padding(.vertical, 12)
                     .background(
                         viewModel.selectedMainTab == tab ?
-                        Theme.bf6Blue.opacity(0.3) :
+                        (tab.isExperimental ? Theme.bf6Purple.opacity(0.3) : Theme.bf6Blue.opacity(0.3)) :
                         Color.clear
                     )
                     .contentShape(Rectangle())
