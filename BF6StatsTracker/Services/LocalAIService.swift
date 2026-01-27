@@ -33,6 +33,7 @@ struct AICoachResponse: Identifiable {
     let weaknesses: [String]
     let tips: [AICoachTip]
     let sessionInsight: String?
+    let trendAnalysis: TrendAnalysis?
     let generatedAt: Date
 
     static let empty = AICoachResponse(
@@ -42,8 +43,138 @@ struct AICoachResponse: Identifiable {
         weaknesses: [],
         tips: [],
         sessionInsight: nil,
+        trendAnalysis: nil,
         generatedAt: Date()
     )
+}
+
+// MARK: - Trend Analysis
+
+struct TrendAnalysis: Identifiable {
+    let id = UUID()
+    let trajectory: PerformanceTrajectory
+    let consistency: ConsistencyRating
+    let peakPerformance: PeakPerformanceInsight?
+    let sessionLengthImpact: String?
+    let momentumStatus: MomentumStatus
+    let insights: [TrendInsight]
+
+    enum PerformanceTrajectory: String {
+        case improving = "Improving"
+        case stable = "Stable"
+        case declining = "Declining"
+        case volatile = "Volatile"
+
+        var icon: String {
+            switch self {
+            case .improving: return "arrow.up.right"
+            case .stable: return "arrow.right"
+            case .declining: return "arrow.down.right"
+            case .volatile: return "arrow.up.arrow.down"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .improving: return .green
+            case .stable: return .blue
+            case .declining: return .orange
+            case .volatile: return .purple
+            }
+        }
+    }
+
+    enum ConsistencyRating: String {
+        case veryConsistent = "Very Consistent"
+        case consistent = "Consistent"
+        case moderate = "Moderate"
+        case inconsistent = "Inconsistent"
+
+        var icon: String {
+            switch self {
+            case .veryConsistent: return "checkmark.seal.fill"
+            case .consistent: return "checkmark.circle.fill"
+            case .moderate: return "circle.fill"
+            case .inconsistent: return "exclamationmark.triangle.fill"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .veryConsistent: return .green
+            case .consistent: return .blue
+            case .moderate: return .yellow
+            case .inconsistent: return .orange
+            }
+        }
+    }
+
+    enum MomentumStatus: String {
+        case hotStreak = "Hot Streak"
+        case warming = "Warming Up"
+        case neutral = "Neutral"
+        case cooling = "Cooling Down"
+        case slump = "In a Slump"
+
+        var icon: String {
+            switch self {
+            case .hotStreak: return "flame.fill"
+            case .warming: return "flame"
+            case .neutral: return "minus.circle"
+            case .cooling: return "snowflake"
+            case .slump: return "cloud.rain.fill"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .hotStreak: return .red
+            case .warming: return .orange
+            case .neutral: return .gray
+            case .cooling: return .cyan
+            case .slump: return .blue
+            }
+        }
+    }
+}
+
+struct PeakPerformanceInsight {
+    let bestTimeOfDay: String?      // e.g., "Evening (6-10 PM)"
+    let bestDayOfWeek: String?      // e.g., "Weekends"
+    let recommendation: String
+}
+
+struct TrendInsight: Identifiable {
+    let id = UUID()
+    let category: InsightCategory
+    let title: String
+    let description: String
+    let dataPoint: String?  // e.g., "+15% K/D", "2.3 hrs avg"
+
+    enum InsightCategory: String {
+        case improvement = "Improvement"
+        case warning = "Warning"
+        case pattern = "Pattern"
+        case recommendation = "Recommendation"
+
+        var icon: String {
+            switch self {
+            case .improvement: return "arrow.up.circle.fill"
+            case .warning: return "exclamationmark.circle.fill"
+            case .pattern: return "chart.line.uptrend.xyaxis"
+            case .recommendation: return "lightbulb.fill"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .improvement: return .green
+            case .warning: return .orange
+            case .pattern: return .blue
+            case .recommendation: return .purple
+            }
+        }
+    }
 }
 
 struct AICoachTip: Identifiable {
@@ -102,6 +233,65 @@ struct AICoachTip: Identifiable {
             case .medium: return Theme.bf6Orange
             case .high: return Theme.bf6Red
             }
+        }
+    }
+}
+
+// MARK: - Trend Data Container
+
+/// Raw trend data gathered from HistoryManager for LLM analysis
+struct TrendDataContainer {
+    // Performance over time
+    let kdTrend7Days: [(Date, Double)]
+    let kdTrend30Days: [(Date, Double)]
+    let kdTrendDirection: TrendDirection
+
+    // Daily performance stats
+    let recentDailyPerformances: [DailyPerformance]
+    let averageDailyKD: Double
+    let kdStandardDeviation: Double
+    let bestDay: DailyPerformance?
+    let worstDay: DailyPerformance?
+
+    // Time-based patterns
+    let weekendAvgKD: Double
+    let weekdayAvgKD: Double
+    let hourlyPerformance: [HourlyPerformanceData]
+
+    // Session analysis
+    let averageSessionLength: TimeInterval
+    let sessionsAnalyzed: Int
+
+    // Momentum indicators
+    let last3DaysAvgKD: Double
+    let previous7DaysAvgKD: Double
+
+    /// Calculate performance change percentage
+    var performanceChangePercent: Double {
+        guard previous7DaysAvgKD > 0 else { return 0 }
+        return ((last3DaysAvgKD - previous7DaysAvgKD) / previous7DaysAvgKD) * 100
+    }
+
+    /// Determine if player performs better on weekends
+    var weekendPerformanceBonus: Double {
+        guard weekdayAvgKD > 0 else { return 0 }
+        return ((weekendAvgKD - weekdayAvgKD) / weekdayAvgKD) * 100
+    }
+
+    /// Find best hour of day for performance
+    var bestHourOfDay: Int? {
+        hourlyPerformance.max(by: { $0.avgKD < $1.avgKD })?.hour
+    }
+
+    /// Format best time of day as readable string
+    var bestTimeOfDayString: String? {
+        guard let hour = bestHourOfDay else { return nil }
+        switch hour {
+        case 5..<12: return "Morning (\(hour)AM - 12PM)"
+        case 12..<17: return "Afternoon (12PM - 5PM)"
+        case 17..<21: return "Evening (5PM - 9PM)"
+        case 21..<24, 0..<5: return "Night (9PM - 5AM)"
+        default: return nil
         }
     }
 }
@@ -467,7 +657,8 @@ class LocalAIService: ObservableObject {
     func generateCoachingAdvice(
         stats: PlayerStats,
         dailyPerformances: [DailyPerformance],
-        recentSnapshots: [StatsSnapshot]
+        recentSnapshots: [StatsSnapshot],
+        trendData: TrendDataContainer? = nil
     ) async -> AICoachResponse {
         // Ensure model is loaded
         if !modelLoaded {
@@ -484,7 +675,8 @@ class LocalAIService: ObservableObject {
         let response = await analyzePlayerStats(
             stats: stats,
             dailyPerformances: dailyPerformances,
-            recentSnapshots: recentSnapshots
+            recentSnapshots: recentSnapshots,
+            trendData: trendData
         )
 
         lastResponse = response
@@ -495,19 +687,82 @@ class LocalAIService: ObservableObject {
         return response
     }
 
+    /// Gather trend data from HistoryManager for analysis
+    func gatherTrendData(from historyManager: HistoryManager, days: Int = 30) -> TrendDataContainer {
+        let kdTrend7Days = historyManager.getKDTrend(days: 7)
+        let kdTrend30Days = historyManager.getKDTrend(days: min(days, 30))
+        let kdTrendDirection = historyManager.calculateKDTrend(days: 7)
+
+        let recentPerformances = historyManager.getRecentDailyPerformances(days: days)
+        let averageKD = historyManager.getAverageDailyKD(days: days)
+        let stdDev = historyManager.getDailyKDStandardDeviation(days: days)
+        let bestDay = historyManager.getBestDailyPerformance(days: days)
+        let worstDay = historyManager.getWorstDailyPerformance(days: days)
+
+        let (weekendAvg, weekdayAvg) = historyManager.getWeekendVsWeekdayStats(days: days)
+
+        // Get hourly performance from recent snapshots
+        let recentSnapshots = historyManager.getRecentSnapshots(limit: 100)
+        let hourlyPerformance = historyManager.getHourlyStats(snapshots: recentSnapshots)
+
+        // Calculate session metrics
+        let sessions = historyManager.detectSessions(days: days)
+        let avgSessionLength = calculateAverageSessionLength(sessions: sessions)
+
+        // Calculate momentum - compare last 3 days vs previous 7
+        let last3DaysKD = calculateAverageKD(from: historyManager.getRecentDailyPerformances(days: 3))
+        let previous7DaysKD = calculateAverageKD(from: Array(historyManager.getRecentDailyPerformances(days: 10).dropFirst(3)))
+
+        return TrendDataContainer(
+            kdTrend7Days: kdTrend7Days,
+            kdTrend30Days: kdTrend30Days,
+            kdTrendDirection: kdTrendDirection,
+            recentDailyPerformances: recentPerformances,
+            averageDailyKD: averageKD,
+            kdStandardDeviation: stdDev,
+            bestDay: bestDay,
+            worstDay: worstDay,
+            weekendAvgKD: weekendAvg,
+            weekdayAvgKD: weekdayAvg,
+            hourlyPerformance: hourlyPerformance,
+            averageSessionLength: avgSessionLength,
+            sessionsAnalyzed: sessions.count,
+            last3DaysAvgKD: last3DaysKD,
+            previous7DaysAvgKD: previous7DaysKD
+        )
+    }
+
+    private func calculateAverageSessionLength(sessions: [[StatsSnapshot]]) -> TimeInterval {
+        guard !sessions.isEmpty else { return 0 }
+        var totalDuration: TimeInterval = 0
+        for session in sessions {
+            if let first = session.first, let last = session.last {
+                totalDuration += last.timestamp.timeIntervalSince(first.timestamp)
+            }
+        }
+        return totalDuration / Double(sessions.count)
+    }
+
+    private func calculateAverageKD(from performances: [DailyPerformance]) -> Double {
+        let validPerformances = performances.filter { $0.deltaDeaths > 0 }
+        guard !validPerformances.isEmpty else { return 0 }
+        return validPerformances.reduce(0) { $0 + $1.dailyKD } / Double(validPerformances.count)
+    }
+
     // MARK: - Analysis Engine
 
     private func analyzePlayerStats(
         stats: PlayerStats,
         dailyPerformances: [DailyPerformance],
-        recentSnapshots: [StatsSnapshot]
+        recentSnapshots: [StatsSnapshot],
+        trendData: TrendDataContainer?
     ) async -> AICoachResponse {
         // Build the prompt for LLM analysis
-        let prompt = buildAnalysisPrompt(stats: stats, history: dailyPerformances)
+        let prompt = buildAnalysisPrompt(stats: stats, history: dailyPerformances, trendData: trendData)
 
         // Try LLM generation first
         if let llmResponse = await generateWithLLM(prompt: prompt),
-           let parsedResponse = parseLLMResponse(llmResponse, stats: stats) {
+           let parsedResponse = parseLLMResponse(llmResponse, stats: stats, trendData: trendData) {
             logSuccess("Using LLM-generated coaching advice", category: .success)
             return parsedResponse
         }
@@ -517,7 +772,8 @@ class LocalAIService: ObservableObject {
         return generateRuleBasedAnalysis(
             stats: stats,
             dailyPerformances: dailyPerformances,
-            recentSnapshots: recentSnapshots
+            recentSnapshots: recentSnapshots,
+            trendData: trendData
         )
     }
 
@@ -525,7 +781,8 @@ class LocalAIService: ObservableObject {
     private func generateRuleBasedAnalysis(
         stats: PlayerStats,
         dailyPerformances: [DailyPerformance],
-        recentSnapshots: [StatsSnapshot]
+        recentSnapshots: [StatsSnapshot],
+        trendData: TrendDataContainer?
     ) -> AICoachResponse {
         // Analyze playstyle
         let (playstyle, playstyleDesc) = determinePlaystyle(stats: stats)
@@ -546,6 +803,9 @@ class LocalAIService: ObservableObject {
             recentSnapshots: recentSnapshots
         )
 
+        // Generate trend analysis
+        let trendAnalysis = generateRuleBasedTrendAnalysis(trendData: trendData)
+
         return AICoachResponse(
             playstyle: playstyle,
             playstyleDescription: playstyleDesc,
@@ -553,13 +813,146 @@ class LocalAIService: ObservableObject {
             weaknesses: weaknesses,
             tips: tips,
             sessionInsight: sessionInsight,
+            trendAnalysis: trendAnalysis,
             generatedAt: Date()
         )
     }
 
+    /// Generate rule-based trend analysis when LLM fails
+    private func generateRuleBasedTrendAnalysis(trendData: TrendDataContainer?) -> TrendAnalysis? {
+        guard let data = trendData else { return nil }
+
+        // Determine trajectory
+        let trajectory: TrendAnalysis.PerformanceTrajectory
+        let changePercent = data.performanceChangePercent
+        if changePercent > 10 {
+            trajectory = .improving
+        } else if changePercent < -10 {
+            trajectory = .declining
+        } else if data.kdStandardDeviation > 0.5 {
+            trajectory = .volatile
+        } else {
+            trajectory = .stable
+        }
+
+        // Determine consistency
+        let consistency: TrendAnalysis.ConsistencyRating
+        let stdDev = data.kdStandardDeviation
+        if stdDev < 0.15 {
+            consistency = .veryConsistent
+        } else if stdDev < 0.3 {
+            consistency = .consistent
+        } else if stdDev < 0.5 {
+            consistency = .moderate
+        } else {
+            consistency = .inconsistent
+        }
+
+        // Determine momentum
+        let momentum: TrendAnalysis.MomentumStatus
+        if changePercent > 20 {
+            momentum = .hotStreak
+        } else if changePercent > 5 {
+            momentum = .warming
+        } else if changePercent < -20 {
+            momentum = .slump
+        } else if changePercent < -5 {
+            momentum = .cooling
+        } else {
+            momentum = .neutral
+        }
+
+        // Build peak performance insight
+        var peakInsight: PeakPerformanceInsight?
+        let weekendBonus = data.weekendPerformanceBonus
+        if abs(weekendBonus) > 10 || data.bestTimeOfDayString != nil {
+            let bestDay = weekendBonus > 10 ? "Weekends" : (weekendBonus < -10 ? "Weekdays" : nil)
+            let recommendation: String
+            if weekendBonus > 15 {
+                recommendation = "Schedule important matches on weekends for optimal performance."
+            } else if weekendBonus < -15 {
+                recommendation = "You perform better on weekdays - use weekends for practice."
+            } else if let time = data.bestTimeOfDayString {
+                recommendation = "Your peak performance is during \(time.lowercased())."
+            } else {
+                recommendation = "Your performance is consistent across different times."
+            }
+
+            peakInsight = PeakPerformanceInsight(
+                bestTimeOfDay: data.bestTimeOfDayString,
+                bestDayOfWeek: bestDay,
+                recommendation: recommendation
+            )
+        }
+
+        // Generate insights
+        var insights: [TrendInsight] = []
+
+        // Trajectory insight
+        if trajectory == .improving {
+            insights.append(TrendInsight(
+                category: .improvement,
+                title: "Performance Improving",
+                description: "Your K/D has improved over the past few days. Keep up the momentum!",
+                dataPoint: String(format: "+%.0f%%", changePercent)
+            ))
+        } else if trajectory == .declining {
+            insights.append(TrendInsight(
+                category: .warning,
+                title: "Performance Dip Detected",
+                description: "Your recent sessions show a decline. Consider taking a break or reviewing your loadout.",
+                dataPoint: String(format: "%.0f%%", changePercent)
+            ))
+        }
+
+        // Weekend/weekday pattern
+        if abs(weekendBonus) > 15 {
+            insights.append(TrendInsight(
+                category: .pattern,
+                title: weekendBonus > 0 ? "Weekend Warrior" : "Weekday Performer",
+                description: weekendBonus > 0
+                    ? "You perform \(String(format: "%.0f%%", weekendBonus)) better on weekends."
+                    : "You perform \(String(format: "%.0f%%", abs(weekendBonus))) better on weekdays.",
+                dataPoint: String(format: "%.0f%% %@", abs(weekendBonus), weekendBonus > 0 ? "↑ weekends" : "↑ weekdays")
+            ))
+        }
+
+        // Session length insight
+        if data.averageSessionLength > 0 {
+            let avgHours = data.averageSessionLength / 3600
+            if avgHours > 3 {
+                insights.append(TrendInsight(
+                    category: .recommendation,
+                    title: "Consider Shorter Sessions",
+                    description: "Your average session is \(String(format: "%.1f", avgHours)) hours. Performance often drops after 2 hours.",
+                    dataPoint: String(format: "%.1f hrs avg", avgHours)
+                ))
+            }
+        }
+
+        // Best day highlight
+        if let bestDay = data.bestDay, bestDay.dailyKD > data.averageDailyKD * 1.3 {
+            insights.append(TrendInsight(
+                category: .improvement,
+                title: "Best Recent Session",
+                description: "On \(formatDate(bestDay.date)), you achieved a \(String(format: "%.2f", bestDay.dailyKD)) K/D with \(bestDay.deltaKills) kills.",
+                dataPoint: String(format: "%.2f K/D", bestDay.dailyKD)
+            ))
+        }
+
+        return TrendAnalysis(
+            trajectory: trajectory,
+            consistency: consistency,
+            peakPerformance: peakInsight,
+            sessionLengthImpact: data.averageSessionLength > 7200 ? "Long sessions may be affecting performance" : nil,
+            momentumStatus: momentum,
+            insights: insights
+        )
+    }
+
     /// Build a structured prompt for LLM analysis
-    private func buildAnalysisPrompt(stats: PlayerStats, history: [DailyPerformance]) -> String {
-        """
+    private func buildAnalysisPrompt(stats: PlayerStats, history: [DailyPerformance], trendData: TrendDataContainer?) -> String {
+        var prompt = """
         Analyze these Battlefield player statistics and provide coaching advice.
 
         PLAYER STATISTICS:
@@ -580,6 +973,41 @@ class LocalAIService: ObservableObject {
 
         RECENT SESSIONS:
         \(history.prefix(5).map { "- \(formatDate($0.date)): K/D \(String(format: "%.2f", $0.dailyKD)), \($0.deltaKills) kills" }.joined(separator: "\n"))
+        """
+
+        // Add trend data if available
+        if let trend = trendData {
+            prompt += """
+
+
+        TREND ANALYSIS DATA:
+        - 7-Day Average K/D: \(String(format: "%.2f", trend.averageDailyKD))
+        - K/D Standard Deviation: \(String(format: "%.2f", trend.kdStandardDeviation)) (lower = more consistent)
+        - Last 3 Days Avg K/D: \(String(format: "%.2f", trend.last3DaysAvgKD))
+        - Previous 7 Days Avg K/D: \(String(format: "%.2f", trend.previous7DaysAvgKD))
+        - Performance Change: \(String(format: "%+.1f%%", trend.performanceChangePercent))
+        - Weekend Avg K/D: \(String(format: "%.2f", trend.weekendAvgKD))
+        - Weekday Avg K/D: \(String(format: "%.2f", trend.weekdayAvgKD))
+        - Weekend vs Weekday Difference: \(String(format: "%+.1f%%", trend.weekendPerformanceBonus))
+        - Average Session Length: \(String(format: "%.1f hours", trend.averageSessionLength / 3600))
+        - Sessions Analyzed: \(trend.sessionsAnalyzed)
+        """
+
+            if let bestTime = trend.bestTimeOfDayString {
+                prompt += "\n- Best Time of Day: \(bestTime)"
+            }
+
+            if let bestDay = trend.bestDay {
+                prompt += "\n- Best Day: \(formatDate(bestDay.date)) with \(String(format: "%.2f", bestDay.dailyKD)) K/D"
+            }
+
+            if let worstDay = trend.worstDay {
+                prompt += "\n- Worst Day: \(formatDate(worstDay.date)) with \(String(format: "%.2f", worstDay.dailyKD)) K/D"
+            }
+        }
+
+        prompt += """
+
 
         Respond in this EXACT JSON format:
         {
@@ -588,18 +1016,32 @@ class LocalAIService: ObservableObject {
             "strengths": ["strength 1", "strength 2", "strength 3"],
             "weaknesses": ["weakness 1", "weakness 2"],
             "tips": [
-                {"category": "accuracy|positioning|teamplay|weapons|vehicles|objectives|general", "title": "Short title", "description": "Detailed tip", "priority": "high|medium|low"},
-                {"category": "positioning", "title": "Another tip", "description": "Description", "priority": "medium"}
+                {"category": "accuracy|positioning|teamplay|weapons|vehicles|objectives|general", "title": "Short title", "description": "Detailed tip", "priority": "high|medium|low"}
             ],
-            "sessionInsight": "Optional insight about recent performance trend"
+            "sessionInsight": "Insight about recent performance trend",
+            "trendAnalysis": {
+                "trajectory": "improving|stable|declining|volatile",
+                "consistency": "veryConsistent|consistent|moderate|inconsistent",
+                "momentum": "hotStreak|warming|neutral|cooling|slump",
+                "peakPerformance": {
+                    "bestTimeOfDay": "Morning/Afternoon/Evening/Night or null",
+                    "bestDayType": "Weekends/Weekdays or null",
+                    "recommendation": "Scheduling recommendation based on patterns"
+                },
+                "insights": [
+                    {"category": "improvement|warning|pattern|recommendation", "title": "Short title", "description": "Detailed insight", "dataPoint": "e.g., +15% or 2.3 hrs"}
+                ]
+            }
         }
 
-        Provide 3-5 tips. Be specific and actionable. Reference their actual stats in your advice.
+        Provide 3-5 tips. Include trend analysis insights. Be specific and reference actual stats.
         """
+
+        return prompt
     }
 
     /// Parse LLM response into AICoachResponse
-    private func parseLLMResponse(_ response: String, stats: PlayerStats) -> AICoachResponse? {
+    private func parseLLMResponse(_ response: String, stats: PlayerStats, trendData: TrendDataContainer?) -> AICoachResponse? {
         // Try to extract JSON from the response
         guard let jsonStart = response.firstIndex(of: "{"),
               let jsonEnd = response.lastIndex(of: "}") else {
@@ -648,6 +1090,15 @@ class LocalAIService: ObservableObject {
 
             let sessionInsight = json["sessionInsight"] as? String
 
+            // Parse trend analysis if present
+            var trendAnalysis: TrendAnalysis?
+            if let trendJson = json["trendAnalysis"] as? [String: Any] {
+                trendAnalysis = parseTrendAnalysis(trendJson)
+            } else if let data = trendData {
+                // Fall back to rule-based trend analysis if LLM didn't provide one
+                trendAnalysis = generateRuleBasedTrendAnalysis(trendData: data)
+            }
+
             return AICoachResponse(
                 playstyle: playstyle,
                 playstyleDescription: playstyleDescription,
@@ -655,12 +1106,108 @@ class LocalAIService: ObservableObject {
                 weaknesses: weaknessesArray,
                 tips: tips,
                 sessionInsight: sessionInsight,
+                trendAnalysis: trendAnalysis,
                 generatedAt: Date()
             )
 
         } catch {
             logError("Failed to parse LLM JSON: \(error.localizedDescription)", category: .error)
             return nil
+        }
+    }
+
+    /// Parse trend analysis from LLM JSON
+    private func parseTrendAnalysis(_ json: [String: Any]) -> TrendAnalysis? {
+        guard let trajectoryStr = json["trajectory"] as? String,
+              let consistencyStr = json["consistency"] as? String,
+              let momentumStr = json["momentum"] as? String else {
+            return nil
+        }
+
+        let trajectory = parseTrajectory(trajectoryStr)
+        let consistency = parseConsistency(consistencyStr)
+        let momentum = parseMomentum(momentumStr)
+
+        // Parse peak performance
+        var peakPerformance: PeakPerformanceInsight?
+        if let peakJson = json["peakPerformance"] as? [String: Any] {
+            let bestTimeOfDay = peakJson["bestTimeOfDay"] as? String
+            let bestDayType = peakJson["bestDayType"] as? String
+            let recommendation = peakJson["recommendation"] as? String ?? "No specific scheduling recommendation."
+
+            if bestTimeOfDay != nil || bestDayType != nil {
+                peakPerformance = PeakPerformanceInsight(
+                    bestTimeOfDay: bestTimeOfDay,
+                    bestDayOfWeek: bestDayType,
+                    recommendation: recommendation
+                )
+            }
+        }
+
+        // Parse insights
+        var insights: [TrendInsight] = []
+        if let insightsArray = json["insights"] as? [[String: Any]] {
+            for insightJson in insightsArray {
+                if let categoryStr = insightJson["category"] as? String,
+                   let title = insightJson["title"] as? String,
+                   let description = insightJson["description"] as? String {
+                    let category = parseInsightCategory(categoryStr)
+                    let dataPoint = insightJson["dataPoint"] as? String
+
+                    insights.append(TrendInsight(
+                        category: category,
+                        title: title,
+                        description: description,
+                        dataPoint: dataPoint
+                    ))
+                }
+            }
+        }
+
+        return TrendAnalysis(
+            trajectory: trajectory,
+            consistency: consistency,
+            peakPerformance: peakPerformance,
+            sessionLengthImpact: nil,
+            momentumStatus: momentum,
+            insights: insights
+        )
+    }
+
+    private func parseTrajectory(_ str: String) -> TrendAnalysis.PerformanceTrajectory {
+        switch str.lowercased() {
+        case "improving": return .improving
+        case "declining": return .declining
+        case "volatile": return .volatile
+        default: return .stable
+        }
+    }
+
+    private func parseConsistency(_ str: String) -> TrendAnalysis.ConsistencyRating {
+        switch str.lowercased() {
+        case "veryconsistent": return .veryConsistent
+        case "consistent": return .consistent
+        case "inconsistent": return .inconsistent
+        default: return .moderate
+        }
+    }
+
+    private func parseMomentum(_ str: String) -> TrendAnalysis.MomentumStatus {
+        switch str.lowercased() {
+        case "hotstreak": return .hotStreak
+        case "warming": return .warming
+        case "cooling": return .cooling
+        case "slump": return .slump
+        default: return .neutral
+        }
+    }
+
+    private func parseInsightCategory(_ str: String) -> TrendInsight.InsightCategory {
+        switch str.lowercased() {
+        case "improvement": return .improvement
+        case "warning": return .warning
+        case "pattern": return .pattern
+        default: return .recommendation
         }
     }
 

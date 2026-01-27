@@ -50,6 +50,11 @@ struct AICoachView: View {
                         // Strengths & Weaknesses
                         strengthsWeaknessesSection(response: response)
 
+                        // Trend Analysis Section
+                        if let trendAnalysis = response.trendAnalysis {
+                            trendAnalysisSection(trendAnalysis: trendAnalysis)
+                        }
+
                         // Tips Section
                         tipsSection(response: response)
 
@@ -596,6 +601,179 @@ struct AICoachView: View {
         .cornerRadius(10)
     }
 
+    // MARK: - Trend Analysis Section
+
+    private func trendAnalysisSection(trendAnalysis: TrendAnalysis) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section Header
+            HStack {
+                Image(systemName: "chart.xyaxis.line")
+                    .foregroundColor(accentColor)
+
+                Text("Trend Analysis")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+
+                Spacer()
+            }
+
+            // Status Cards Row
+            HStack(spacing: 12) {
+                // Trajectory Card
+                trendStatusCard(
+                    title: "Trajectory",
+                    value: trendAnalysis.trajectory.rawValue,
+                    icon: trendAnalysis.trajectory.icon,
+                    color: trendAnalysis.trajectory.color
+                )
+
+                // Consistency Card
+                trendStatusCard(
+                    title: "Consistency",
+                    value: trendAnalysis.consistency.rawValue,
+                    icon: trendAnalysis.consistency.icon,
+                    color: trendAnalysis.consistency.color
+                )
+
+                // Momentum Card
+                trendStatusCard(
+                    title: "Momentum",
+                    value: trendAnalysis.momentumStatus.rawValue,
+                    icon: trendAnalysis.momentumStatus.icon,
+                    color: trendAnalysis.momentumStatus.color
+                )
+            }
+
+            // Peak Performance Section
+            if let peak = trendAnalysis.peakPerformance {
+                peakPerformanceCard(peak: peak)
+            }
+
+            // Trend Insights
+            if !trendAnalysis.insights.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Insights")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.textSecondary)
+
+                    ForEach(trendAnalysis.insights) { insight in
+                        trendInsightRow(insight: insight)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+
+    private func trendStatusCard(title: String, value: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(Theme.textPrimary)
+
+            Text(title)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
+    }
+
+    private func peakPerformanceCard(peak: PeakPerformanceInsight) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "star.fill")
+                    .foregroundColor(.yellow)
+
+                Text("Peak Performance")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+            }
+
+            HStack(spacing: 16) {
+                if let timeOfDay = peak.bestTimeOfDay {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+                        Text(timeOfDay)
+                            .font(.caption)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                }
+
+                if let dayOfWeek = peak.bestDayOfWeek {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+                        Text(dayOfWeek)
+                            .font(.caption)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                }
+            }
+
+            Text(peak.recommendation)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.overlayColor)
+        .cornerRadius(8)
+    }
+
+    private func trendInsightRow(insight: TrendInsight) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: insight.category.icon)
+                .font(.body)
+                .foregroundColor(insight.category.color)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(insight.title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(Theme.textPrimary)
+
+                    if let dataPoint = insight.dataPoint {
+                        Text(dataPoint)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(insight.category.color)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(insight.category.color.opacity(0.15))
+                            .cornerRadius(4)
+                    }
+                }
+
+                Text(insight.description)
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.overlayColor)
+        .cornerRadius(8)
+    }
+
     // MARK: - Session Insight
 
     private func sessionInsightCard(insight: String) -> some View {
@@ -765,10 +943,14 @@ struct AICoachView: View {
                 playerName: stats.userName
             )
 
+            // Gather trend data for analysis
+            let trendData = aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
+
             _ = await aiService.generateCoachingAdvice(
                 stats: stats,
                 dailyPerformances: dailyPerformances,
-                recentSnapshots: Array(recentSnapshots.prefix(50))
+                recentSnapshots: Array(recentSnapshots.prefix(50)),
+                trendData: trendData
             )
 
             isGenerating = false
