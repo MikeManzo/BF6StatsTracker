@@ -55,6 +55,7 @@ struct TrendAnalysis: Identifiable {
     let trajectory: PerformanceTrajectory
     let consistency: ConsistencyRating
     let peakPerformance: PeakPerformanceInsight?
+    let topWeapon: TopWeaponInsight?
     let sessionLengthImpact: String?
     let momentumStatus: MomentumStatus
     let insights: [TrendInsight]
@@ -142,6 +143,17 @@ struct PeakPerformanceInsight {
     let bestTimeOfDay: String?      // e.g., "Evening (6-10 PM)"
     let bestDayOfWeek: String?      // e.g., "Weekends"
     let recommendation: String
+}
+
+struct TopWeaponInsight {
+    let weaponName: String
+    let weaponType: String
+    let weaponImage: String?
+    let kills: Int
+    let accuracy: Double            // 0.0 to 1.0
+    let headshotPercentage: Double  // 0.0 to 1.0
+    let killsPerMinute: Double
+    let recommendation: String      // Coaching tip for this weapon
 }
 
 struct TrendInsight: Identifiable {
@@ -804,7 +816,7 @@ class LocalAIService: ObservableObject {
         )
 
         // Generate trend analysis
-        let trendAnalysis = generateRuleBasedTrendAnalysis(trendData: trendData)
+        let trendAnalysis = generateRuleBasedTrendAnalysis(trendData: trendData, stats: stats)
 
         return AICoachResponse(
             playstyle: playstyle,
@@ -819,7 +831,7 @@ class LocalAIService: ObservableObject {
     }
 
     /// Generate rule-based trend analysis when LLM fails
-    private func generateRuleBasedTrendAnalysis(trendData: TrendDataContainer?) -> TrendAnalysis? {
+    private func generateRuleBasedTrendAnalysis(trendData: TrendDataContainer?, stats: PlayerStats?) -> TrendAnalysis? {
         guard let data = trendData else { return nil }
 
         // Determine trajectory
@@ -940,14 +952,70 @@ class LocalAIService: ObservableObject {
             ))
         }
 
+        // Extract top weapon insight
+        let topWeaponInsight = extractTopWeaponInsight(from: stats)
+
         return TrendAnalysis(
             trajectory: trajectory,
             consistency: consistency,
             peakPerformance: peakInsight,
+            topWeapon: topWeaponInsight,
             sessionLengthImpact: data.averageSessionLength > 7200 ? "Long sessions may be affecting performance" : nil,
             momentumStatus: momentum,
             insights: insights
         )
+    }
+
+    /// Extract top weapon insight from player stats
+    private func extractTopWeaponInsight(from stats: PlayerStats?) -> TopWeaponInsight? {
+        guard let stats = stats,
+              let weapons = stats.weapons,
+              !weapons.isEmpty else { return nil }
+
+        // Find the weapon with most kills
+        guard let topWeapon = weapons.max(by: { $0.kills < $1.kills }) else { return nil }
+
+        // Don't show if very few kills
+        guard topWeapon.kills >= 50 else { return nil }
+
+        // Generate recommendation based on weapon stats
+        let recommendation = generateWeaponRecommendation(weapon: topWeapon, playerStats: stats)
+
+        return TopWeaponInsight(
+            weaponName: topWeapon.weaponName,
+            weaponType: topWeapon.type,
+            weaponImage: topWeapon.image,
+            kills: topWeapon.kills,
+            accuracy: topWeapon.accuracy / 100.0,  // Convert from percentage to 0-1 scale
+            headshotPercentage: topWeapon.headshotPercentage / 100.0,
+            killsPerMinute: topWeapon.killsPerMinute,
+            recommendation: recommendation
+        )
+    }
+
+    /// Generate a coaching recommendation for the top weapon
+    private func generateWeaponRecommendation(weapon: WeaponStats, playerStats: PlayerStats) -> String {
+        let accuracy = weapon.accuracy
+        let headshotRate = weapon.headshotPercentage
+        let kpm = weapon.killsPerMinute
+
+        // Compare to player's overall stats
+        let overallAccuracy = playerStats.accuracy
+        let overallHeadshotRate = playerStats.headshotPercentage
+
+        if headshotRate > 15 && accuracy > overallAccuracy {
+            return "Excellent precision with this weapon! Your headshot rate is exceptional - keep leveraging this strength."
+        } else if accuracy < overallAccuracy * 0.8 {
+            return "Your accuracy with this weapon is below your average. Consider practicing burst fire or adjusting your aim sensitivity."
+        } else if headshotRate < overallHeadshotRate * 0.7 && headshotRate < 10 {
+            return "Try aiming higher to increase headshots. This weapon can be lethal with better headshot placement."
+        } else if kpm > 0.8 {
+            return "High kill rate with this weapon! You're very aggressive and effective - perfect for objective pushes."
+        } else if kpm < 0.3 && weapon.kills > 500 {
+            return "Consider a more aggressive playstyle with this weapon to increase your kills per minute."
+        } else {
+            return "This is your go-to weapon. Keep mastering it to maintain your edge in combat."
+        }
     }
 
     /// Build a structured prompt for LLM analysis
@@ -1003,6 +1071,28 @@ class LocalAIService: ObservableObject {
 
             if let worstDay = trend.worstDay {
                 prompt += "\n- Worst Day: \(formatDate(worstDay.date)) with \(String(format: "%.2f", worstDay.dailyKD)) K/D"
+            }
+        }
+
+        // Add top weapon data if available
+        if let weapons = stats.weapons, !weapons.isEmpty {
+            // Get top 3 weapons by kills
+            let topWeapons = weapons.sorted { $0.kills > $1.kills }.prefix(3)
+
+            prompt += """
+
+
+        TOP WEAPONS (by kills):
+        """
+            for (index, weapon) in topWeapons.enumerated() {
+                prompt += """
+
+        \(index + 1). \(weapon.weaponName) (\(weapon.type))
+           - Kills: \(weapon.kills)
+           - Accuracy: \(String(format: "%.1f%%", weapon.accuracy))
+           - Headshot Rate: \(String(format: "%.1f%%", weapon.headshotPercentage))
+           - Kills/Min: \(String(format: "%.2f", weapon.killsPerMinute))
+        """
             }
         }
 
@@ -1093,10 +1183,10 @@ class LocalAIService: ObservableObject {
             // Parse trend analysis if present
             var trendAnalysis: TrendAnalysis?
             if let trendJson = json["trendAnalysis"] as? [String: Any] {
-                trendAnalysis = parseTrendAnalysis(trendJson)
+                trendAnalysis = parseTrendAnalysis(trendJson, stats: stats)
             } else if let data = trendData {
                 // Fall back to rule-based trend analysis if LLM didn't provide one
-                trendAnalysis = generateRuleBasedTrendAnalysis(trendData: data)
+                trendAnalysis = generateRuleBasedTrendAnalysis(trendData: data, stats: stats)
             }
 
             return AICoachResponse(
@@ -1117,7 +1207,7 @@ class LocalAIService: ObservableObject {
     }
 
     /// Parse trend analysis from LLM JSON
-    private func parseTrendAnalysis(_ json: [String: Any]) -> TrendAnalysis? {
+    private func parseTrendAnalysis(_ json: [String: Any], stats: PlayerStats) -> TrendAnalysis? {
         guard let trajectoryStr = json["trajectory"] as? String,
               let consistencyStr = json["consistency"] as? String,
               let momentumStr = json["momentum"] as? String else {
@@ -1164,10 +1254,14 @@ class LocalAIService: ObservableObject {
             }
         }
 
+        // Extract top weapon insight
+        let topWeaponInsight = extractTopWeaponInsight(from: stats)
+
         return TrendAnalysis(
             trajectory: trajectory,
             consistency: consistency,
             peakPerformance: peakPerformance,
+            topWeapon: topWeaponInsight,
             sessionLengthImpact: nil,
             momentumStatus: momentum,
             insights: insights
@@ -1432,8 +1526,8 @@ class LocalAIService: ObservableObject {
             ))
         }
 
-        // Weapon tips based on top weapon
-        if let topWeapon = stats.weapons?.first {
+        // Weapon tips based on top weapon (by kills)
+        if let topWeapon = stats.weapons?.max(by: { $0.kills < $1.kills }) {
             if topWeapon.accuracy < 15 {
                 tips.append(AICoachTip(
                     category: .weapons,

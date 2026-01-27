@@ -40,8 +40,10 @@ struct AICoachView: View {
                 if !aiService.status.isDownloaded {
                     modelDownloadSection
                 } else {
-                    // Model Status
-                    modelStatusSection
+                    // Model Status (hide when generating - the animation handles it)
+                    if !isGenerating {
+                        modelStatusSection
+                    }
 
                     Group {
                         if isGenerating {
@@ -658,6 +660,11 @@ struct AICoachView: View {
                 peakPerformanceCard(peak: peak)
             }
 
+            // Top Weapon Section
+            if let topWeapon = trendAnalysis.topWeapon {
+                topWeaponCard(weapon: topWeapon)
+            }
+
             // Trend Insights
             if !trendAnalysis.insights.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
@@ -745,6 +752,127 @@ struct AICoachView: View {
         .cornerRadius(8)
     }
 
+    private func topWeaponCard(weapon: TopWeaponInsight) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header
+            HStack {
+                Image(systemName: "scope")
+                    .foregroundColor(.orange)
+
+                Text("Top Weapon")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+
+                Spacer()
+
+                // Weapon type badge
+                Text(weapon.weaponType)
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundColor(.orange)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.orange.opacity(0.15))
+                    .cornerRadius(4)
+            }
+
+            // Weapon info row
+            HStack(spacing: 12) {
+                // Weapon image
+                if let imageName = weapon.weaponImage, !imageName.isEmpty {
+                    AsyncImage(url: URL(string: imageName)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 80, height: 40)
+                        case .failure, .empty:
+                            Image(systemName: "rectangle.dashed")
+                                .font(.title2)
+                                .foregroundColor(Theme.textSecondary)
+                                .frame(width: 80, height: 40)
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                }
+
+                // Weapon name and kills
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(weapon.weaponName)
+                        .font(.headline)
+                        .foregroundColor(Theme.textPrimary)
+
+                    Text("\(weapon.kills.formatted()) kills")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                }
+
+                Spacer()
+            }
+
+            // Stats row
+            HStack(spacing: 16) {
+                weaponStatPill(
+                    label: "Accuracy",
+                    value: String(format: "%.1f%%", weapon.accuracy * 100),
+                    color: weapon.accuracy > 0.20 ? .green : (weapon.accuracy > 0.12 ? .orange : .red)
+                )
+
+                weaponStatPill(
+                    label: "Headshots",
+                    value: String(format: "%.1f%%", weapon.headshotPercentage * 100),
+                    color: weapon.headshotPercentage > 0.15 ? .green : (weapon.headshotPercentage > 0.08 ? .orange : .yellow)
+                )
+
+                weaponStatPill(
+                    label: "KPM",
+                    value: String(format: "%.2f", weapon.killsPerMinute),
+                    color: weapon.killsPerMinute > 0.7 ? .green : (weapon.killsPerMinute > 0.4 ? .orange : .yellow)
+                )
+            }
+
+            // Recommendation
+            Text(weapon.recommendation)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [Color.orange.opacity(0.08), Theme.overlayColor],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    private func weaponStatPill(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(color)
+
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(Theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(color.opacity(0.1))
+        .cornerRadius(6)
+    }
+
     private func trendInsightRow(insight: TrendInsight) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: insight.category.icon)
@@ -824,12 +952,21 @@ struct AICoachView: View {
 
     private var analysisLoadingSection: some View {
         VStack(spacing: 16) {
-            AIAnalysisLoadingView()
+            AIAnalysisLoadingView(modelStatus: aiService.status)
 
-            Text("This may take a moment while the AI model processes your stats")
-                .font(.caption)
-                .foregroundColor(Theme.textSecondary)
-                .multilineTextAlignment(.center)
+            // Dynamic subtitle based on model status
+            Group {
+                if case .loading = aiService.status {
+                    Text("Loading AI model into memory...")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                } else {
+                    Text("This may take a moment while the AI model processes your stats")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                }
+            }
+            .multilineTextAlignment(.center)
         }
         .padding(40)
         .frame(maxWidth: .infinity)
@@ -991,6 +1128,7 @@ struct AICoachView: View {
 /// Shows stat items flowing upward as they're being "analyzed"
 private struct AIAnalysisLoadingView: View {
     @Environment(\.accentColor) private var accentColor
+    let modelStatus: AIModelStatus
 
     // Animation state
     @State private var particles: [AnalysisParticle] = []
@@ -998,6 +1136,7 @@ private struct AIAnalysisLoadingView: View {
     @State private var centralRotation: Double = 0
     @State private var processingPhase: Int = 0
     @State private var scanLineOffset: CGFloat = 0
+    @State private var animationsStarted = false
 
     // Timer for spawning particles
     let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
@@ -1017,13 +1156,29 @@ private struct AIAnalysisLoadingView: View {
         ("heart.fill", "Revives")
     ]
 
-    private let processingPhases = [
-        "Analyzing combat patterns...",
-        "Evaluating accuracy metrics...",
-        "Processing K/D trends...",
-        "Identifying strengths...",
-        "Generating insights..."
-    ]
+    // Dynamic phases based on model status
+    private var currentPhaseText: String {
+        if case .loading(let progress) = modelStatus {
+            if progress < 0.3 {
+                return "Initializing AI model..."
+            } else if progress < 0.6 {
+                return "Loading neural network..."
+            } else if progress < 0.9 {
+                return "Warming up inference engine..."
+            } else {
+                return "Preparing analysis..."
+            }
+        }
+
+        let processingPhases = [
+            "Analyzing combat patterns...",
+            "Evaluating accuracy metrics...",
+            "Processing K/D trends...",
+            "Identifying strengths...",
+            "Generating insights..."
+        ]
+        return processingPhases[processingPhase % processingPhases.count]
+    }
 
     var body: some View {
         VStack(spacing: 24) {
@@ -1133,10 +1288,11 @@ private struct AIAnalysisLoadingView: View {
 
             // Processing phase text
             VStack(spacing: 8) {
-                Text(processingPhases[processingPhase])
+                Text(currentPhaseText)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(Theme.textPrimary)
+                    .id(currentPhaseText) // Force view update on text change
                     .animation(.easeInOut(duration: 0.3), value: processingPhase)
 
                 // Animated dots
@@ -1152,19 +1308,29 @@ private struct AIAnalysisLoadingView: View {
             }
         }
         .onAppear {
-            startAnimations()
+            // Start animations immediately without delay
+            if !animationsStarted {
+                animationsStarted = true
+                startAnimations()
+            }
         }
         .onReceive(timer) { _ in
             spawnParticle()
         }
         .onReceive(phaseTimer) { _ in
-            withAnimation {
-                processingPhase = (processingPhase + 1) % processingPhases.count
+            // Only cycle phases when not loading the model
+            if case .loading = modelStatus {
+                // Model is loading - phases are handled by currentPhaseText
+            } else {
+                withAnimation {
+                    processingPhase = (processingPhase + 1) % 5
+                }
             }
         }
     }
 
     private func startAnimations() {
+        // Start all animations immediately with no delay
         // Central pulse animation
         withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
             centralPulse = 1.1
@@ -1180,7 +1346,7 @@ private struct AIAnalysisLoadingView: View {
             scanLineOffset = 200
         }
 
-        // Spawn initial particles
+        // Spawn initial particles immediately
         for _ in 0..<5 {
             spawnParticle()
         }
