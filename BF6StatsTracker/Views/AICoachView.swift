@@ -28,6 +28,7 @@ struct AICoachView: View {
 
     @State private var isGenerating = false
     @State private var showModelInfo = false
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -35,43 +36,56 @@ struct AICoachView: View {
                 // Header
                 headerSection
 
-                // Model Status
-                modelStatusSection
+                // Model Download Section (if not downloaded)
+                if !aiService.status.isDownloaded {
+                    modelDownloadSection
+                } else {
+                    // Model Status
+                    modelStatusSection
 
-                if let response = aiService.lastResponse {
-                    // Playstyle Card
-                    playstyleCard(response: response)
+                    if let response = aiService.lastResponse {
+                        // Playstyle Card
+                        playstyleCard(response: response)
 
-                    // Strengths & Weaknesses
-                    strengthsWeaknessesSection(response: response)
+                        // Strengths & Weaknesses
+                        strengthsWeaknessesSection(response: response)
 
-                    // Tips Section
-                    tipsSection(response: response)
+                        // Tips Section
+                        tipsSection(response: response)
 
-                    // Session Insight
-                    if let insight = response.sessionInsight {
-                        sessionInsightCard(insight: insight)
+                        // Session Insight
+                        if let insight = response.sessionInsight {
+                            sessionInsightCard(insight: insight)
+                        }
+
+                        // Timestamp
+                        generatedAtFooter(response: response)
+                    } else if !isGenerating {
+                        // Empty State
+                        emptyStateView
                     }
-
-                    // Timestamp
-                    generatedAtFooter(response: response)
-                } else if !isGenerating {
-                    // Empty State
-                    emptyStateView
                 }
             }
             .padding()
         }
         .background(Theme.backgroundPrimary)
         .onAppear {
-            // Auto-generate if we have stats but no response
-            if viewModel.playerStats != nil && aiService.lastResponse == nil {
+            // Auto-generate if we have stats, model is downloaded, and no response
+            if viewModel.playerStats != nil && aiService.status.isDownloaded && aiService.lastResponse == nil {
                 generateAdvice()
             }
         }
         .onDisappear {
             // Unload model when leaving the view
             aiService.unloadModel()
+        }
+        .alert("Delete AI Model?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                aiService.deleteModel()
+            }
+        } message: {
+            Text("This will delete the downloaded model (\(aiService.downloadedModelSize)). You can re-download it later.")
         }
     }
 
@@ -100,30 +114,33 @@ struct AICoachView: View {
 
             Spacer()
 
-            // Generate Button
-            Button {
-                generateAdvice()
-            } label: {
-                HStack(spacing: 6) {
-                    if isGenerating {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                            .progressViewStyle(CircularProgressViewStyle(tint: Theme.selectedText))
-                    } else {
-                        Image(systemName: "sparkles")
+            // Only show generate button if model is downloaded
+            if aiService.status.isDownloaded {
+                // Generate Button
+                Button {
+                    generateAdvice()
+                } label: {
+                    HStack(spacing: 6) {
+                        if isGenerating {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .progressViewStyle(CircularProgressViewStyle(tint: Theme.selectedText))
+                        } else {
+                            Image(systemName: "sparkles")
+                        }
+                        Text(isGenerating ? "Analyzing..." : "Analyze")
                     }
-                    Text(isGenerating ? "Analyzing..." : "Analyze")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(Theme.selectedText)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(accentColor)
+                    .cornerRadius(8)
                 }
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(Theme.selectedText)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(accentColor)
-                .cornerRadius(8)
+                .buttonStyle(.plain)
+                .disabled(isGenerating || viewModel.playerStats == nil)
             }
-            .buttonStyle(.plain)
-            .disabled(isGenerating || viewModel.playerStats == nil)
 
             // Info Button
             Button {
@@ -149,6 +166,166 @@ struct AICoachView: View {
             .padding(.vertical, 2)
             .background(Theme.bf6Purple)
             .cornerRadius(4)
+    }
+
+    // MARK: - Model Download Section
+
+    private var modelDownloadSection: some View {
+        VStack(spacing: 24) {
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(Theme.bf6Purple.opacity(0.1))
+                    .frame(width: 100, height: 100)
+
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 48))
+                    .foregroundColor(Theme.bf6Purple)
+            }
+
+            // Title and description
+            VStack(spacing: 8) {
+                Text("Download AI Model")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+
+                Text("To use AI coaching, you need to download the language model. This is a one-time download that will be stored locally on your Mac.")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 500)
+            }
+
+            // Model info
+            VStack(spacing: 12) {
+                HStack(spacing: 20) {
+                    modelInfoItem(icon: "doc.zipper", label: "Model", value: aiService.modelInfo.displayName)
+                    modelInfoItem(icon: "internaldrive", label: "Size", value: aiService.modelInfo.size)
+                    modelInfoItem(icon: "folder", label: "Location", value: "Application Support")
+                }
+            }
+            .padding()
+            .background(Theme.overlayColor)
+            .cornerRadius(12)
+
+            // Download progress or button
+            if case .downloading(let progress) = aiService.status {
+                VStack(spacing: 12) {
+                    ProgressView(value: progress)
+                        .tint(Theme.bf6Purple)
+                        .frame(width: 300)
+
+                    HStack {
+                        Text("Downloading: \(aiService.currentDownloadFile)")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Spacer()
+
+                        Text("\(Int(progress * 100))%")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(Theme.bf6Purple)
+                    }
+                    .frame(width: 300)
+
+                    Button {
+                        aiService.cancelDownload()
+                    } label: {
+                        Text("Cancel")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.bf6Red)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else if case .error(let message) = aiService.status {
+                VStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(Theme.bf6Red)
+
+                        Text(message)
+                            .font(.caption)
+                            .foregroundColor(Theme.bf6Red)
+                    }
+                    .padding()
+                    .background(Theme.bf6Red.opacity(0.1))
+                    .cornerRadius(8)
+
+                    Button {
+                        Task {
+                            await aiService.downloadModel()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Retry Download")
+                        }
+                        .font(.headline)
+                        .foregroundColor(Theme.selectedText)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Theme.bf6Purple)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                Button {
+                    Task {
+                        await aiService.downloadModel()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.down.circle.fill")
+                        Text("Download Model (\(aiService.modelInfo.size))")
+                    }
+                    .font(.headline)
+                    .foregroundColor(Theme.selectedText)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Theme.bf6Purple)
+                    .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Privacy note
+            HStack(spacing: 8) {
+                Image(systemName: "lock.shield.fill")
+                    .foregroundColor(Theme.bf6Green)
+
+                Text("All processing happens locally. Your data never leaves your device.")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            .padding()
+            .background(Theme.bf6Green.opacity(0.1))
+            .cornerRadius(8)
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity)
+        .background(Theme.cardBackground)
+        .cornerRadius(16)
+    }
+
+    private func modelInfoItem(icon: String, label: String, value: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(Theme.bf6Purple)
+
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(Theme.textSecondary)
+
+            Text(value)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(Theme.textPrimary)
+        }
+        .frame(minWidth: 80)
     }
 
     // MARK: - Model Status
@@ -193,6 +370,35 @@ struct AICoachView: View {
                 .padding()
                 .background(Theme.bf6Red.opacity(0.1))
                 .cornerRadius(12)
+
+            case .downloaded:
+                // Show a subtle indicator that model is ready
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(Theme.bf6Green)
+
+                    Text("Model ready")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+
+                    Spacer()
+
+                    Button {
+                        showDeleteConfirmation = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trash")
+                            Text("Delete")
+                        }
+                        .font(.caption)
+                        .foregroundColor(Theme.bf6Red)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(Theme.cardBackground)
+                .cornerRadius(8)
 
             default:
                 EmptyView()
@@ -486,19 +692,45 @@ struct AICoachView: View {
 
             Divider()
 
-            HStack {
-                Text("Model Status:")
-                    .font(.caption)
-                    .foregroundColor(Theme.textSecondary)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Model:")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
 
-                Text(aiService.isModelLoaded ? "Loaded" : "Not Loaded")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(aiService.isModelLoaded ? Theme.bf6Green : Theme.textSecondary)
+                    Text(aiService.modelInfo.displayName)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(Theme.textPrimary)
+                }
+
+                HStack {
+                    Text("Status:")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+
+                    Text(aiService.status.displayText)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(aiService.isModelLoaded ? Theme.bf6Green : Theme.textSecondary)
+                }
+
+                if aiService.status.isDownloaded {
+                    HStack {
+                        Text("Size on Disk:")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Text(aiService.downloadedModelSize)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                }
             }
         }
         .padding()
-        .frame(width: 320)
+        .frame(width: 340)
     }
 
     private func infoRow(icon: String, title: String, description: String) -> some View {

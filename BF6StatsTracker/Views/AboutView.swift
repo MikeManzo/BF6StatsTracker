@@ -145,6 +145,15 @@ struct AboutView: View {
                             icon: "person.badge.key.fill",
                             color: .green
                         )
+
+                        Divider()
+
+                        APIAcknowledgement(
+                            name: "Hugging Face",
+                            description: "Hosts the Phi-3 Mini MLX model used for on-device AI coaching features.",
+                            icon: "face.smiling",
+                            color: .yellow
+                        )
                     }
                 }
                 .padding(.vertical, 12)

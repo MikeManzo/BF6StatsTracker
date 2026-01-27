@@ -18,6 +18,10 @@
 
 import Foundation
 import SwiftUI
+import MLX
+import MLXLLM
+import MLXLMCommon
+import Tokenizers
 
 // MARK: - AI Coach Response
 
@@ -105,7 +109,9 @@ struct AICoachTip: Identifiable {
 // MARK: - Model Status
 
 enum AIModelStatus: Equatable {
-    case notLoaded
+    case notDownloaded
+    case downloading(progress: Double)
+    case downloaded
     case loading(progress: Double)
     case loaded
     case error(String)
@@ -116,9 +122,20 @@ enum AIModelStatus: Equatable {
         return false
     }
 
+    var isDownloaded: Bool {
+        switch self {
+        case .downloaded, .loading, .loaded, .generating:
+            return true
+        default:
+            return false
+        }
+    }
+
     var displayText: String {
         switch self {
-        case .notLoaded: return "Model not loaded"
+        case .notDownloaded: return "Model not downloaded"
+        case .downloading(let progress): return "Downloading model... \(Int(progress * 100))%"
+        case .downloaded: return "Model ready to load"
         case .loading(let progress): return "Loading model... \(Int(progress * 100))%"
         case .loaded: return "Model ready"
         case .error(let message): return "Error: \(message)"
@@ -127,45 +144,284 @@ enum AIModelStatus: Equatable {
     }
 }
 
+// MARK: - Model Info
+
+struct AIModelInfo {
+    let name: String
+    let displayName: String
+    let size: String
+    let downloadURL: URL
+    let files: [String]
+
+    static let phi3Mini = AIModelInfo(
+        name: "Phi-3-mini-4k-instruct-4bit",
+        displayName: "Phi-3 Mini (4-bit)",
+        size: "~2.2 GB",
+        downloadURL: URL(string: "https://huggingface.co/mlx-community/Phi-3-mini-4k-instruct-4bit/resolve/main/")!,
+        files: [
+            "config.json",
+            "model.safetensors",
+            "tokenizer.json",
+            "tokenizer_config.json",
+            "special_tokens_map.json"
+        ]
+    )
+}
+
 // MARK: - Local AI Service
 
 @MainActor
 class LocalAIService: ObservableObject {
     static let shared = LocalAIService()
 
-    @Published var status: AIModelStatus = .notLoaded
+    @Published var status: AIModelStatus = .notDownloaded
     @Published var lastResponse: AICoachResponse?
     @Published var isModelLoaded: Bool = false
+    @Published var downloadProgress: Double = 0.0
+    @Published var currentDownloadFile: String = ""
 
     private var unloadTimer: Timer?
     private let unloadTimeout: TimeInterval = 300 // 5 minutes
 
-    // MLX model instance (placeholder - actual MLX integration requires the MLX Swift package)
-    private var modelLoaded: Bool = false
+    // Model configuration
+    let modelInfo = AIModelInfo.phi3Mini
 
-    private init() {}
+    // MLX model instance
+    private var modelContainer: ModelContainer?
+    private var modelLoaded: Bool = false
+    private var downloadTask: URLSessionDownloadTask?
+
+    // Generation configuration
+    private let maxTokens: Int = 1024
+    private let temperature: Float = 0.7
+
+    private init() {
+        // Check if model is already downloaded
+        Task {
+            await checkModelStatus()
+        }
+    }
+
+    // MARK: - Model Directory
+
+    /// Get the Application Support directory for the app
+    var appSupportDirectory: URL {
+        let fileManager = FileManager.default
+        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appDir = appSupport.appendingPathComponent("BF6StatsTracker", isDirectory: true)
+
+        // Create directory if it doesn't exist
+        if !fileManager.fileExists(atPath: appDir.path) {
+            try? fileManager.createDirectory(at: appDir, withIntermediateDirectories: true)
+        }
+
+        return appDir
+    }
+
+    /// Get the models directory
+    var modelsDirectory: URL {
+        let modelsDir = appSupportDirectory.appendingPathComponent("Models", isDirectory: true)
+
+        // Create directory if it doesn't exist
+        if !FileManager.default.fileExists(atPath: modelsDir.path) {
+            try? FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
+        }
+
+        return modelsDir
+    }
+
+    /// Get the path for the current model
+    var modelDirectory: URL {
+        modelsDirectory.appendingPathComponent(modelInfo.name, isDirectory: true)
+    }
+
+    /// Check if all model files exist
+    var isModelDownloaded: Bool {
+        let fileManager = FileManager.default
+        for file in modelInfo.files {
+            let filePath = modelDirectory.appendingPathComponent(file)
+            if !fileManager.fileExists(atPath: filePath.path) {
+                return false
+            }
+        }
+        return true
+    }
+
+    /// Get total size of downloaded model
+    var downloadedModelSize: String {
+        let fileManager = FileManager.default
+        var totalSize: Int64 = 0
+
+        for file in modelInfo.files {
+            let filePath = modelDirectory.appendingPathComponent(file)
+            if let attrs = try? fileManager.attributesOfItem(atPath: filePath.path),
+               let size = attrs[.size] as? Int64 {
+                totalSize += size
+            }
+        }
+
+        return ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+    }
+
+    // MARK: - Model Status Check
+
+    func checkModelStatus() async {
+        if isModelDownloaded {
+            status = .downloaded
+            logInfo("AI Model found at: \(modelDirectory.path)", category: .general)
+        } else {
+            status = .notDownloaded
+            logInfo("AI Model not found. Download required.", category: .general)
+        }
+    }
+
+    // MARK: - Model Download
+
+    /// Download the AI model from Hugging Face
+    func downloadModel() async {
+        guard !status.isDownloaded else {
+            logInfo("Model already downloaded", category: .general)
+            return
+        }
+
+        // Create model directory
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: modelDirectory.path) {
+            try? fileManager.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        }
+
+        status = .downloading(progress: 0.0)
+        downloadProgress = 0.0
+
+        let totalFiles = modelInfo.files.count
+        var completedFiles = 0
+
+        for file in modelInfo.files {
+            currentDownloadFile = file
+            let fileURL = modelInfo.downloadURL.appendingPathComponent(file)
+            let destinationURL = modelDirectory.appendingPathComponent(file)
+
+            // Skip if file already exists
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                completedFiles += 1
+                downloadProgress = Double(completedFiles) / Double(totalFiles)
+                status = .downloading(progress: downloadProgress)
+                continue
+            }
+
+            logInfo("Downloading: \(file)", category: .network)
+
+            do {
+                let (tempURL, response) = try await URLSession.shared.download(from: fileURL)
+
+                // Check for valid response
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                    throw NSError(domain: "Download failed", code: httpResponse.statusCode, userInfo: [
+                        NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode) for \(file)"
+                    ])
+                }
+
+                // Move to final destination
+                if fileManager.fileExists(atPath: destinationURL.path) {
+                    try fileManager.removeItem(at: destinationURL)
+                }
+                try fileManager.moveItem(at: tempURL, to: destinationURL)
+
+                completedFiles += 1
+                downloadProgress = Double(completedFiles) / Double(totalFiles)
+                status = .downloading(progress: downloadProgress)
+
+                logSuccess("Downloaded: \(file)", category: .success)
+
+            } catch {
+                logError("Failed to download \(file): \(error.localizedDescription)", category: .error)
+                status = .error("Failed to download \(file): \(error.localizedDescription)")
+                return
+            }
+        }
+
+        currentDownloadFile = ""
+        status = .downloaded
+        logSuccess("AI Model download complete!", category: .success)
+    }
+
+    /// Cancel ongoing download
+    func cancelDownload() {
+        downloadTask?.cancel()
+        downloadTask = nil
+        status = .notDownloaded
+        downloadProgress = 0.0
+        currentDownloadFile = ""
+
+        // Clean up partial downloads
+        try? FileManager.default.removeItem(at: modelDirectory)
+
+        logInfo("Model download cancelled", category: .general)
+    }
+
+    /// Delete the downloaded model
+    func deleteModel() {
+        unloadModel()
+
+        try? FileManager.default.removeItem(at: modelDirectory)
+        status = .notDownloaded
+        downloadProgress = 0.0
+
+        logInfo("AI Model deleted", category: .general)
+    }
 
     // MARK: - Model Lifecycle
 
     /// Load the AI model into memory
     func loadModel() async {
+        guard status.isDownloaded else {
+            status = .error("Model not downloaded")
+            return
+        }
+
         guard !modelLoaded else { return }
 
         status = .loading(progress: 0.0)
 
-        // Simulate model loading progress
-        // In production, this would be actual MLX model loading
-        for i in 1...10 {
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-            status = .loading(progress: Double(i) / 10.0)
+        do {
+            // Load the model configuration
+            status = .loading(progress: 0.1)
+            logInfo("Loading model from: \(modelDirectory.path)", category: .general)
+
+            // Create model configuration pointing to the local downloaded model directory
+            let modelConfiguration = ModelConfiguration(
+                directory: modelDirectory,
+                defaultPrompt: "You are a helpful assistant."
+            )
+
+            status = .loading(progress: 0.5)
+            logInfo("Loading model weights and tokenizer...", category: .general)
+
+            // Load the LLM model container from the local directory
+            modelContainer = try await LLMModelFactory.shared.loadContainer(
+                configuration: modelConfiguration
+            )
+
+            // Trigger model warm-up
+            status = .loading(progress: 0.8)
+            _ = await modelContainer?.perform { _ in
+                // Empty warm-up operation
+                return ()
+            }
+
+            modelLoaded = true
+            isModelLoaded = true
+            status = .loaded
+
+            logSuccess("AI Coach model loaded into memory", category: .success)
+            resetUnloadTimer()
+
+        } catch {
+            logError("Failed to load model: \(error.localizedDescription)", category: .error)
+            status = .error("Failed to load model: \(error.localizedDescription)")
+            modelLoaded = false
+            isModelLoaded = false
         }
-
-        modelLoaded = true
-        isModelLoaded = true
-        status = .loaded
-
-        logInfo("AI Coach model loaded", category: .general)
-        resetUnloadTimer()
     }
 
     /// Unload the AI model from memory
@@ -173,11 +429,26 @@ class LocalAIService: ObservableObject {
         unloadTimer?.invalidate()
         unloadTimer = nil
 
+        // Release model resources
+        modelContainer = nil
         modelLoaded = false
         isModelLoaded = false
-        status = .notLoaded
 
-        logInfo("AI Coach model unloaded", category: .general)
+        // Force clear MLX GPU cache and memory
+        Memory.clearCache()
+        Memory.cacheLimit = 0  // Disable caching to force immediate release
+
+        // Re-enable reasonable cache limit for next load
+        Memory.cacheLimit = 512 * 1024 * 1024  // 512MB cache limit
+
+        // Keep status as downloaded if model exists
+        if isModelDownloaded {
+            status = .downloaded
+        } else {
+            status = .notDownloaded
+        }
+
+        logInfo("AI Coach model unloaded from memory", category: .general)
     }
 
     /// Reset the auto-unload timer
@@ -203,13 +474,13 @@ class LocalAIService: ObservableObject {
             await loadModel()
         }
 
-        resetUnloadTimer()
+        guard status == .loaded else {
+            return AICoachResponse.empty
+        }
+
         status = .generating
 
-        // Build the analysis using rule-based logic + LLM enhancement
-        // For now, we use sophisticated rule-based analysis
-        // In production, this would send a prompt to the local LLM
-
+        // Analyze player stats using LLM with rule-based fallback
         let response = await analyzePlayerStats(
             stats: stats,
             dailyPerformances: dailyPerformances,
@@ -217,7 +488,9 @@ class LocalAIService: ObservableObject {
         )
 
         lastResponse = response
-        status = .loaded
+
+        // Unload model immediately after analysis to free memory
+        unloadModel()
 
         return response
     }
@@ -229,9 +502,31 @@ class LocalAIService: ObservableObject {
         dailyPerformances: [DailyPerformance],
         recentSnapshots: [StatsSnapshot]
     ) async -> AICoachResponse {
-        // Simulate LLM processing time
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
+        // Build the prompt for LLM analysis
+        let prompt = buildAnalysisPrompt(stats: stats, history: dailyPerformances)
 
+        // Try LLM generation first
+        if let llmResponse = await generateWithLLM(prompt: prompt),
+           let parsedResponse = parseLLMResponse(llmResponse, stats: stats) {
+            logSuccess("Using LLM-generated coaching advice", category: .success)
+            return parsedResponse
+        }
+
+        // Fallback to rule-based analysis if LLM fails or returns invalid response
+        logInfo("Falling back to rule-based analysis", category: .general)
+        return generateRuleBasedAnalysis(
+            stats: stats,
+            dailyPerformances: dailyPerformances,
+            recentSnapshots: recentSnapshots
+        )
+    }
+
+    /// Rule-based fallback analysis
+    private func generateRuleBasedAnalysis(
+        stats: PlayerStats,
+        dailyPerformances: [DailyPerformance],
+        recentSnapshots: [StatsSnapshot]
+    ) -> AICoachResponse {
         // Analyze playstyle
         let (playstyle, playstyleDesc) = determinePlaystyle(stats: stats)
 
@@ -260,6 +555,134 @@ class LocalAIService: ObservableObject {
             sessionInsight: sessionInsight,
             generatedAt: Date()
         )
+    }
+
+    /// Build a structured prompt for LLM analysis
+    private func buildAnalysisPrompt(stats: PlayerStats, history: [DailyPerformance]) -> String {
+        """
+        Analyze these Battlefield player statistics and provide coaching advice.
+
+        PLAYER STATISTICS:
+        - K/D Ratio: \(String(format: "%.2f", stats.kdRatio))
+        - Accuracy: \(String(format: "%.1f%%", stats.accuracy))
+        - Headshot Rate: \(String(format: "%.1f%%", stats.headshotPercentage))
+        - Win Rate: \(String(format: "%.1f%%", stats.wlRatio))
+        - Kills per Match: \(String(format: "%.1f", stats.killsPerMatch))
+        - Kills per Minute: \(String(format: "%.2f", stats.killsPerMinute))
+        - Total Kills: \(stats.kills)
+        - Total Deaths: \(stats.deaths)
+        - Revives: \(stats.revives)
+        - Resupplies: \(stats.resupplies)
+        - Vehicles Destroyed: \(stats.vehiclesDestroyed)
+        - Best Class: \(stats.bestClass)
+        - Matches Played: \(stats.matchesPlayed)
+        - Time Played: \(stats.timePlayedString)
+
+        RECENT SESSIONS:
+        \(history.prefix(5).map { "- \(formatDate($0.date)): K/D \(String(format: "%.2f", $0.dailyKD)), \($0.deltaKills) kills" }.joined(separator: "\n"))
+
+        Respond in this EXACT JSON format:
+        {
+            "playstyle": "Name of playstyle (e.g., Aggressive Slayer, Combat Medic)",
+            "playstyleDescription": "2-3 sentence description of their playstyle",
+            "strengths": ["strength 1", "strength 2", "strength 3"],
+            "weaknesses": ["weakness 1", "weakness 2"],
+            "tips": [
+                {"category": "accuracy|positioning|teamplay|weapons|vehicles|objectives|general", "title": "Short title", "description": "Detailed tip", "priority": "high|medium|low"},
+                {"category": "positioning", "title": "Another tip", "description": "Description", "priority": "medium"}
+            ],
+            "sessionInsight": "Optional insight about recent performance trend"
+        }
+
+        Provide 3-5 tips. Be specific and actionable. Reference their actual stats in your advice.
+        """
+    }
+
+    /// Parse LLM response into AICoachResponse
+    private func parseLLMResponse(_ response: String, stats: PlayerStats) -> AICoachResponse? {
+        // Try to extract JSON from the response
+        guard let jsonStart = response.firstIndex(of: "{"),
+              let jsonEnd = response.lastIndex(of: "}") else {
+            logError("No JSON found in LLM response", category: .error)
+            return nil
+        }
+
+        let jsonString = String(response[jsonStart...jsonEnd])
+
+        guard let jsonData = jsonString.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+
+            guard let json = json,
+                  let playstyle = json["playstyle"] as? String,
+                  let playstyleDescription = json["playstyleDescription"] as? String,
+                  let strengthsArray = json["strengths"] as? [String],
+                  let weaknessesArray = json["weaknesses"] as? [String],
+                  let tipsArray = json["tips"] as? [[String: Any]] else {
+                logError("Invalid JSON structure in LLM response", category: .error)
+                return nil
+            }
+
+            // Parse tips
+            var tips: [AICoachTip] = []
+            for tipJson in tipsArray {
+                if let categoryStr = tipJson["category"] as? String,
+                   let title = tipJson["title"] as? String,
+                   let description = tipJson["description"] as? String,
+                   let priorityStr = tipJson["priority"] as? String {
+
+                    let category = parseTipCategory(categoryStr)
+                    let priority = parseTipPriority(priorityStr)
+
+                    tips.append(AICoachTip(
+                        category: category,
+                        title: title,
+                        description: description,
+                        priority: priority
+                    ))
+                }
+            }
+
+            let sessionInsight = json["sessionInsight"] as? String
+
+            return AICoachResponse(
+                playstyle: playstyle,
+                playstyleDescription: playstyleDescription,
+                strengths: strengthsArray,
+                weaknesses: weaknessesArray,
+                tips: tips,
+                sessionInsight: sessionInsight,
+                generatedAt: Date()
+            )
+
+        } catch {
+            logError("Failed to parse LLM JSON: \(error.localizedDescription)", category: .error)
+            return nil
+        }
+    }
+
+    private func parseTipCategory(_ str: String) -> AICoachTip.TipCategory {
+        switch str.lowercased() {
+        case "accuracy": return .accuracy
+        case "positioning": return .positioning
+        case "teamplay": return .teamplay
+        case "weapons": return .weapons
+        case "vehicles": return .vehicles
+        case "objectives": return .objectives
+        default: return .general
+        }
+    }
+
+    private func parseTipPriority(_ str: String) -> AICoachTip.TipPriority {
+        switch str.lowercased() {
+        case "high": return .high
+        case "medium": return .medium
+        case "low": return .low
+        default: return .medium
+        }
     }
 
     private func determinePlaystyle(stats: PlayerStats) -> (String, String) {
@@ -519,47 +942,69 @@ class LocalAIService: ObservableObject {
         }
     }
 
-    // MARK: - LLM Integration (Future)
+    // MARK: - LLM Integration
 
     /// Generate advice using local LLM (MLX)
-    /// This is a placeholder for actual MLX integration
-    private func generateWithLLM(prompt: String) async -> String {
-        // In production, this would:
-        // 1. Load MLX model if not loaded
-        // 2. Tokenize the prompt
-        // 3. Run inference on Apple Silicon
-        // 4. Decode and return the response
+    private func generateWithLLM(prompt: String) async -> String? {
+        guard let container = modelContainer else {
+            logError("Model container not loaded", category: .error)
+            return nil
+        }
 
-        // For now, return empty string as we use rule-based analysis
-        return ""
-    }
+        do {
+            logInfo("Starting LLM inference...", category: .general)
 
-    /// Build prompt for LLM
-    private func buildPrompt(stats: PlayerStats, history: [DailyPerformance]) -> String {
-        """
-        You are an expert Battlefield coach. Analyze these player statistics and provide 3-5 specific, actionable tips to improve their gameplay.
+            // Create the chat messages for Phi-3 format
+            let systemPrompt = """
+            You are an expert Battlefield game coach. Analyze player statistics and provide personalized, actionable advice.
+            Be encouraging but honest. Focus on specific, practical tips that will help the player improve.
+            Keep your response concise and structured.
+            """
 
-        Current Stats:
-        - K/D Ratio: \(String(format: "%.2f", stats.kdRatio))
-        - Accuracy: \(String(format: "%.1f%%", stats.accuracy))
-        - Headshot Rate: \(String(format: "%.1f%%", stats.headshotPercentage))
-        - Win Rate: \(String(format: "%.1f%%", stats.wlRatio))
-        - Kills per Match: \(String(format: "%.1f", stats.killsPerMatch))
-        - Kills per Minute: \(String(format: "%.2f", stats.killsPerMinute))
-        - Total Kills: \(stats.kills)
-        - Total Deaths: \(stats.deaths)
-        - Revives: \(stats.revives)
-        - Resupplies: \(stats.resupplies)
-        - Vehicles Destroyed: \(stats.vehiclesDestroyed)
-        - Best Class: \(stats.bestClass)
-        - Matches Played: \(stats.matchesPlayed)
-        - Time Played: \(stats.timePlayedString)
+            let messages: [Message] = [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": prompt]
+            ]
 
-        Recent Performance Trend:
-        \(history.prefix(5).map { "- \(formatDate($0.date)): K/D \(String(format: "%.2f", $0.dailyKD)), \($0.deltaKills) kills" }.joined(separator: "\n"))
+            // Prepare input for generation using messages
+            let userInput = UserInput(prompt: .messages(messages))
+            let input = try await container.prepare(input: userInput)
 
-        Based on this data, identify their playstyle, list their strengths, areas for improvement, and provide specific tips. Be encouraging but honest.
-        """
+            // Set up generation parameters
+            let generateParameters = GenerateParameters(
+                maxTokens: maxTokens,
+                temperature: temperature,
+                topP: 0.9,
+                repetitionPenalty: 1.1
+            )
+
+            // Generate response using the model container
+            var generatedText = ""
+            let stream = try await container.generate(
+                input: input,
+                parameters: generateParameters
+            )
+            
+            // Collect the generated text from the stream
+            for await generation in stream {
+                switch generation {
+                case .chunk(let text):
+                    generatedText += text
+                case .info(let info):
+                    logInfo("Generation complete: \(String(format: "%.1f", info.tokensPerSecond)) tokens/sec", category: .general)
+                case .toolCall:
+                    // Not using tool calls for this use case
+                    break
+                }
+            }
+
+            logSuccess("LLM inference complete", category: .success)
+            return generatedText
+
+        } catch {
+            logError("LLM generation failed: \(error.localizedDescription)", category: .error)
+            return nil
+        }
     }
 
     private func formatDate(_ date: Date) -> String {
