@@ -458,3 +458,320 @@ struct AnimatedNumber: View {
             }
     }
 }
+
+// MARK: - AI Analysis Loading Animation
+
+/// A sophisticated cascading data analysis animation for the AI Coach
+/// Shows stat items flowing upward as they're being "analyzed"
+struct AIAnalysisLoadingView: View {
+    @Environment(\.accentColor) private var accentColor
+
+    // Animation state
+    @State private var particles: [AnalysisParticle] = []
+    @State private var centralPulse: CGFloat = 1.0
+    @State private var centralRotation: Double = 0
+    @State private var processingPhase: Int = 0
+    @State private var scanLineOffset: CGFloat = 0
+
+    // Timer for spawning particles
+    let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
+    let phaseTimer = Timer.publish(every: 2.0, on: .main, in: .common).autoconnect()
+
+    // Stat items to cycle through
+    private let statItems: [(icon: String, label: String)] = [
+        ("target", "Accuracy"),
+        ("person.fill.viewfinder", "K/D Ratio"),
+        ("flame.fill", "Kills"),
+        ("clock.fill", "Time Played"),
+        ("trophy.fill", "Score"),
+        ("star.fill", "SPM"),
+        ("bolt.fill", "Headshots"),
+        ("chart.line.uptrend.xyaxis", "Win Rate"),
+        ("scope", "Kills/Min"),
+        ("heart.fill", "Revives")
+    ]
+
+    private let processingPhases = [
+        "Analyzing combat patterns...",
+        "Evaluating accuracy metrics...",
+        "Processing K/D trends...",
+        "Identifying strengths...",
+        "Generating insights..."
+    ]
+
+    var body: some View {
+        VStack(spacing: 24) {
+            // Main animation container
+            ZStack {
+                // Background glow
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                accentColor.opacity(0.15),
+                                accentColor.opacity(0.05),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 20,
+                            endRadius: 150
+                        )
+                    )
+                    .frame(width: 300, height: 300)
+                    .scaleEffect(centralPulse)
+
+                // Scan line effect
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.clear,
+                                accentColor.opacity(0.3),
+                                accentColor.opacity(0.5),
+                                accentColor.opacity(0.3),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 200, height: 2)
+                    .offset(y: scanLineOffset - 100)
+                    .mask(
+                        RoundedRectangle(cornerRadius: 100)
+                            .frame(width: 200, height: 200)
+                    )
+
+                // Floating particles
+                ForEach(particles) { particle in
+                    AnalysisParticleView(particle: particle, accentColor: accentColor)
+                }
+
+                // Central processing indicator
+                ZStack {
+                    // Outer rotating ring
+                    Circle()
+                        .trim(from: 0.0, to: 0.7)
+                        .stroke(
+                            AngularGradient(
+                                colors: [accentColor, Theme.bf6Purple, accentColor.opacity(0.3)],
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                        )
+                        .frame(width: 80, height: 80)
+                        .rotationEffect(.degrees(centralRotation))
+
+                    // Inner rotating ring (opposite direction)
+                    Circle()
+                        .trim(from: 0.2, to: 0.5)
+                        .stroke(
+                            AngularGradient(
+                                colors: [Theme.bf6Purple.opacity(0.5), accentColor],
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                        )
+                        .frame(width: 60, height: 60)
+                        .rotationEffect(.degrees(-centralRotation * 1.5))
+
+                    // Center icon
+                    ZStack {
+                        Circle()
+                            .fill(Theme.cardBackground)
+                            .frame(width: 50, height: 50)
+
+                        Image(systemName: "brain.head.profile")
+                            .font(.system(size: 24))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [accentColor, Theme.bf6Purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .scaleEffect(centralPulse * 0.9 + 0.1)
+                    }
+                }
+
+                // Data stream lines
+                ForEach(0..<6, id: \.self) { index in
+                    DataStreamLine(
+                        index: index,
+                        accentColor: accentColor,
+                        rotation: centralRotation
+                    )
+                }
+            }
+            .frame(width: 300, height: 250)
+
+            // Processing phase text
+            VStack(spacing: 8) {
+                Text(processingPhases[processingPhase])
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(Theme.textPrimary)
+                    .animation(.easeInOut(duration: 0.3), value: processingPhase)
+
+                // Animated dots
+                HStack(spacing: 4) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Circle()
+                            .fill(accentColor)
+                            .frame(width: 6, height: 6)
+                            .opacity(Double((processingPhase + index) % 3 == 0 ? 1.0 : 0.3))
+                            .animation(.easeInOut(duration: 0.5).delay(Double(index) * 0.15), value: processingPhase)
+                    }
+                }
+            }
+        }
+        .onAppear {
+            startAnimations()
+        }
+        .onReceive(timer) { _ in
+            spawnParticle()
+        }
+        .onReceive(phaseTimer) { _ in
+            withAnimation {
+                processingPhase = (processingPhase + 1) % processingPhases.count
+            }
+        }
+    }
+
+    private func startAnimations() {
+        // Central pulse animation
+        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+            centralPulse = 1.1
+        }
+
+        // Central rotation animation
+        withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+            centralRotation = 360
+        }
+
+        // Scan line animation
+        withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+            scanLineOffset = 200
+        }
+
+        // Spawn initial particles
+        for _ in 0..<5 {
+            spawnParticle()
+        }
+    }
+
+    private func spawnParticle() {
+        let randomStat = statItems.randomElement()!
+        let startX = CGFloat.random(in: -100...100)
+        let particle = AnalysisParticle(
+            id: UUID(),
+            icon: randomStat.icon,
+            label: randomStat.label,
+            startPosition: CGPoint(x: startX, y: 120),
+            endPosition: CGPoint(x: startX + CGFloat.random(in: -30...30), y: -120),
+            duration: Double.random(in: 2.0...3.5)
+        )
+
+        withAnimation(.easeOut(duration: particle.duration)) {
+            particles.append(particle)
+        }
+
+        // Remove particle after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + particle.duration) {
+            particles.removeAll { $0.id == particle.id }
+        }
+    }
+}
+
+// MARK: - Analysis Particle Model
+
+struct AnalysisParticle: Identifiable {
+    let id: UUID
+    let icon: String
+    let label: String
+    let startPosition: CGPoint
+    let endPosition: CGPoint
+    let duration: Double
+}
+
+// MARK: - Analysis Particle View
+
+struct AnalysisParticleView: View {
+    let particle: AnalysisParticle
+    let accentColor: Color
+
+    @State private var progress: CGFloat = 0
+    @State private var opacity: CGFloat = 0
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: particle.icon)
+                .font(.caption)
+                .foregroundColor(accentColor)
+
+            Text(particle.label)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(Theme.textPrimary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Theme.cardBackground)
+                .shadow(color: accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
+        )
+        .overlay(
+            Capsule()
+                .strokeBorder(accentColor.opacity(0.3), lineWidth: 1)
+        )
+        .position(
+            x: 150 + particle.startPosition.x + (particle.endPosition.x - particle.startPosition.x) * progress,
+            y: 125 + particle.startPosition.y + (particle.endPosition.y - particle.startPosition.y) * progress
+        )
+        .opacity(opacity)
+        .onAppear {
+            withAnimation(.easeOut(duration: particle.duration)) {
+                progress = 1
+            }
+            withAnimation(.easeIn(duration: 0.3)) {
+                opacity = 1
+            }
+            withAnimation(.easeOut(duration: 0.5).delay(particle.duration - 0.5)) {
+                opacity = 0
+            }
+        }
+    }
+}
+
+// MARK: - Data Stream Line
+
+struct DataStreamLine: View {
+    let index: Int
+    let accentColor: Color
+    let rotation: Double
+
+    @State private var dashPhase: CGFloat = 0
+
+    private var angle: Double {
+        Double(index) * 60
+    }
+
+    var body: some View {
+        Path { path in
+            path.move(to: CGPoint(x: 150, y: 125))
+            let endX = 150 + cos((angle + rotation * 0.2) * .pi / 180) * 100
+            let endY = 125 + sin((angle + rotation * 0.2) * .pi / 180) * 100
+            path.addLine(to: CGPoint(x: endX, y: endY))
+        }
+        .stroke(
+            accentColor.opacity(0.2),
+            style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [4, 8], dashPhase: dashPhase)
+        )
+        .onAppear {
+            withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                dashPhase = -12
+            }
+        }
+    }
+}
