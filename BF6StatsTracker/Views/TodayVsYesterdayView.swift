@@ -295,6 +295,7 @@ struct TodayVsYesterdayView: View {
     }
 
     // Get yesterday's data by comparing last snapshot of yesterday to last snapshot of day before yesterday
+    // Falls back to first snapshot of yesterday if no day-before-yesterday data exists
     private var yesterdayData: DailyPerformanceData? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -303,7 +304,7 @@ struct TodayVsYesterdayView: View {
 
         let snapshots = historyManager.getAllSnapshots()
 
-        // Get last snapshot from yesterday
+        // Get snapshots from yesterday, sorted chronologically
         let yesterdaySnapshots = snapshots.filter { snapshot in
             calendar.isDate(snapshot.timestamp, inSameDayAs: yesterday)
         }.sorted { $0.timestamp < $1.timestamp }
@@ -315,19 +316,20 @@ struct TodayVsYesterdayView: View {
             calendar.isDate(snapshot.timestamp, inSameDayAs: dayBeforeYesterday)
         }.sorted { $0.timestamp < $1.timestamp }
 
-        guard let lastDayBefore = dayBeforeSnapshots.last else { return nil }
+        // Use day-before-yesterday's last snapshot as baseline, or fall back to yesterday's first snapshot
+        let baseline = dayBeforeSnapshots.last ?? yesterdaySnapshots.first!
 
-        let kills = lastYesterday.kills - lastDayBefore.kills
-        let deaths = lastYesterday.deaths - lastDayBefore.deaths
-        let matches = lastYesterday.matchesPlayed - lastDayBefore.matchesPlayed
+        let kills = lastYesterday.kills - baseline.kills
+        let deaths = lastYesterday.deaths - baseline.deaths
+        let matches = lastYesterday.matchesPlayed - baseline.matchesPlayed
         let kd = deaths > 0 ? Double(kills) / Double(deaths) : Double(kills)
-        let headshots = lastYesterday.headshots - lastDayBefore.headshots
-        let assists = lastYesterday.assists - lastDayBefore.assists
-        let revives = lastYesterday.revives - lastDayBefore.revives
-        let score = lastYesterday.totalScore - lastDayBefore.totalScore
+        let headshots = lastYesterday.headshots - baseline.headshots
+        let assists = lastYesterday.assists - baseline.assists
+        let revives = lastYesterday.revives - baseline.revives
+        let score = lastYesterday.totalScore - baseline.totalScore
         let killAssists = kills + assists
         let kda = deaths > 0 ? Double(killAssists) / Double(deaths) : Double(killAssists)
-        let wins = lastYesterday.wins - lastDayBefore.wins
+        let wins = lastYesterday.wins - baseline.wins
 
         return DailyPerformanceData(
             deltaKills: kills,
