@@ -1101,20 +1101,33 @@ struct AICoachView: View {
 
         isGenerating = true
 
-        Task {
-            let dailyPerformances = HistoryManager.shared.getRecentDailyPerformances(
-                days: 30,
-                playerName: stats.userName
-            )
+        // Capture recentSnapshots before entering async context
+        let snapshotsToUse = Array(recentSnapshots.prefix(50))
 
-            // Gather trend data for analysis
-            let trendData = aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
+        // Get nickname from the most recent stored account, fall back to eaId
+        let account = EAAccountStore.shared.mostRecentAccount
+        let playerNickname = account?.nickname ?? account?.eaId
+
+        Task {
+            // Yield immediately to allow UI to update and show animation
+            await Task.yield()
+
+            // Gather data on background thread to avoid blocking UI
+            let (dailyPerformances, trendData) = await Task.detached(priority: .userInitiated) {
+                let performances = HistoryManager.shared.getRecentDailyPerformances(
+                    days: 30,
+                    playerName: stats.userName
+                )
+                let trends = self.aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
+                return (performances, trends)
+            }.value
 
             _ = await aiService.generateCoachingAdvice(
                 stats: stats,
                 dailyPerformances: dailyPerformances,
-                recentSnapshots: Array(recentSnapshots.prefix(50)),
-                trendData: trendData
+                recentSnapshots: snapshotsToUse,
+                trendData: trendData,
+                playerNickname: playerNickname
             )
 
             isGenerating = false

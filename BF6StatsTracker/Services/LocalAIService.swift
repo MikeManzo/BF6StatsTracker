@@ -670,7 +670,8 @@ class LocalAIService: ObservableObject {
         stats: PlayerStats,
         dailyPerformances: [DailyPerformance],
         recentSnapshots: [StatsSnapshot],
-        trendData: TrendDataContainer? = nil
+        trendData: TrendDataContainer? = nil,
+        playerNickname: String? = nil
     ) async -> AICoachResponse {
         // Ensure model is loaded
         if !modelLoaded {
@@ -688,7 +689,8 @@ class LocalAIService: ObservableObject {
             stats: stats,
             dailyPerformances: dailyPerformances,
             recentSnapshots: recentSnapshots,
-            trendData: trendData
+            trendData: trendData,
+            playerNickname: playerNickname
         )
 
         lastResponse = response
@@ -767,10 +769,11 @@ class LocalAIService: ObservableObject {
         stats: PlayerStats,
         dailyPerformances: [DailyPerformance],
         recentSnapshots: [StatsSnapshot],
-        trendData: TrendDataContainer?
+        trendData: TrendDataContainer?,
+        playerNickname: String? = nil
     ) async -> AICoachResponse {
         // Build the prompt for LLM analysis
-        let prompt = buildAnalysisPrompt(stats: stats, history: dailyPerformances, trendData: trendData)
+        let prompt = buildAnalysisPrompt(stats: stats, history: dailyPerformances, trendData: trendData, playerNickname: playerNickname)
 
         // Try LLM generation first
         if let llmResponse = await generateWithLLM(prompt: prompt),
@@ -1019,9 +1022,10 @@ class LocalAIService: ObservableObject {
     }
 
     /// Build a structured prompt for LLM analysis
-    private func buildAnalysisPrompt(stats: PlayerStats, history: [DailyPerformance], trendData: TrendDataContainer?) -> String {
+    private func buildAnalysisPrompt(stats: PlayerStats, history: [DailyPerformance], trendData: TrendDataContainer?, playerNickname: String? = nil) -> String {
+        let playerName = playerNickname ?? stats.userName
         var prompt = """
-        Analyze these Battlefield player statistics and provide coaching advice.
+        Analyze these Battlefield player statistics and provide coaching advice for \(playerName).
 
         PLAYER STATISTICS:
         - K/D Ratio: \(String(format: "%.2f", stats.kdRatio))
