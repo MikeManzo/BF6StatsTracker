@@ -1112,15 +1112,13 @@ struct AICoachView: View {
             // Yield immediately to allow UI to update and show animation
             await Task.yield()
 
-            // Gather data on background thread to avoid blocking UI
-            let (dailyPerformances, trendData) = await Task.detached(priority: .userInitiated) {
-                let performances = HistoryManager.shared.getRecentDailyPerformances(
-                    days: 30,
-                    playerName: stats.userName
-                )
-                let trends = self.aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
-                return (performances, trends)
-            }.value
+            // Gather data on the MainActor (HistoryManager is @MainActor)
+            // Don't use Task.detached since SwiftData models are not Sendable
+            let dailyPerformances = HistoryManager.shared.getRecentDailyPerformances(
+                days: 30,
+                playerName: stats.userName
+            )
+            let trendData = aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
 
             _ = await aiService.generateCoachingAdvice(
                 stats: stats,
