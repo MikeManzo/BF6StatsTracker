@@ -782,6 +782,7 @@ struct SettingsToggleRow: View {
             }
         }
         .toggleStyle(.switch)
+        .controlSize(.small)
         .tint(accentColor)
     }
 }
