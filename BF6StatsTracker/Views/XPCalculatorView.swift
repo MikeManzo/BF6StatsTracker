@@ -152,6 +152,8 @@ struct XPCalculatorView: View {
                             .foregroundColor(didWin ? .green : .red)
                     }
                     .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(accentColor)
                 }
                 .padding()
                 .background(Theme.backgroundSecondary)

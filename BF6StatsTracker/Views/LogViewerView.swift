@@ -106,6 +106,7 @@ struct LogViewerView: View {
                 }
                 .toggleStyle(.switch)
                 .controlSize(.small)
+                .tint(accentColor)
 
                 // Auto-scroll toggle
                 Toggle(isOn: $viewModel.autoScroll) {
@@ -117,6 +118,7 @@ struct LogViewerView: View {
                 }
                 .toggleStyle(.switch)
                 .controlSize(.small)
+                .tint(accentColor)
 
                 // Clear logs
                 Button(action: { viewModel.clearLogs() }) {
