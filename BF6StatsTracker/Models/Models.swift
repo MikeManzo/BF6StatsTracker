@@ -1367,6 +1367,7 @@ struct AppSettings: Codable {
     var selectedColorScheme: AppColorScheme
     var debugMode: Bool
     var playSoundOnSnapshot: Bool
+    var selectedSound: String     // System sound name for notifications
     var menuBarOnlyMode: Bool
     var appearanceMode: AppearanceMode
 
@@ -1390,6 +1391,7 @@ struct AppSettings: Codable {
         self.selectedColorScheme = .orange
         self.debugMode = false
         self.playSoundOnSnapshot = true
+        self.selectedSound = "Glass"
         self.menuBarOnlyMode = false
         self.appearanceMode = .auto
         self.nucleusId = nil
@@ -1420,7 +1422,7 @@ struct AppSettings: Codable {
     enum CodingKeys: String, CodingKey {
         case playerName, platform, autoRefresh, refreshInterval, tilePositions
         case showNotifications, compactMode, selectedColorScheme, debugMode
-        case playSoundOnSnapshot, menuBarOnlyMode, appearanceMode
+        case playSoundOnSnapshot, selectedSound, menuBarOnlyMode, appearanceMode
         case nucleusId, personaId, eaId, isEAAuthenticated
         case aiCoachEnabled
     }
@@ -1441,6 +1443,9 @@ struct AppSettings: Codable {
 
         // Default to true if playSoundOnSnapshot doesn't exist in saved settings
         playSoundOnSnapshot = try container.decodeIfPresent(Bool.self, forKey: .playSoundOnSnapshot) ?? true
+
+        // Default to "Glass" if selectedSound doesn't exist in saved settings
+        selectedSound = try container.decodeIfPresent(String.self, forKey: .selectedSound) ?? "Glass"
 
         // Default to false if menuBarOnlyMode doesn't exist in saved settings
         menuBarOnlyMode = try container.decodeIfPresent(Bool.self, forKey: .menuBarOnlyMode) ?? false

@@ -30,8 +30,8 @@ class SoundNotificationService: ObservableObject {
         // Only play sound if the user has enabled it in settings
         guard settings.playSoundOnSnapshot else { return }
 
-        // Using "Glass" - a satisfying, clear notification sound
-        // Other good options: "Submarine", "Pop", "Tink", "Purr"
-        NSSound(named: "Glass")?.play()
+        // Use the user's selected sound, defaulting to "Glass" if not set or invalid
+        let soundName = settings.selectedSound.isEmpty ? "Glass" : settings.selectedSound
+        NSSound(named: NSSound.Name(soundName))?.play()
     }
 }

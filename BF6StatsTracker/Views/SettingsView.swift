@@ -25,6 +25,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case accounts = "EA Accounts"
     case appearance = "Appearance"
     case display = "Display"
+    case sound = "Sound"
     case autoRefresh = "Auto Refresh"
     case menuBar = "Menu Bar"
     case dataManagement = "Data Management"
@@ -38,6 +39,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .accounts: return "person.crop.circle.fill"
         case .appearance: return "paintbrush.fill"
         case .display: return "display"
+        case .sound: return "speaker.wave.3.fill"
         case .autoRefresh: return "arrow.clockwise"
         case .menuBar: return "menubar.rectangle"
         case .dataManagement: return "externaldrive.fill"
@@ -51,6 +53,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .accounts: return .blue
         case .appearance: return .purple
         case .display: return .indigo
+        case .sound: return .pink
         case .autoRefresh: return .green
         case .menuBar: return .gray
         case .dataManagement: return .orange
@@ -85,6 +88,7 @@ struct SettingsView: View {
     @State private var playSoundOnSnapshot: Bool = true
     @State private var menuBarOnlyMode: Bool = false
     @State private var appearanceMode: AppearanceMode = .auto
+    @State private var selectedSound: String = "Glass"
     @State private var showClearHistoryConfirmation = false
     @State private var accountToDelete: StoredEAAccount?
     @State private var showDeleteAccountAlert = false
@@ -208,6 +212,8 @@ struct SettingsView: View {
             appearancePane
         case .display:
             displayPane
+        case .sound:
+            soundPane
         case .autoRefresh:
             autoRefreshPane
         case .menuBar:
@@ -249,6 +255,7 @@ struct SettingsView: View {
                     SettingsGroupBox {
                         EAAccountRow(
                             account: account,
+                            isCurrentUser: isCurrentUser(account),
                             onDelete: {
                                 accountToDelete = account
                                 showDeleteAccountAlert = true
@@ -360,18 +367,62 @@ struct SettingsView: View {
                         isOn: $showNotifications
                     )
                     .onChange(of: showNotifications) { _, _ in saveSettings() }
-
-                    Divider()
-                        .padding(.vertical, 12)
-
-                    SettingsToggleRow(
-                        title: "Play Sound on Update",
-                        subtitle: "Play a sound when new data is available",
-                        isOn: $playSoundOnSnapshot
-                    )
-                    .onChange(of: playSoundOnSnapshot) { _, _ in saveSettings() }
                 }
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Sound Pane
+
+    private var soundPane: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            // Sound enabled toggle
+            SettingsGroupBox {
+                SettingsToggleRow(
+                    title: "Play Sound on Update",
+                    subtitle: "Play a notification sound when new data is available",
+                    isOn: $playSoundOnSnapshot
+                )
+                .onChange(of: playSoundOnSnapshot) { _, _ in saveSettings() }
+            }
+
+            // Sound selection
+            if playSoundOnSnapshot {
+                SettingsGroupBox {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Notification Sound")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        VStack(spacing: 2) {
+                            ForEach(SystemSound.allSounds, id: \.name) { sound in
+                                SoundOptionRow(
+                                    sound: sound,
+                                    isSelected: selectedSound == sound.name,
+                                    onSelect: {
+                                        selectedSound = sound.name
+                                        saveSettings()
+                                    },
+                                    onTest: {
+                                        NSSound(named: NSSound.Name(sound.name))?.play()
+                                    }
+                                )
+
+                                if sound.name != SystemSound.allSounds.last?.name {
+                                    Divider()
+                                        .padding(.vertical, 4)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text("Choose which sound to play when a snapshot is saved after completing a match.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -604,6 +655,7 @@ struct SettingsView: View {
         selectedColorScheme = viewModel.settings.selectedColorScheme
         debugMode = viewModel.settings.debugMode
         playSoundOnSnapshot = viewModel.settings.playSoundOnSnapshot
+        selectedSound = viewModel.settings.selectedSound
         menuBarOnlyMode = viewModel.settings.menuBarOnlyMode
         appearanceMode = viewModel.settings.appearanceMode
         aiCoachEnabled = viewModel.settings.aiCoachEnabled
@@ -620,6 +672,7 @@ struct SettingsView: View {
         viewModel.settings.selectedColorScheme = selectedColorScheme
         viewModel.settings.debugMode = debugMode
         viewModel.settings.playSoundOnSnapshot = playSoundOnSnapshot
+        viewModel.settings.selectedSound = selectedSound
         viewModel.settings.menuBarOnlyMode = menuBarOnlyMode
         viewModel.settings.appearanceMode = appearanceMode
         viewModel.settings.aiCoachEnabled = aiCoachEnabled
@@ -675,6 +728,19 @@ struct SettingsView: View {
         }
 
         return parts.joined(separator: ", ")
+    }
+
+    private func isCurrentUser(_ account: StoredEAAccount) -> Bool {
+        // Check if this account matches the currently authenticated user
+        if let currentNucleusId = viewModel.settings.nucleusId,
+           account.nucleusId == currentNucleusId {
+            return true
+        }
+        if let currentPersonaId = viewModel.settings.personaId,
+           account.personaId == currentPersonaId {
+            return true
+        }
+        return false
     }
 
     private func clearHistoricalData() {
@@ -920,9 +986,18 @@ struct AccentColorButton: View {
 struct EAAccountRow: View {
     @Environment(\.accentColor) private var accentColor
     let account: StoredEAAccount
+    let isCurrentUser: Bool
     let onDelete: () -> Void
 
-    @State private var isExpanded = false
+    @State private var isExpanded: Bool
+
+    init(account: StoredEAAccount, isCurrentUser: Bool = false, onDelete: @escaping () -> Void) {
+        self.account = account
+        self.isCurrentUser = isCurrentUser
+        self.onDelete = onDelete
+        // Auto-expand if this is the current user
+        self._isExpanded = State(initialValue: isCurrentUser)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1093,6 +1168,71 @@ struct EAAccountRow: View {
         }
 
         return dateString
+    }
+}
+
+// MARK: - System Sound
+
+struct SystemSound {
+    let name: String
+    let displayName: String
+
+    static let allSounds: [SystemSound] = [
+        SystemSound(name: "Basso", displayName: "Basso"),
+        SystemSound(name: "Blow", displayName: "Blow"),
+        SystemSound(name: "Bottle", displayName: "Bottle"),
+        SystemSound(name: "Frog", displayName: "Frog"),
+        SystemSound(name: "Funk", displayName: "Funk"),
+        SystemSound(name: "Glass", displayName: "Glass"),
+        SystemSound(name: "Hero", displayName: "Hero"),
+        SystemSound(name: "Morse", displayName: "Morse"),
+        SystemSound(name: "Ping", displayName: "Ping"),
+        SystemSound(name: "Pop", displayName: "Pop"),
+        SystemSound(name: "Purr", displayName: "Purr"),
+        SystemSound(name: "Sosumi", displayName: "Sosumi"),
+        SystemSound(name: "Submarine", displayName: "Submarine"),
+        SystemSound(name: "Tink", displayName: "Tink")
+    ]
+}
+
+// MARK: - Sound Option Row
+
+struct SoundOptionRow: View {
+    @Environment(\.accentColor) private var accentColor
+    let sound: SystemSound
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onTest: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onSelect) {
+                HStack(spacing: 10) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(isSelected ? accentColor : .secondary)
+                        .font(.body)
+
+                    Text(sound.displayName)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Button(action: onTest) {
+                Image(systemName: "play.fill")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(6)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    .cornerRadius(4)
+            }
+            .buttonStyle(.plain)
+            .help("Test sound")
+        }
+        .padding(.vertical, 2)
     }
 }
 
