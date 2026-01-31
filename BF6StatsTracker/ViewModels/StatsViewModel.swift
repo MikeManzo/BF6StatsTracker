@@ -843,7 +843,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .teamplay:
             return [.classes, .support, .intel, .loadout]
         case .tools:
-            return [.xpCalculator, .servers, .logViewer]
+            return [.logViewer, .servers, .xpCalculator]
         }
     }
 
@@ -890,9 +890,9 @@ enum StatTab: String, CaseIterable, Identifiable {
     case loadout = "Loadout"
 
     // Tools sub-tabs
-    case xpCalculator = "XP Calc"
-    case servers = "Servers"
     case logViewer = "Logs"
+    case servers = "Servers"
+    case xpCalculator = "XP Calc"
 
     var id: String { rawValue }
 

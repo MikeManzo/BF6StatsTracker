@@ -799,8 +799,6 @@ struct SnapshotRow: View {
                             .foregroundColor(Theme.textPrimary)
                             .lineLimit(1)
 
-                        Spacer()
-
                         Text("\(mapActivity.matchesPlayed)")
                             .font(.caption2)
                             .fontWeight(.semibold)
@@ -809,6 +807,8 @@ struct SnapshotRow: View {
                             .padding(.vertical, 2)
                             .background(accentColor.opacity(0.1))
                             .cornerRadius(4)
+                        
+                        Spacer()
                     }
                 }
             }
