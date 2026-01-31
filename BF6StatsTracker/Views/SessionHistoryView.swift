@@ -43,6 +43,7 @@ struct SessionHistoryView: View {
     @State private var collapsedSections: Set<Date> = []
     @State private var shimmerOpacity: Double = 0.1
     @State private var isInitialLoad: Bool = true
+    @State private var visibleRowCount: Int = 10  // Start with limited rows for fast initial render
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,11 +53,13 @@ struct SessionHistoryView: View {
             // Search bar
             searchBar
 
-            // Snapshots list
-            if isInitialLoad && allSnapshots.isEmpty {
-                skeletonLoader
-            } else if filteredSnapshots.isEmpty {
-                emptyStateView
+            // Snapshots list - show immediately as data loads
+            if filteredSnapshots.isEmpty {
+                if isInitialLoad {
+                    skeletonLoader
+                } else {
+                    emptyStateView
+                }
             } else {
                 snapshotsList
             }
@@ -267,7 +270,10 @@ struct SessionHistoryView: View {
                     Section {
                         if !collapsedSections.contains(date) {
                             ForEach(groupedSnapshots[date] ?? [], id: \.id) { snapshot in
-                                SnapshotRow(snapshot: snapshot) {
+                                SnapshotRow(
+                                    snapshot: snapshot,
+                                    allSnapshots: allSnapshots
+                                ) {
                                     snapshotToDelete = snapshot
                                     showingDeleteAlert = true
                                 }
@@ -298,6 +304,18 @@ struct SessionHistoryView: View {
             }
         }
         .background(Theme.backgroundPrimary)
+        .onAppear {
+            // Mark initial load complete once we have data
+            if !allSnapshots.isEmpty {
+                isInitialLoad = false
+            }
+        }
+        .onChange(of: allSnapshots.count) { _, newCount in
+            // As soon as snapshots load, dismiss skeleton
+            if newCount > 0 {
+                isInitialLoad = false
+            }
+        }
     }
 
     /// Group snapshots by day
@@ -361,10 +379,6 @@ struct SessionHistoryView: View {
         .onAppear {
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
                 shimmerOpacity = 0.3
-            }
-            // Mark initial load as complete after a brief delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isInitialLoad = false
             }
         }
     }
@@ -584,6 +598,7 @@ struct SnapshotRow: View {
     @Environment(\.accentColor) private var accentColor
 
     let snapshot: StatsSnapshot
+    let allSnapshots: [StatsSnapshot]  // Passed in to avoid N+1 queries
     let onDelete: () -> Void
     @State private var showingMapsDetail = false
 
@@ -694,13 +709,7 @@ struct SnapshotRow: View {
     }
 
     private func getDeltaStats() -> DeltaStats? {
-        // Get all snapshots from HistoryManager
-        guard let allSnapshots = try? HistoryManager.shared.modelContext?.fetch(
-            FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
-        ) else {
-            return nil
-        }
-
+        // Use passed-in snapshots (already sorted by timestamp descending)
         // Find the snapshot immediately before this one
         guard let currentIndex = allSnapshots.firstIndex(where: { $0.id == snapshot.id }),
               currentIndex + 1 < allSnapshots.count else {
@@ -735,13 +744,7 @@ struct SnapshotRow: View {
     }
 
     private func getMapsPlayed() -> [MapActivity]? {
-        // Get all snapshots from HistoryManager
-        guard let allSnapshots = try? HistoryManager.shared.modelContext?.fetch(
-            FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
-        ) else {
-            return nil
-        }
-
+        // Use passed-in snapshots (already sorted by timestamp descending)
         // Find the snapshot immediately before this one
         guard let currentIndex = allSnapshots.firstIndex(where: { $0.id == snapshot.id }),
               currentIndex + 1 < allSnapshots.count else {
