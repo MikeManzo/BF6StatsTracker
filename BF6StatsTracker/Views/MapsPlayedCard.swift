@@ -24,7 +24,7 @@ struct MapsPlayedCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Maps Played", icon: "map.fill")
+            SectionHeader(title: "Maps Played In Snapshot", icon: "map.fill")
 
             if let mapsPlayed = getMapsPlayed() {
                 if mapsPlayed.isEmpty {

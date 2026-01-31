@@ -41,6 +41,14 @@ struct PerformanceChartsView: View {
     @State private var cachedRolling30: [(Date, Double)] = []
     @State private var cachedHourlyData: [HourlyPerformanceData] = []
 
+    /// Number of days of data available based on oldest snapshot
+    private var daysOfDataAvailable: Int {
+        guard let oldestSnapshot = allSnapshots.last else { return 0 }
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.day], from: oldestSnapshot.timestamp, to: Date())
+        return max(0, components.day ?? 0)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -115,6 +123,7 @@ struct PerformanceChartsView: View {
     private var periodSelector: some View {
         HStack(spacing: 12) {
             ForEach(ChartPeriod.allCases) { period in
+                let isEnabled = isPeriodEnabled(period)
                 Button(action: { selectedPeriod = period }) {
                     Text(period.rawValue)
                         .font(.caption)
@@ -122,10 +131,22 @@ struct PerformanceChartsView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(selectedPeriod == period ? Theme.bf6Purple : Theme.overlayColor)
-                        .foregroundColor(selectedPeriod == period ? Theme.selectedText : Theme.textPrimary)
+                        .foregroundColor(selectedPeriod == period ? Theme.selectedText : (isEnabled ? Theme.textPrimary : Theme.textSecondary.opacity(0.5)))
                         .cornerRadius(8)
+                        .opacity(isEnabled ? 1.0 : 0.5)
                 }
+                .disabled(!isEnabled)
             }
+        }
+    }
+
+    /// Check if a period has enough data to be selectable
+    private func isPeriodEnabled(_ period: ChartPeriod) -> Bool {
+        switch period {
+        case .day, .week, .all:
+            return true
+        case .month:
+            return daysOfDataAvailable >= 30
         }
     }
 
@@ -998,8 +1019,13 @@ struct PerformanceChartsView: View {
         let firstHalf = data.prefix(data.count / 2).map { $0.1 }
         let secondHalf = data.suffix(data.count - data.count / 2).map { $0.1 }
 
+        guard !firstHalf.isEmpty, !secondHalf.isEmpty else { return ("→", "Stable", .gray) }
+
         let firstAvg = firstHalf.reduce(0, +) / Double(firstHalf.count)
         let secondAvg = secondHalf.reduce(0, +) / Double(secondHalf.count)
+
+        // Avoid division by zero
+        guard firstAvg > 0 else { return ("→", "Stable", .gray) }
 
         let change = ((secondAvg - firstAvg) / firstAvg) * 100
 

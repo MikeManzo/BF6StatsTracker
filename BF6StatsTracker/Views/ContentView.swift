@@ -278,10 +278,10 @@ struct ContentView: View {
         HStack(spacing: 20) {
             CleanStatCard(
                 value: String(format: "%.2f", stats.kdRatio),
-                label: "K/D",
+                label: "KILLS / DEATH",
                 color: .green,
                 trend: viewModel.kdTrend
-            )
+            ).help("All-Time Kills / Death Ratio")
 
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
@@ -292,7 +292,7 @@ struct ContentView: View {
                 label: "KILLS",
                 color: .orange,
                 trend: viewModel.killsTrend
-            )
+            ).help("All-Time Kills")
 
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
@@ -303,7 +303,7 @@ struct ContentView: View {
                 label: "ASSISTS",
                 color: .purple,
                 trend: viewModel.assistsTrend
-            )
+            ).help("All-Time Assists")
 
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
@@ -314,7 +314,7 @@ struct ContentView: View {
                 label: "WIN RATE",
                 color: .blue,
                 trend: viewModel.wlTrend
-            )
+            ).help("All-Time Win Rate")
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Quick statistics")
