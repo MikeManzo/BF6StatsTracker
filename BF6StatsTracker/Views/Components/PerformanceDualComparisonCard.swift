@@ -138,6 +138,9 @@ struct PerformanceDualComparisonCard: View {
                             Image(systemName: rightDelta > 0 ? "arrow.up" : rightDelta < 0 ? "arrow.down" : "minus")
                                 .font(.caption)
                                 .foregroundStyle(changeColor(rightDelta, lowerIsBetter: rightLowerIsBetter))
+                        } else {
+                            Image(systemName: "arrow.forward")
+                                .font(.caption)
                         }
                     }
 
@@ -145,6 +148,9 @@ struct PerformanceDualComparisonCard: View {
                         Text("\(String(format: "%.0f", abs(rightPercentChange)))%")
                             .font(.caption2)
                             .foregroundStyle(changeColor(rightDelta, lowerIsBetter: rightLowerIsBetter))
+                    } else {
+                        Text("--")
+                            .font(.caption2)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
