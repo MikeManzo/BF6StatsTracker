@@ -260,6 +260,7 @@ struct CompactStatItem: View {
     let value: String
     let icon: String
     let color: Color
+    var detail: String? = nil
 
     var body: some View {
         HStack(spacing: 8) {
@@ -275,6 +276,12 @@ struct CompactStatItem: View {
                 Text(label)
                     .font(.caption2)
                     .foregroundColor(Theme.textSecondary)
+
+                if let detail = detail {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary.opacity(0.7))
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

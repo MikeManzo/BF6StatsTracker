@@ -171,43 +171,45 @@ struct OverviewStatsView: View {
 
             // Match Performance Section
             if let stats = viewModel.playerStats, stats.matchesPlayed > 0 {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     SectionHeader(title: "Overall Match Performance", icon: "gamecontroller.fill")
 
-                    HStack(spacing: 16) {
-                        StatCard(
-                            title: "Matches Played",
+                    HStack(spacing: 24) {
+                        CompactStatItem(
+                            label: "Matches",
                             value: stats.matchesPlayed.formatted(),
                             icon: "flag.checkered",
                             color: Theme.bf6Purple,
-                            subtitle: "\(stats.wins) wins"
+                            detail: "\(stats.wins) wins"
                         )
 
-                        StatCard(
-                            title: "Kills/Match",
+                        CompactStatItem(
+                            label: "Kills/Match",
                             value: String(format: "%.1f", stats.killsPerMatch),
                             icon: "target",
                             color: Theme.bf6Red,
-                            subtitle: "Humans + Bots"
+                            detail: "Humans + Bots"
                         )
 
-                        StatCard(
-                            title: "Human %",
+                        CompactStatItem(
+                            label: "Human %",
                             value: stats.humanPercent,
                             icon: "person.fill",
                             color: Theme.bf6Blue,
-                            subtitle: "Player kills"
+                            detail: "Player kills"
                         )
 
                         if stats.damagePerMatch > 0 {
-                            StatCard(
-                                title: "Damage/Match",
+                            CompactStatItem(
+                                label: "Damage/Match",
                                 value: String(format: "%.0f", stats.damagePerMatch),
                                 icon: "bolt.fill",
                                 color: accentColor,
-                                subtitle: "Avg per game"
+                                detail: "Avg per game"
                             )
                         }
+
+                        Spacer()
                     }
                 }
                 .cardStyle()
@@ -356,6 +358,7 @@ struct StatRow: View {
         .font(.subheadline)
     }
 }
+
 
 // MARK: - Rank Card with Decorative Icon
 
