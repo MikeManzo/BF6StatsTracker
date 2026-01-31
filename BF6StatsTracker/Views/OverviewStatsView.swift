@@ -80,53 +80,52 @@ struct OverviewStatsView: View {
                         .stroke(accentColor.opacity(0.3), lineWidth: 1)
                 )
             }
-            // Top Stats Cards - Responsive Grid
-            GeometryReader { geometry in
-                let breakpoint = ResponsiveBreakpoint(width: geometry.size.width)
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: breakpoint.columns), alignment: .leading, spacing: breakpoint.spacing) {
-                    if let stats = viewModel.playerStats {
-                        StatCard(
-                            title: "Kills",
-                            value: stats.kills.formatted(),
-                            icon: "target",
-                            color: Theme.bf6Red,
-                            subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
-                            trend: convertTrend(viewModel.killsTrend)
-                        )
+            // Top Stats Cards - Always in single row
+            if let stats = viewModel.playerStats {
+                HStack(spacing: 16) {
+                    StatCard(
+                        title: "Kills",
+                        value: stats.kills.formatted(),
+                        icon: "target",
+                        color: Theme.bf6Red,
+                        subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
+                        trend: convertTrend(viewModel.killsTrend)
+                    )
+                    .frame(maxWidth: .infinity)
 
-                        StatCard(
-                            title: "Deaths",
-                            value: stats.deaths.formatted(),
-                            icon: "xmark.circle.fill",
-                            color: Theme.textSecondary,
-                            subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))",
-                            trend: convertTrend(viewModel.kdTrend)
-                        )
+                    StatCard(
+                        title: "Deaths",
+                        value: stats.deaths.formatted(),
+                        icon: "xmark.circle.fill",
+                        color: Theme.textSecondary,
+                        subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))",
+                        trend: convertTrend(viewModel.kdTrend)
+                    )
+                    .frame(maxWidth: .infinity)
 
-                        StatCard(
-                            title: "Score",
-                            value: stats.totalScore.formatted(),
-                            icon: "star.fill",
-                            color: .yellow,
-                            subtitle: "\(String(format: "%.0f", stats.scorePerMinute)) per min"
-                        )
+                    StatCard(
+                        title: "Score",
+                        value: stats.totalScore.formatted(),
+                        icon: "star.fill",
+                        color: .yellow,
+                        subtitle: "\(String(format: "%.0f", stats.scorePerMinute)) per min"
+                    )
+                    .frame(maxWidth: .infinity)
 
-                        StatCard(
-                            title: "Wins",
-                            value: stats.wins.formatted(),
-                            icon: "trophy.fill",
-                            color: Theme.bf6Green,
-                            subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
-                            trend: convertTrend(viewModel.wlTrend)
-                        )
+                    StatCard(
+                        title: "Wins",
+                        value: stats.wins.formatted(),
+                        icon: "trophy.fill",
+                        color: Theme.bf6Green,
+                        subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
+                        trend: convertTrend(viewModel.wlTrend)
+                    )
+                    .frame(maxWidth: .infinity)
 
-                        RankCard(stats: stats)
-                    }
+                    RankCard(stats: stats)
+                        .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(height: 160)
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Last Completed Match - Computed from Snapshots
             LastCompletedMatchView(
