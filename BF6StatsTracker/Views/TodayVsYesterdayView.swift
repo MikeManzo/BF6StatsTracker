@@ -26,6 +26,14 @@ struct TodayVsYesterdayView: View {
     @State private var isMapsExpanded = true
     @State private var isCombatBreakdownExpanded = true
 
+    // Combat Breakdown graph colors (persisted via AppStorage)
+    @AppStorage("combatGraphColor_headshots") private var headshotsColor: Color = .purple
+    @AppStorage("combatGraphColor_accuracy") private var accuracyColor: Color = .orange
+    @AppStorage("combatGraphColor_kpm") private var kpmColor: Color = .yellow
+    @AppStorage("combatGraphColor_assists") private var assistsColor: Color = .cyan
+    @AppStorage("combatGraphColor_winRate") private var winRateColor: Color = .green
+    @AppStorage("combatGraphColor_score") private var scoreColor: Color = .blue
+
     // Get current and previous snapshots for comparison
     private var currentSnapshot: StatsSnapshot? {
         let snapshots = historyManager.getAllSnapshots()
@@ -1389,8 +1397,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.headshotsPerMatch,
                         yesterdayValue: baselineAvg.headshotsPerMatch,
-                        label: "🎯 Headshots / Match",
-                        accentColor: .purple,
+                        label: "Headshots / Match",
+                        accentColor: $headshotsColor,
                         delay: 0.0,
                         shouldAnimate: !hasAnimated
                     )
@@ -1399,8 +1407,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.accuracy,
                         yesterdayValue: baselineAvg.accuracy,
-                        label: "🎪 Accuracy",
-                        accentColor: .orange,
+                        label: "Accuracy",
+                        accentColor: $accuracyColor,
                         delay: 0.1,
                         shouldAnimate: !hasAnimated
                     )
@@ -1409,8 +1417,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.killsPerMinute,
                         yesterdayValue: baselineAvg.killsPerMinute,
-                        label: "⚡ Kills Per Minute",
-                        accentColor: .yellow,
+                        label: "Kills Per Minute",
+                        accentColor: $kpmColor,
                         delay: 0.2,
                         shouldAnimate: !hasAnimated
                     )
@@ -1419,8 +1427,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.assistsPerMatch,
                         yesterdayValue: baselineAvg.assistsPerMatch,
-                        label: "🤝 Assists / Match",
-                        accentColor: .cyan,
+                        label: "Assists / Match",
+                        accentColor: $assistsColor,
                         delay: 0.3,
                         shouldAnimate: !hasAnimated
                     )
@@ -1429,8 +1437,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.winRate,
                         yesterdayValue: baselineAvg.winRate,
-                        label: "🏆 Win Rate",
-                        accentColor: .green,
+                        label: "Win Rate",
+                        accentColor: $winRateColor,
                         delay: 0.4,
                         shouldAnimate: !hasAnimated
                     )
@@ -1439,8 +1447,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.scorePerMatch / 1000,
                         yesterdayValue: baselineAvg.scorePerMatch / 1000,
-                        label: "🎖️ Score / Match (K)",
-                        accentColor: .blue,
+                        label: "Score / Match (K)",
+                        accentColor: $scoreColor,
                         delay: 0.5,
                         shouldAnimate: !hasAnimated
                     )
@@ -1508,8 +1516,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.headshotsPerMatch,
                         yesterdayValue: baselineAvg.headshotsPerMatch,
-                        label: "🎯 Headshots / Match",
-                        accentColor: .purple,
+                        label: "Headshots / Match",
+                        accentColor: $headshotsColor,
                         delay: 0.0,
                         shouldAnimate: !hasAnimated
                     )
@@ -1518,8 +1526,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.accuracy,
                         yesterdayValue: baselineAvg.accuracy,
-                        label: "🎪 Accuracy",
-                        accentColor: .orange,
+                        label: "Accuracy",
+                        accentColor: $accuracyColor,
                         delay: 0.1,
                         shouldAnimate: !hasAnimated
                     )
@@ -1528,8 +1536,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.killsPerMinute,
                         yesterdayValue: baselineAvg.killsPerMinute,
-                        label: "⚡ Kills Per Minute",
-                        accentColor: .yellow,
+                        label: "Kills Per Minute",
+                        accentColor: $kpmColor,
                         delay: 0.2,
                         shouldAnimate: !hasAnimated
                     )
@@ -1538,8 +1546,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.assistsPerMatch,
                         yesterdayValue: baselineAvg.assistsPerMatch,
-                        label: "🤝 Assists / Match",
-                        accentColor: .cyan,
+                        label: "Assists / Match",
+                        accentColor: $assistsColor,
                         delay: 0.3,
                         shouldAnimate: !hasAnimated
                     )
@@ -1548,8 +1556,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.winRate,
                         yesterdayValue: baselineAvg.winRate,
-                        label: "🏆 Win Rate",
-                        accentColor: .green,
+                        label: "Win Rate",
+                        accentColor: $winRateColor,
                         delay: 0.4,
                         shouldAnimate: !hasAnimated
                     )
@@ -1558,8 +1566,8 @@ struct TodayVsYesterdayView: View {
                     AnimatedComparisonProgressBar(
                         todayValue: todayAvg.scorePerMatch / 1000,
                         yesterdayValue: baselineAvg.scorePerMatch / 1000,
-                        label: "🎖️ Score / Match (K)",
-                        accentColor: .blue,
+                        label: "Score / Match (K)",
+                        accentColor: $scoreColor,
                         delay: 0.5,
                         shouldAnimate: !hasAnimated
                     )
@@ -1592,7 +1600,7 @@ struct TodayVsYesterdayView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "info.circle.fill")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(accentColor)
                 Text("Combat Breakdown")
                     .font(.headline)
                     .fontWeight(.bold)
@@ -1633,10 +1641,18 @@ struct TodayVsYesterdayView: View {
 
             HStack {
                 Spacer()
-                Button("Got it") {
+                Button {
                     showCombatBreakdownInfo = false
+                } label: {
+                    Text("Got it")
+                        .fontWeight(.medium)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(accentColor)
+                        .cornerRadius(6)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.plain)
             }
         }
         .padding()
@@ -1660,7 +1676,7 @@ struct AnimatedComparisonProgressBar: View {
     let todayValue: Double
     let yesterdayValue: Double
     let label: String
-    let accentColor: Color
+    @Binding var accentColor: Color
     let delay: Double
     let shouldAnimate: Bool
 
@@ -1684,10 +1700,13 @@ struct AnimatedComparisonProgressBar: View {
         VStack(alignment: .leading, spacing: 8) {
             // Label and values
             HStack {
-                Text(label)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+                HStack(spacing: 6) {
+                    ColorPickerDot(color: $accentColor, dotSize: 10)
+                    Text(label)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
+                }
 
                 Spacer()
 

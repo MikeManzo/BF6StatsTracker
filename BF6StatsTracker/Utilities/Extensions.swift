@@ -507,3 +507,28 @@ extension View {
         modifier(TooltipModifier(text: text))
     }
 }
+
+// MARK: - Color Storage for AppStorage
+
+/// Extension to make Color work with @AppStorage via RawRepresentable
+extension Color: @retroactive RawRepresentable {
+    public init?(rawValue: String) {
+        // Parse "r,g,b,a" format
+        let components = rawValue.split(separator: ",").compactMap { Double($0) }
+        guard components.count == 4 else { return nil }
+        self = Color(
+            red: components[0],
+            green: components[1],
+            blue: components[2],
+            opacity: components[3]
+        )
+    }
+
+    public var rawValue: String {
+        // Convert to NSColor to extract components
+        guard let nsColor = NSColor(self).usingColorSpace(.deviceRGB) else {
+            return "0.5,0.5,0.5,1.0"
+        }
+        return "\(nsColor.redComponent),\(nsColor.greenComponent),\(nsColor.blueComponent),\(nsColor.alphaComponent)"
+    }
+}

@@ -83,6 +83,7 @@
 		27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543862EE98F4000B01618 /* ServerBrowserView.swift */; };
 		27E798072EE645F80002311A /* EAIdentityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798062EE645F80002311A /* EAIdentityManager.swift */; };
 		27E798092EE646350002311A /* EALoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E798082EE646350002311A /* EALoginView.swift */; };
+		27CPDOT12F460001004D2E1D /* ColorPickerDot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CPDOT02F460001004D2E1D /* ColorPickerDot.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -120,6 +121,7 @@
 		2749FA0F2F045D97004D2E1D /* PerformanceBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceBadgeView.swift; sourceTree = "<group>"; };
 		2749FA102F045D97004D2E1D /* PerformanceComparisonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceComparisonCard.swift; sourceTree = "<group>"; };
 		2749FA112F045D97004D2E1D /* ProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBarView.swift; sourceTree = "<group>"; };
+		27CPDOT02F460001004D2E1D /* ColorPickerDot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerDot.swift; sourceTree = "<group>"; };
 		2749FA172F045DB0004D2E1D /* TodayVsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayVsYesterdayView.swift; sourceTree = "<group>"; };
 		2749FA182F045E00004D2E1D /* PerformanceDualComparisonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceDualComparisonCard.swift; sourceTree = "<group>"; };
 		2749FA192F05DD55004D2E1D /* SearchableListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableListView.swift; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 		2749FA122F045D97004D2E1D /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				27CPDOT02F460001004D2E1D /* ColorPickerDot.swift */,
 				276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */,
 				2749FA1B2F05DD5C004D2E1D /* UnifiedStatCard.swift */,
 				2749FA192F05DD55004D2E1D /* SearchableListView.swift */,
@@ -434,6 +437,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27CPDOT12F460001004D2E1D /* ColorPickerDot.swift in Sources */,
 				274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */,
 				274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */,
 				2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */,
