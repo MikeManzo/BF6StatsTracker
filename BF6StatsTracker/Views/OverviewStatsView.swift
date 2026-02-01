@@ -22,6 +22,10 @@ struct OverviewStatsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
     @EnvironmentObject var historyManager: HistoryManager
 
+    // State for collapsible sections
+    @State private var isCombatStatsExpanded = true
+    @State private var isTeamSupportExpanded = true
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Daily Performance (Today's stats) - Always show enhanced view
@@ -133,86 +137,9 @@ struct OverviewStatsView: View {
                 previousSnapshot: historyManager.getRecentSnapshots(limit: 2).dropFirst().first
             )
 
-            HStack(spacing: 16) {
-                // Combat Stats
-                VStack(alignment: .leading, spacing: 16) {
-                    SectionHeader(title: "Combat Stats", icon: "scope")
-
-                    if let stats = viewModel.playerStats {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            StatRow(label: "Headshots", value: stats.headshots.formatted())
-                            StatRow(label: "HS %", value: "\(String(format: "%.1f", stats.headshotPercentage))%")
-                            StatRow(label: "Accuracy", value: "\(String(format: "%.1f", stats.accuracy))%")
-                            StatRow(label: "Longest HS", value: "\(String(format: "%.0f", stats.longestHeadshot))m")
-                            StatRow(label: "Assists", value: stats.assists.formatted())
-                            StatRow(label: "Revives", value: stats.revives.formatted())
-                        }
-                    }
-                }
-                .cardStyle()
-
-                // Team Stats
-                VStack(alignment: .leading, spacing: 16) {
-                    SectionHeader(title: "Team Support", icon: "person.3.fill")
-
-                    if let stats = viewModel.playerStats {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            StatRow(label: "Revives", value: stats.revives.formatted())
-                            StatRow(label: "Resupplies", value: stats.resupplies.formatted())
-                            StatRow(label: "Repairs", value: stats.repairs.formatted())
-                            StatRow(label: "Heals", value: stats.heals.formatted())
-                            StatRow(label: "Savior Kills", value: stats.saviorKills.formatted())
-                            StatRow(label: "Enemies Spotted", value: stats.enemiesSpotted.formatted())
-                        }
-                    }
-                }
-                .cardStyle()
-            }
-
-            // Match Performance Section
+            // Unified Overall Match Performance Card
             if let stats = viewModel.playerStats, stats.matchesPlayed > 0 {
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "Overall Match Performance", icon: "gamecontroller.fill")
-
-                    HStack(spacing: 24) {
-                        CompactStatItem(
-                            label: "Matches",
-                            value: stats.matchesPlayed.formatted(),
-                            icon: "flag.checkered",
-                            color: Theme.bf6Purple,
-                            detail: "\(stats.wins) wins"
-                        )
-
-                        CompactStatItem(
-                            label: "Kills/Match",
-                            value: String(format: "%.1f", stats.killsPerMatch),
-                            icon: "target",
-                            color: Theme.bf6Red,
-                            detail: "Humans + Bots"
-                        )
-
-                        CompactStatItem(
-                            label: "Human %",
-                            value: stats.humanPercent,
-                            icon: "person.fill",
-                            color: Theme.bf6Blue,
-                            detail: "Player kills"
-                        )
-
-                        if stats.damagePerMatch > 0 {
-                            CompactStatItem(
-                                label: "Damage/Match",
-                                value: String(format: "%.0f", stats.damagePerMatch),
-                                icon: "bolt.fill",
-                                color: accentColor,
-                                detail: "Avg per game"
-                            )
-                        }
-
-                        Spacer()
-                    }
-                }
-                .cardStyle()
+                overallMatchPerformanceCard(stats: stats)
             }
 
             HStack(spacing: 16) {
@@ -296,6 +223,182 @@ struct OverviewStatsView: View {
         case .stable:
             return nil // Don't show trend for stable
         }
+    }
+
+    // MARK: - Overall Match Performance Card (Unified Container)
+
+    private func overallMatchPerformanceCard(stats: PlayerStats) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            SectionHeader(title: "Overall Match Performance", icon: "gamecontroller.fill")
+
+            // Primary stats row
+            HStack(spacing: 24) {
+                CompactStatItem(
+                    label: "Matches",
+                    value: stats.matchesPlayed.formatted(),
+                    icon: "flag.checkered",
+                    color: Theme.bf6Purple,
+                    detail: "\(stats.wins) wins"
+                )
+
+                CompactStatItem(
+                    label: "Kills/Match",
+                    value: String(format: "%.1f", stats.killsPerMatch),
+                    icon: "target",
+                    color: Theme.bf6Red,
+                    detail: "Humans + Bots"
+                )
+
+                CompactStatItem(
+                    label: "Human %",
+                    value: stats.humanPercent,
+                    icon: "person.fill",
+                    color: Theme.bf6Blue,
+                    detail: "Player kills"
+                )
+
+                if stats.damagePerMatch > 0 {
+                    CompactStatItem(
+                        label: "Damage/Match",
+                        value: String(format: "%.0f", stats.damagePerMatch),
+                        icon: "bolt.fill",
+                        color: accentColor,
+                        detail: "Avg per game"
+                    )
+                }
+
+                Spacer()
+            }
+
+            // Collapsible sub-sections side by side
+            HStack(alignment: .top, spacing: 12) {
+                // Combat Stats - Collapsible
+                combatStatsDisclosure(stats: stats)
+
+                // Team Support - Collapsible
+                teamSupportDisclosure(stats: stats)
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(accentColor.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Combat Stats Disclosure
+
+    private func combatStatsDisclosure(stats: PlayerStats) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Disclosure header
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isCombatStatsExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: isCombatStatsExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 16)
+
+                    Image(systemName: "scope")
+                        .font(.subheadline)
+                        .foregroundStyle(accentColor)
+
+                    Text("Combat Stats")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Expandable content
+            if isCombatStatsExpanded {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    StatRow(label: "Headshots", value: stats.headshots.formatted())
+                    StatRow(label: "HS %", value: "\(String(format: "%.1f", stats.headshotPercentage))%")
+                    StatRow(label: "Accuracy", value: "\(String(format: "%.1f", stats.accuracy))%")
+                    StatRow(label: "Longest HS", value: "\(String(format: "%.0f", stats.longestHeadshot))m")
+                    StatRow(label: "Assists", value: stats.assists.formatted())
+                    StatRow(label: "Revives", value: stats.revives.formatted())
+                }
+                .padding(.top, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(accentColor.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Team Support Disclosure
+
+    private func teamSupportDisclosure(stats: PlayerStats) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Disclosure header
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isTeamSupportExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: isTeamSupportExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 16)
+
+                    Image(systemName: "person.3.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(accentColor)
+
+                    Text("Team Support")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Expandable content
+            if isTeamSupportExpanded {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    StatRow(label: "Revives", value: stats.revives.formatted())
+                    StatRow(label: "Resupplies", value: stats.resupplies.formatted())
+                    StatRow(label: "Repairs", value: stats.repairs.formatted())
+                    StatRow(label: "Heals", value: stats.heals.formatted())
+                    StatRow(label: "Savior Kills", value: stats.saviorKills.formatted())
+                    StatRow(label: "Enemies Spotted", value: stats.enemiesSpotted.formatted())
+                }
+                .padding(.top, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(accentColor.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
