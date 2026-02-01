@@ -23,6 +23,7 @@ struct OverviewStatsView: View {
     @EnvironmentObject var historyManager: HistoryManager
 
     // State for collapsible sections
+    @State private var isPerMatchAveragesExpanded = true
     @State private var isCombatStatsExpanded = true
     @State private var isTeamSupportExpanded = true
 
@@ -84,51 +85,10 @@ struct OverviewStatsView: View {
                         .stroke(accentColor.opacity(0.3), lineWidth: 1)
                 )
             }
-            // Top Stats Cards - Always in single row
-            if let stats = viewModel.playerStats {
-                HStack(spacing: 16) {
-                    StatCard(
-                        title: "Kills",
-                        value: stats.kills.formatted(),
-                        icon: "target",
-                        color: Theme.bf6Red,
-                        subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
-                        trend: convertTrend(viewModel.killsTrend)
-                    )
-                    .frame(maxWidth: .infinity)
 
-                    StatCard(
-                        title: "Deaths",
-                        value: stats.deaths.formatted(),
-                        icon: "xmark.circle.fill",
-                        color: Theme.textSecondary,
-                        subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))",
-                        trend: convertTrend(viewModel.kdTrend)
-                    )
-                    .frame(maxWidth: .infinity)
-
-                    StatCard(
-                        title: "Score",
-                        value: stats.totalScore.formatted(),
-                        icon: "star.fill",
-                        color: .yellow,
-                        subtitle: "\(String(format: "%.0f", stats.scorePerMinute)) per min"
-                    )
-                    .frame(maxWidth: .infinity)
-
-                    StatCard(
-                        title: "Wins",
-                        value: stats.wins.formatted(),
-                        icon: "trophy.fill",
-                        color: Theme.bf6Green,
-                        subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
-                        trend: convertTrend(viewModel.wlTrend)
-                    )
-                    .frame(maxWidth: .infinity)
-
-                    RankCard(stats: stats)
-                        .frame(maxWidth: .infinity)
-                }
+            // Unified Overall Match Performance Card (includes hero stats)
+            if let stats = viewModel.playerStats, stats.matchesPlayed > 0 {
+                overallMatchPerformanceCard(stats: stats)
             }
 
             // Last Completed Match - Computed from Snapshots
@@ -136,11 +96,6 @@ struct OverviewStatsView: View {
                 currentSnapshot: historyManager.getRecentSnapshots(limit: 1).first,
                 previousSnapshot: historyManager.getRecentSnapshots(limit: 2).dropFirst().first
             )
-
-            // Unified Overall Match Performance Card
-            if let stats = viewModel.playerStats, stats.matchesPlayed > 0 {
-                overallMatchPerformanceCard(stats: stats)
-            }
 
             HStack(spacing: 16) {
                 // Enhanced Class Card
@@ -232,52 +187,61 @@ struct OverviewStatsView: View {
             // Header
             SectionHeader(title: "Overall Match Performance", icon: "gamecontroller.fill")
 
-            // Primary stats row
-            HStack(spacing: 24) {
-                CompactStatItem(
-                    label: "Matches",
-                    value: stats.matchesPlayed.formatted(),
-                    icon: "flag.checkered",
-                    color: Theme.bf6Purple,
-                    detail: "\(stats.wins) wins"
-                )
-
-                CompactStatItem(
-                    label: "Kills/Match",
-                    value: String(format: "%.1f", stats.killsPerMatch),
+            // Hero Stats Row - Primary career metrics
+            HStack(spacing: 16) {
+                StatCard(
+                    title: "Kills",
+                    value: stats.kills.formatted(),
                     icon: "target",
                     color: Theme.bf6Red,
-                    detail: "Humans + Bots"
+                    subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
+                    trend: convertTrend(viewModel.killsTrend)
                 )
+                .frame(maxWidth: .infinity)
 
-                CompactStatItem(
-                    label: "Human %",
-                    value: stats.humanPercent,
-                    icon: "person.fill",
-                    color: Theme.bf6Blue,
-                    detail: "Player kills"
+                StatCard(
+                    title: "Deaths",
+                    value: stats.deaths.formatted(),
+                    icon: "xmark.circle.fill",
+                    color: Theme.textSecondary,
+                    subtitle: "K/D: \(String(format: "%.2f", stats.kdRatio))",
+                    trend: convertTrend(viewModel.kdTrend)
                 )
+                .frame(maxWidth: .infinity)
 
-                if stats.damagePerMatch > 0 {
-                    CompactStatItem(
-                        label: "Damage/Match",
-                        value: String(format: "%.0f", stats.damagePerMatch),
-                        icon: "bolt.fill",
-                        color: accentColor,
-                        detail: "Avg per game"
-                    )
-                }
+                StatCard(
+                    title: "Score",
+                    value: stats.totalScore.formatted(),
+                    icon: "star.fill",
+                    color: .yellow,
+                    subtitle: "\(String(format: "%.0f", stats.scorePerMinute)) per min"
+                )
+                .frame(maxWidth: .infinity)
 
-                Spacer()
+                StatCard(
+                    title: "Wins",
+                    value: stats.wins.formatted(),
+                    icon: "trophy.fill",
+                    color: Theme.bf6Green,
+                    subtitle: "W/L: \(String(format: "%.1f%%", stats.wlRatio))",
+                    trend: convertTrend(viewModel.wlTrend)
+                )
+                .frame(maxWidth: .infinity)
+
+                RankCard(stats: stats)
+                    .frame(maxWidth: .infinity)
             }
 
-            // Collapsible sub-sections side by side
-            HStack(alignment: .top, spacing: 12) {
-                // Combat Stats - Collapsible
-                combatStatsDisclosure(stats: stats)
+            // Collapsible sub-sections
+            VStack(alignment: .leading, spacing: 12) {
+                // Per-Match Averages - Collapsible (full width)
+                perMatchAveragesDisclosure(stats: stats)
 
-                // Team Support - Collapsible
-                teamSupportDisclosure(stats: stats)
+                // Combat Stats & Team Support - side by side
+                HStack(alignment: .top, spacing: 12) {
+                    combatStatsDisclosure(stats: stats)
+                    teamSupportDisclosure(stats: stats)
+                }
             }
         }
         .padding()
@@ -286,6 +250,91 @@ struct OverviewStatsView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(accentColor.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Per-Match Averages Disclosure
+
+    private func perMatchAveragesDisclosure(stats: PlayerStats) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Disclosure header
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isPerMatchAveragesExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: isPerMatchAveragesExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 16)
+
+                    Image(systemName: "chart.bar.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(accentColor)
+
+                    Text("Per-Match Averages")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Expandable content
+            if isPerMatchAveragesExpanded {
+                HStack(spacing: 24) {
+                    CompactStatItem(
+                        label: "Matches",
+                        value: stats.matchesPlayed.formatted(),
+                        icon: "flag.checkered",
+                        color: Theme.bf6Purple,
+                        detail: "\(stats.wins) wins"
+                    )
+
+                    CompactStatItem(
+                        label: "Kills/Match",
+                        value: String(format: "%.1f", stats.killsPerMatch),
+                        icon: "target",
+                        color: Theme.bf6Red,
+                        detail: "Humans + Bots"
+                    )
+
+                    CompactStatItem(
+                        label: "Human %",
+                        value: stats.humanPercent,
+                        icon: "person.fill",
+                        color: Theme.bf6Blue,
+                        detail: "Player kills"
+                    )
+
+                    if stats.damagePerMatch > 0 {
+                        CompactStatItem(
+                            label: "Damage/Match",
+                            value: String(format: "%.0f", stats.damagePerMatch),
+                            icon: "bolt.fill",
+                            color: accentColor,
+                            detail: "Avg per game"
+                        )
+                    }
+
+                    Spacer()
+                }
+                .padding(.top, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(accentColor.opacity(0.1), lineWidth: 1)
         )
     }
 
