@@ -754,9 +754,9 @@ struct PerformanceChartsView: View {
                             x: .value("Hour", data.hour),
                             y: .value("Avg K/D", sanitize(data.avgKD))
                         )
-                        .foregroundStyle(by: .value("Performance", performanceLevel(sanitize(data.avgKD))))
+                        .foregroundStyle(kdColorForValue(sanitize(data.avgKD)))
                     }
-                    .chartYScale(domain: safeYDomain(for: activeHours.map { $0.avgKD }))
+                    .chartYScale(domain: 0...max(activeHours.map { sanitize($0.avgKD) }.max() ?? 1.0, 1.0) * 1.1)
                     .chartYAxis {
                         AxisMarks(position: .leading) { _ in
                             AxisGridLine()
@@ -771,7 +771,9 @@ struct PerformanceChartsView: View {
                     }
                     .chartXAxisLabel("Hour of Day", alignment: .center)
                     .chartYAxisLabel("Avg K/D", alignment: .center)
+                    .chartLegend(.hidden)
                     .frame(height: 120)
+                    .clipped()
                 }
 
                 Divider()
@@ -805,6 +807,7 @@ struct PerformanceChartsView: View {
                     .chartXAxisLabel("Hour of Day", alignment: .center)
                     .chartYAxisLabel("Kills Earned", alignment: .center)
                     .frame(height: 100)
+                    .clipped()
                 }
 
                 Divider()
@@ -838,6 +841,7 @@ struct PerformanceChartsView: View {
                     .chartXAxisLabel("Hour of Day", alignment: .center)
                     .chartYAxisLabel("Sessions", alignment: .center)
                     .frame(height: 100)
+                    .clipped()
                 }
 
                 // Best time of day
@@ -1111,6 +1115,13 @@ struct PerformanceChartsView: View {
         if kd >= 1.5 { return "Good" }
         if kd >= 1.0 { return "Average" }
         return "Below Average"
+    }
+
+    private func kdColorForValue(_ kd: Double) -> Color {
+        if kd >= 2.0 { return .blue }
+        if kd >= 1.5 { return .green }
+        if kd >= 1.0 { return .yellow }
+        return .red
     }
 
     /// Calculate a safe X-axis domain for Date-based charts to prevent NaN in axis calculation
