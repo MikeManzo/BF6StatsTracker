@@ -1728,6 +1728,7 @@ struct ImportHistoryView: View {
                    let matches = mapDict["matches"] as? Int,
                    let winPercent = mapDict["winPercent"] as? String,
                    let secondsPlayed = mapDict["secondsPlayed"] as? Int {
+                    let score = mapDict["score"] as? Int ?? 0
 
                     let map = MapPerformance(
                         mapId: mapId,
@@ -1737,7 +1738,8 @@ struct ImportHistoryView: View {
                         losses: losses,
                         matches: matches,
                         winPercentString: winPercent,
-                        secondsPlayed: secondsPlayed
+                        secondsPlayed: secondsPlayed,
+                        score: score
                     )
                     maps.append(map)
                 }

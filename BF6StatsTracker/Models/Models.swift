@@ -1128,6 +1128,7 @@ struct MapPerformance: Codable, Identifiable {
     let matches: Int
     let winPercentString: String
     let secondsPlayed: Int
+    let score: Int
 
     // Computed properties
     var winRate: Double {
@@ -1160,9 +1161,10 @@ struct MapPerformance: Codable, Identifiable {
         case matches
         case winPercentString = "winPercent"
         case secondsPlayed
+        case score
     }
 
-    init(mapId: String, mapName: String, image: String, wins: Int, losses: Int, matches: Int, winPercentString: String, secondsPlayed: Int) {
+    init(mapId: String, mapName: String, image: String, wins: Int, losses: Int, matches: Int, winPercentString: String, secondsPlayed: Int, score: Int) {
         self.mapId = mapId
         self.mapName = mapName
         self.image = image
@@ -1171,6 +1173,7 @@ struct MapPerformance: Codable, Identifiable {
         self.matches = matches
         self.winPercentString = winPercentString
         self.secondsPlayed = secondsPlayed
+        self.score = score
     }
 
     init(from decoder: Decoder) throws {
@@ -1183,6 +1186,7 @@ struct MapPerformance: Codable, Identifiable {
         matches = try container.decodeIfPresent(Int.self, forKey: .matches) ?? 0
         winPercentString = try container.decodeIfPresent(String.self, forKey: .winPercentString) ?? "0%"
         secondsPlayed = try container.decodeIfPresent(Int.self, forKey: .secondsPlayed) ?? 0
+        score = try container.decodeIfPresent(Int.self, forKey: .score) ?? 0
     }
 }
 

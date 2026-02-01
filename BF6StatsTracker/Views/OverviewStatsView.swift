@@ -91,11 +91,11 @@ struct OverviewStatsView: View {
                 overallMatchPerformanceCard(stats: stats)
             }
 
-            // Last Completed Match - Computed from Snapshots
-            LastCompletedMatchView(
-                currentSnapshot: historyManager.getRecentSnapshots(limit: 1).first,
-                previousSnapshot: historyManager.getRecentSnapshots(limit: 2).dropFirst().first
-            )
+            // Last Completed Match - Computed from Snapshots (MRM: Legacy Snapshot Stats)
+//            LastCompletedMatchView(
+//                currentSnapshot: historyManager.getRecentSnapshots(limit: 1).first,
+//                previousSnapshot: historyManager.getRecentSnapshots(limit: 2).dropFirst().first
+//            )
 
             HStack(spacing: 16) {
                 // Enhanced Class Card
@@ -185,7 +185,7 @@ struct OverviewStatsView: View {
     private func overallMatchPerformanceCard(stats: PlayerStats) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
-            SectionHeader(title: "Overall Match Performance", icon: "gamecontroller.fill")
+            SectionHeader(title: "Overall Game Performance", icon: "gamecontroller.fill")
 
             // Hero Stats Row - Primary career metrics
             HStack(spacing: 16) {

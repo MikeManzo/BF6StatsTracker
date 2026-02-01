@@ -335,6 +335,7 @@ struct MapActivity: Identifiable {
     let timePlayedSeconds: Int
     let wins: Int
     let losses: Int
+    let score: Int
 
     /// Format time played as human-readable string
     var timePlayedFormatted: String {
@@ -371,6 +372,16 @@ struct MapActivity: Identifiable {
     var hasLosses: Bool {
         losses > 0
     }
+
+    /// Format score as human-readable string (e.g., 1.2K, 15K)
+    var scoreFormatted: String {
+        if score >= 1000 {
+            let thousands = Double(score) / 1000.0
+            return String(format: "%.1fK", thousands)
+        } else {
+            return "\(score)"
+        }
+    }
 }
 
 extension StatsSnapshot {
@@ -382,7 +393,12 @@ extension StatsSnapshot {
             return []
         }
 
-        var activities: [MapActivity] = []
+        // Calculate total score delta from snapshots
+        let totalScoreDelta = previous != nil ? self.totalScore - previous!.totalScore : self.totalScore
+
+        // First pass: collect map activities and total time played
+        var rawActivities: [(mapName: String, mapId: String, matchesPlayed: Int, timePlayedSeconds: Int, wins: Int, losses: Int)] = []
+        var totalTimePlayed = 0
 
         for currentMap in currentMaps {
             if let prevMap = previousMaps.first(where: { $0.mapId == currentMap.mapId }) {
@@ -393,30 +409,53 @@ extension StatsSnapshot {
 
                 // Only include maps that had activity
                 if timeDelta > 0 || matchesDelta > 0 {
-                    activities.append(
-                        MapActivity(
-                            mapName: currentMap.mapName,
-                            mapId: currentMap.mapId,
-                            matchesPlayed: matchesDelta,
-                            timePlayedSeconds: timeDelta,
-                            wins: winsDelta,
-                            losses: lossesDelta
-                        )
-                    )
+                    rawActivities.append((
+                        mapName: currentMap.mapName,
+                        mapId: currentMap.mapId,
+                        matchesPlayed: matchesDelta,
+                        timePlayedSeconds: timeDelta,
+                        wins: winsDelta,
+                        losses: lossesDelta
+                    ))
+                    totalTimePlayed += timeDelta
                 }
             } else if currentMap.matches > 0 {
                 // New map that wasn't in previous snapshot
-                activities.append(
-                    MapActivity(
-                        mapName: currentMap.mapName,
-                        mapId: currentMap.mapId,
-                        matchesPlayed: currentMap.matches,
-                        timePlayedSeconds: currentMap.secondsPlayed,
-                        wins: currentMap.wins,
-                        losses: currentMap.losses
-                    )
-                )
+                rawActivities.append((
+                    mapName: currentMap.mapName,
+                    mapId: currentMap.mapId,
+                    matchesPlayed: currentMap.matches,
+                    timePlayedSeconds: currentMap.secondsPlayed,
+                    wins: currentMap.wins,
+                    losses: currentMap.losses
+                ))
+                totalTimePlayed += currentMap.secondsPlayed
             }
+        }
+
+        // Second pass: distribute score proportionally by time played
+        var activities: [MapActivity] = []
+        for raw in rawActivities {
+            let scoreForMap: Int
+            if totalTimePlayed > 0 {
+                // Distribute score proportionally by time played
+                scoreForMap = Int(Double(totalScoreDelta) * (Double(raw.timePlayedSeconds) / Double(totalTimePlayed)))
+            } else {
+                // Fallback: distribute evenly
+                scoreForMap = rawActivities.isEmpty ? 0 : totalScoreDelta / rawActivities.count
+            }
+
+            activities.append(
+                MapActivity(
+                    mapName: raw.mapName,
+                    mapId: raw.mapId,
+                    matchesPlayed: raw.matchesPlayed,
+                    timePlayedSeconds: raw.timePlayedSeconds,
+                    wins: raw.wins,
+                    losses: raw.losses,
+                    score: scoreForMap
+                )
+            )
         }
 
         // Sort by time played (descending) - most played first

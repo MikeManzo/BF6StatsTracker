@@ -537,9 +537,9 @@ struct SettingsView: View {
 
                     Spacer()
 
-                    Button("Clear Cache") {
+                    Button("Clear") {
                         viewModel.clearCache()
-                    }
+                    }.help("Clear Cache")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -562,9 +562,9 @@ struct SettingsView: View {
 
                     Spacer()
 
-                    Button("Clear History...", role: .destructive) {
+                    Button("Clear", role: .destructive) {
                         showClearHistoryConfirmation = true
-                    }
+                    }.help("Clear Historical Data")
                     .foregroundColor(.red)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

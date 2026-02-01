@@ -83,6 +83,10 @@ struct MapsPlayedCard: View {
                     Label(mapActivity.recordFormatted, systemImage: mapActivity.hasWins ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .font(.caption)
                         .foregroundColor(mapActivity.hasWins ? .green : .red)
+
+                    Label(mapActivity.scoreFormatted, systemImage: "star.fill")
+                        .font(.caption)
+                        .foregroundColor(.orange)
                 }
             }
 
@@ -132,6 +136,14 @@ struct MapsPlayedCard: View {
                             Text(mapActivity.recordFormatted)
                                 .font(.caption2)
                                 .foregroundColor(mapActivity.hasWins ? .green : .red)
+
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundColor(Theme.textSecondary)
+
+                            Text(mapActivity.scoreFormatted)
+                                .font(.caption2)
+                                .foregroundColor(.orange)
                         }
                     }
 
@@ -230,6 +242,10 @@ struct MapsPlayedContent: View {
                     Label(mapActivity.recordFormatted, systemImage: mapActivity.hasWins ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .font(.caption2)
                         .foregroundColor(mapActivity.hasWins ? .green : .red)
+
+                    Label(mapActivity.scoreFormatted, systemImage: "star.fill")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
                 }
             }
 
@@ -276,6 +292,14 @@ struct MapsPlayedContent: View {
                             .font(.caption2)
                             .fontWeight(.medium)
                             .foregroundColor(mapActivity.hasWins ? .green : .red)
+
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Text(mapActivity.scoreFormatted)
+                            .font(.caption2)
+                            .foregroundColor(.orange)
                     }
                 }
                 .padding(.vertical, 2)
