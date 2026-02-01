@@ -112,6 +112,18 @@ struct AboutView: View {
                             copyright: "© 2024 Electronic Arts Inc.",
                             license: "EA and Battlefield are trademarks of Electronic Arts Inc."
                         )
+
+                        CopyrightRow(
+                            title: "PlayStation®",
+                            copyright: "© Sony Interactive Entertainment Inc.",
+                            license: "PlayStation and the PlayStation logos are registered trademarks of Sony Interactive Entertainment Inc."
+                        )
+
+                        CopyrightRow(
+                            title: "Xbox®",
+                            copyright: "© Microsoft Corporation",
+                            license: "Xbox and the Xbox logos are trademarks of the Microsoft group of companies."
+                        )
                     }
                 }
                 .padding(.vertical, 12)
