@@ -285,10 +285,10 @@ struct LoadoutAnalyzerView: View {
             Text("Weapon Distribution")
                 .font(.headline)
 
-            if !viewModel.topWeapons.isEmpty {
+            if viewModel.topWeapons.count >= 2 {
                 Chart(viewModel.topWeapons.prefix(5)) { weapon in
                     SectorMark(
-                        angle: .value("Kills", weapon.kills),
+                        angle: .value("Kills", max(weapon.kills, 1)),
                         innerRadius: .ratio(0.5),
                         angularInset: 1.5
                     )
@@ -300,6 +300,12 @@ struct LoadoutAnalyzerView: View {
                     }
                 }
                 .frame(height: 250)
+            } else if !viewModel.topWeapons.isEmpty {
+                Text("Need at least 2 weapons for distribution chart")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                    .frame(height: 100)
+                    .frame(maxWidth: .infinity)
             }
         }
         .padding()
@@ -327,22 +333,36 @@ struct LoadoutAnalyzerView: View {
         .cornerRadius(16)
     }
 
+    /// Calculate a safe X-axis domain for the weapon comparison chart
+    private var weaponComparisonXDomain: ClosedRange<Int> {
+        let kills = viewModel.topWeapons.prefix(5).map { $0.kills }
+        let maxKills = kills.max() ?? 100
+        return 0...max(maxKills + 10, 10)
+    }
+
     private var weaponComparisonSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Top Weapons Comparison")
                 .font(.headline)
 
-            if !viewModel.topWeapons.isEmpty {
+            if viewModel.topWeapons.count >= 2 {
                 Chart {
                     ForEach(viewModel.topWeapons.prefix(5)) { weapon in
                         BarMark(
-                            x: .value("Kills", weapon.kills),
+                            x: .value("Kills", max(weapon.kills, 0)),
                             y: .value("Weapon", weapon.weaponName)
                         )
                         .foregroundStyle(Color.orange.gradient)
                     }
                 }
+                .chartXScale(domain: weaponComparisonXDomain)
                 .frame(height: 200)
+            } else if !viewModel.topWeapons.isEmpty {
+                Text("Need at least 2 weapons for comparison chart")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                    .frame(height: 100)
+                    .frame(maxWidth: .infinity)
             }
         }
         .padding()

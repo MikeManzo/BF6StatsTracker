@@ -854,7 +854,8 @@ class HistoryManager: ObservableObject {
             let deltaKills = end.kills - start.kills
             let deltaDeaths = end.deaths - start.deaths
             let dailyKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
-            return (date, dailyKD)
+            // Ensure the result is finite (not NaN or Infinity)
+            return dailyKD.isFinite ? (date, dailyKD) : (date, 0.0)
         }.sorted { $0.0 < $1.0 }
     }
 
@@ -966,8 +967,10 @@ class HistoryManager: ObservableObject {
 
         for i in (windowSize - 1)..<snapshots.count {
             let window = Array(snapshots[(i - windowSize + 1)...i])
-            let avgKD = window.reduce(0.0) { $0 + $1.kdRatio } / Double(windowSize)
-            result.append((window.last!.timestamp, avgKD))
+            // Filter out non-finite kdRatio values before averaging
+            let finiteKDs = window.map { $0.kdRatio }.filter { $0.isFinite }
+            let avgKD = finiteKDs.isEmpty ? 0.0 : finiteKDs.reduce(0.0, +) / Double(finiteKDs.count)
+            result.append((window.last!.timestamp, avgKD.isFinite ? avgKD : 0.0))
         }
 
         return result
@@ -1017,6 +1020,9 @@ class HistoryManager: ObservableObject {
         var weekdayKDs: [Double] = []
 
         for snapshot in snapshots {
+            // Only include finite kdRatio values
+            guard snapshot.kdRatio.isFinite else { continue }
+
             let weekday = calendar.component(.weekday, from: snapshot.timestamp)
             if weekday == 1 || weekday == 7 { // Sunday = 1, Saturday = 7
                 weekendKDs.append(snapshot.kdRatio)
@@ -1028,19 +1034,25 @@ class HistoryManager: ObservableObject {
         let weekendAvg = weekendKDs.isEmpty ? 0.0 : weekendKDs.reduce(0.0, +) / Double(weekendKDs.count)
         let weekdayAvg = weekdayKDs.isEmpty ? 0.0 : weekdayKDs.reduce(0.0, +) / Double(weekdayKDs.count)
 
-        return (weekendAvg, weekdayAvg)
+        return (weekendAvg.isFinite ? weekendAvg : 0.0, weekdayAvg.isFinite ? weekdayAvg : 0.0)
     }
 
     /// Get hourly performance data with multiple metrics
     func getHourlyStats(snapshots: [StatsSnapshot]) -> [HourlyPerformanceData] {
         let calendar = Calendar.current
-        var hourlyData: [Int: (kdSum: Double, snapshots: [StatsSnapshot])] = [:]
+        var hourlyData: [Int: (kdSum: Double, validKdCount: Int, snapshots: [StatsSnapshot])] = [:]
 
-        // Group snapshots by hour
+        // Group snapshots by hour, filtering NaN values
         for snapshot in snapshots {
             let hour = calendar.component(.hour, from: snapshot.timestamp)
-            let current = hourlyData[hour] ?? (0, [])
-            hourlyData[hour] = (current.kdSum + snapshot.kdRatio, current.snapshots + [snapshot])
+            let current = hourlyData[hour] ?? (0, 0, [])
+            // Only add to kdSum if the value is finite (not NaN or Infinity)
+            let kdValue = snapshot.kdRatio
+            if kdValue.isFinite {
+                hourlyData[hour] = (current.kdSum + kdValue, current.validKdCount + 1, current.snapshots + [snapshot])
+            } else {
+                hourlyData[hour] = (current.kdSum, current.validKdCount, current.snapshots + [snapshot])
+            }
         }
 
         // Calculate delta kills for each hour
@@ -1057,9 +1069,17 @@ class HistoryManager: ObservableObject {
                     deltaKills = 0
                 }
 
+                // Calculate average K/D, guarding against division by zero and NaN
+                let avgKD: Double
+                if data.validKdCount > 0 {
+                    avgKD = data.kdSum / Double(data.validKdCount)
+                } else {
+                    avgKD = 0.0
+                }
+
                 return HourlyPerformanceData(
                     hour: hour,
-                    avgKD: data.kdSum / Double(data.snapshots.count),
+                    avgKD: avgKD.isFinite ? avgKD : 0.0,
                     totalKills: max(0, deltaKills), // Ensure non-negative
                     sessionCount: data.snapshots.count
                 )

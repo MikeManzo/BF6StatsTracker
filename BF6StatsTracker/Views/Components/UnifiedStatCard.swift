@@ -144,7 +144,8 @@ struct UnifiedStatCard: View {
     }
     
     private func progressView(_ progress: ProgressInfo) -> some View {
-        let normalizedValue = progress.max > 0 ? min(progress.current / progress.max, 1.0) : 0.0
+        let rawValue = progress.max > 0 ? min(progress.current / progress.max, 1.0) : 0.0
+        let normalizedValue = rawValue.isFinite ? rawValue : 0.0
         return ProgressBarView(
             value: normalizedValue,
             color: config.color,

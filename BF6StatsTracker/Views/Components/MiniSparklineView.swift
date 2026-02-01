@@ -40,35 +40,68 @@ struct MiniSparklineView: View {
         return Array(days.suffix(endIndex))
     }
 
+    /// Sanitize a Double value, replacing NaN or Infinity with a default value
+    private func sanitize(_ value: Double, default defaultValue: Double = 0.0) -> Double {
+        value.isFinite ? value : defaultValue
+    }
+
+    /// Calculate a safe Y-axis domain that ensures a minimum range to prevent NaN in chart rendering
+    private var safeYDomain: ClosedRange<Double> {
+        let finiteValues = data.filter { $0.isFinite }
+        guard finiteValues.count >= 2 else { return 0...1 }
+        let minVal = finiteValues.min() ?? 0
+        let maxVal = finiteValues.max() ?? 1
+        let range = maxVal - minVal
+        if range < 0.01 {
+            // All values are essentially the same - create artificial range
+            let center = (minVal + maxVal) / 2
+            return max(0, center - 0.5)...(center + 0.5)
+        }
+        return max(0, minVal * 0.9)...(maxVal * 1.1)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Chart
-            Chart {
-                ForEach(Array(data.enumerated()), id: \.offset) { index, value in
-                    LineMark(
-                        x: .value("Day", index),
-                        y: .value("Value", value)
-                    )
-                    .foregroundStyle(color)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-
-                    AreaMark(
-                        x: .value("Day", index),
-                        y: .value("Value", value)
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [color.opacity(0.3), color.opacity(0.05)],
-                            startPoint: .top,
-                            endPoint: .bottom
+            // Chart - only render if we have at least 2 data points to prevent NaN axis calculation
+            if data.count >= 2 {
+                Chart {
+                    ForEach(Array(data.enumerated()), id: \.offset) { index, value in
+                        LineMark(
+                            x: .value("Day", index),
+                            y: .value("Value", sanitize(value))
                         )
-                    )
+                        .foregroundStyle(color)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+
+                        AreaMark(
+                            x: .value("Day", index),
+                            y: .value("Value", sanitize(value))
+                        )
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [color.opacity(0.3), color.opacity(0.05)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    }
                 }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .chartYScale(domain: safeYDomain)
+                .chartLegend(.hidden)
+                .frame(height: 60)
+            } else {
+                // Placeholder for insufficient data
+                Rectangle()
+                    .fill(color.opacity(0.1))
+                    .frame(height: 60)
+                    .overlay(
+                        Text("Insufficient data")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    )
             }
-            .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
-            .chartLegend(.hidden)
-            .frame(height: 60)
 
             // Labels
             if showLabels && !labels.isEmpty {

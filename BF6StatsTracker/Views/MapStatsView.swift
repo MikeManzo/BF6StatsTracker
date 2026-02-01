@@ -189,31 +189,48 @@ struct MapStatsView: View {
 
     // MARK: - Map Comparison Chart
 
+    /// Calculate a safe Y-axis domain for the map comparison chart
+    private var mapChartYDomain: ClosedRange<Double> {
+        let winRates = filteredMaps.prefix(8).map { $0.winRate }.filter { $0.isFinite }
+        guard !winRates.isEmpty else { return 0...100 }
+        let maxRate = winRates.max() ?? 100
+        return 0...max(maxRate * 1.1, 10)
+    }
+
     private var mapComparisonChart: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Win Rate Comparison")
                 .font(.headline)
                 .padding(.horizontal)
 
-            Chart(filteredMaps.prefix(8)) { map in
-                BarMark(
-                    x: .value("Map", map.mapName),
-                    y: .value("Win %", map.winRate)
-                )
-                .foregroundStyle(by: .value("Performance", winPerformanceLevel(map.winRate)))
-                .annotation(position: .top) {
-                    Text(String(format: "%.0f%%", map.winRate))
-                        .font(.caption2)
-                        .foregroundColor(Theme.textSecondary)
+            if filteredMaps.count >= 2 {
+                Chart(filteredMaps.prefix(8)) { map in
+                    BarMark(
+                        x: .value("Map", map.mapName),
+                        y: .value("Win %", map.winRate.isFinite ? map.winRate : 0)
+                    )
+                    .foregroundStyle(by: .value("Performance", winPerformanceLevel(map.winRate)))
+                    .annotation(position: .top) {
+                        Text(String(format: "%.0f%%", map.winRate))
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+                    }
                 }
-            }
-            .frame(height: 200)
-            .padding(.horizontal)
-            .chartXAxis {
-                AxisMarks { _ in
-                    AxisValueLabel()
-                        .font(.caption2)
+                .frame(height: 200)
+                .padding(.horizontal)
+                .chartYScale(domain: mapChartYDomain)
+                .chartXAxis {
+                    AxisMarks { _ in
+                        AxisValueLabel()
+                            .font(.caption2)
+                    }
                 }
+            } else {
+                Text("Need at least 2 maps for comparison")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
             }
         }
         .padding(.vertical)

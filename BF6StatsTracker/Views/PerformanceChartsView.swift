@@ -88,9 +88,12 @@ struct PerformanceChartsView: View {
                 }
             }
             .padding()
+            // Disable all animations for charts to prevent NaN from interpolated values
+            .transaction { transaction in
+                transaction.disablesAnimations = true
+            }
         }
         .background(Theme.backgroundPrimary)
-        .animation(.easeInOut(duration: 0.3), value: selectedPeriod)
         .onAppear {
             updateCachedData()
         }
@@ -154,11 +157,11 @@ struct PerformanceChartsView: View {
 
     private var summaryStatsCard: some View {
         let dailyData = cachedDailyKDTrend
-        let avgKD = dailyData.isEmpty ? 0.0 : dailyData.map { $0.1 }.reduce(0.0, +) / Double(dailyData.count)
-        let stdDev = calculateStdDev(dailyData)
-        let bestDay = dailyData.max(by: { $0.1 < $1.1 })
-        let worstDay = dailyData.min(by: { $0.1 < $1.1 })
-        let trend = calculateTrend(dailyData)
+        let avgKD = sanitize(dailyData.isEmpty ? 0.0 : dailyData.map { $0.1 }.reduce(0.0, +) / Double(dailyData.count))
+        let stdDev = sanitize(calculateStdDev(dailyData))
+        let bestDay = dailyData.filter { $0.1.isFinite }.max(by: { $0.1 < $1.1 })
+        let worstDay = dailyData.filter { $0.1.isFinite }.min(by: { $0.1 < $1.1 })
+        let trend = calculateTrend(dailyData.filter { $0.1.isFinite })
 
         return VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -191,7 +194,7 @@ struct PerformanceChartsView: View {
                 if let best = bestDay {
                     StatBox(
                         title: "Best Day",
-                        value: String(format: "%.2f", best.1),
+                        value: String(format: "%.2f", sanitize(best.1)),
                         subtitle: formatDate(best.0),
                         color: Theme.bf6Green
                     )
@@ -201,7 +204,7 @@ struct PerformanceChartsView: View {
                 if let worst = worstDay {
                     StatBox(
                         title: "Worst Day",
-                        value: String(format: "%.2f", worst.1),
+                        value: String(format: "%.2f", sanitize(worst.1)),
                         subtitle: formatDate(worst.0),
                         color: Theme.bf6Red
                     )
@@ -231,7 +234,7 @@ struct PerformanceChartsView: View {
             let (bestSnapshot, worstSnapshot) = getBestAndWorstFromCache()
             let avgKD = dailyData.isEmpty ? 0.0 : dailyData.map { $0.1 }.reduce(0.0, +) / Double(dailyData.count)
 
-            if snapshots.isEmpty {
+            if snapshots.count < 2 {
                 noDataView
             } else {
                 VStack(spacing: 16) {
@@ -243,33 +246,35 @@ struct PerformanceChartsView: View {
 
                         Chart {
                             ForEach(snapshots, id: \.id) { snapshot in
+                                let safeKD = sanitize(snapshot.kdRatio)
                                 LineMark(
                                     x: .value("Time", snapshot.timestamp),
-                                    y: .value("K/D", snapshot.kdRatio)
+                                    y: .value("K/D", safeKD)
                                 )
                                 .foregroundStyle(Theme.bf6Green.gradient)
                                 .lineStyle(StrokeStyle(lineWidth: 2))
 
                                 PointMark(
                                     x: .value("Time", snapshot.timestamp),
-                                    y: .value("K/D", snapshot.kdRatio)
+                                    y: .value("K/D", safeKD)
                                 )
                                 .foregroundStyle(
                                     snapshot.id == bestSnapshot?.id ? .green :
                                     snapshot.id == worstSnapshot?.id ? .red :
-                                    colorForKD(snapshot.kdRatio, avg: avgKD)
+                                    colorForKD(safeKD, avg: avgKD)
                                 )
                                 .symbolSize(snapshot.id == bestSnapshot?.id || snapshot.id == worstSnapshot?.id ? 100 : 40)
                             }
 
                             // Average line
                             if avgKD > 0 {
-                                RuleMark(y: .value("Average", avgKD))
+                                RuleMark(y: .value("Average", sanitize(avgKD)))
                                     .foregroundStyle(accentColor)
                                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                             }
                         }
-                        .chartYScale(domain: 0...(snapshots.map { $0.kdRatio }.max() ?? 3.0) * 1.1)
+                        .chartYScale(domain: 0...max((snapshots.map { sanitize($0.kdRatio) }.max() ?? 3.0) * 1.1, 0.1))
+                        .chartXScale(domain: safeXDomain(for: snapshots.map { $0.timestamp }))
                         .chartYAxis {
                             AxisMarks(position: .leading) { _ in
                                 AxisGridLine()
@@ -309,8 +314,8 @@ struct PerformanceChartsView: View {
                             .font(.subheadline)
                             .foregroundColor(Theme.textSecondary)
 
-                        if dailyData.isEmpty {
-                            Text("No daily performance data available yet")
+                        if dailyData.count < 2 {
+                            Text("Need at least 2 days of data")
                                 .font(.caption)
                                 .foregroundColor(Theme.textSecondary)
                                 .frame(height: 150)
@@ -320,7 +325,7 @@ struct PerformanceChartsView: View {
                                 ForEach(Array(dailyData.enumerated()), id: \.offset) { _, data in
                                     BarMark(
                                         x: .value("Date", data.0),
-                                        y: .value("K/D", data.1)
+                                        y: .value("K/D", sanitize(data.1))
                                     )
                                     .foregroundStyle(gradientForKD(data.1, avg: avgKD))
                                     .cornerRadius(4)
@@ -328,11 +333,13 @@ struct PerformanceChartsView: View {
 
                                 // Average line
                                 if avgKD > 0 {
-                                    RuleMark(y: .value("Average", avgKD))
+                                    RuleMark(y: .value("Average", sanitize(avgKD)))
                                         .foregroundStyle(accentColor)
                                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                                 }
                             }
+                            .chartYScale(domain: safeYDomain(for: dailyData.map { $0.1 }))
+                            .chartXScale(domain: safeXDomain(for: dailyData.map { $0.0 }))
                             .chartYAxis {
                                 AxisMarks(position: .leading) { _ in
                                     AxisGridLine()
@@ -395,7 +402,7 @@ struct PerformanceChartsView: View {
                     ForEach(snapshots, id: \.id) { snapshot in
                         PointMark(
                             x: .value("Time", snapshot.timestamp),
-                            y: .value("K/D", snapshot.kdRatio)
+                            y: .value("K/D", sanitize(snapshot.kdRatio))
                         )
                         .foregroundStyle(Theme.textSecondary.opacity(0.3))
                         .symbolSize(20)
@@ -405,7 +412,7 @@ struct PerformanceChartsView: View {
                     ForEach(Array(rolling7.enumerated()), id: \.offset) { _, data in
                         LineMark(
                             x: .value("Date", data.0),
-                            y: .value("7-Day Avg", data.1)
+                            y: .value("7-Day Avg", sanitize(data.1))
                         )
                         .foregroundStyle(Theme.bf6Blue.gradient)
                         .lineStyle(StrokeStyle(lineWidth: 3))
@@ -416,13 +423,15 @@ struct PerformanceChartsView: View {
                         ForEach(Array(rolling30.enumerated()), id: \.offset) { _, data in
                             LineMark(
                                 x: .value("Date", data.0),
-                                y: .value("30-Day Avg", data.1)
+                                y: .value("30-Day Avg", sanitize(data.1))
                             )
                             .foregroundStyle(Theme.bf6Purple.gradient)
                             .lineStyle(StrokeStyle(lineWidth: 3, dash: [5, 3]))
                         }
                     }
                 }
+                .chartYScale(domain: safeYDomain(for: snapshots.map { $0.kdRatio } + rolling7.map { $0.1 } + rolling30.map { $0.1 }))
+                .chartXScale(domain: safeXDomain(for: snapshots.map { $0.timestamp } + rolling7.map { $0.0 } + rolling30.map { $0.0 }))
                 .chartYAxis {
                     AxisMarks(position: .leading) { _ in
                         AxisGridLine()
@@ -476,7 +485,7 @@ struct PerformanceChartsView: View {
 
             let dailyData = cachedDailyKillsTrend
 
-            if dailyData.isEmpty {
+            if dailyData.count < 2 {
                 noDataView
             } else {
                 let avgKills = Double(dailyData.reduce(0) { $0 + $1.1 }) / Double(dailyData.count)
@@ -493,11 +502,11 @@ struct PerformanceChartsView: View {
                     }
 
                     // Average line
-                    RuleMark(y: .value("Average", avgKills))
+                    RuleMark(y: .value("Average", sanitize(avgKills)))
                         .foregroundStyle(accentColor)
                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                         .annotation(position: .top, alignment: .trailing) {
-                            Text("Avg: \(Int(avgKills))")
+                            Text("Avg: \(Int(sanitize(avgKills)))")
                                 .font(.caption2)
                                 .foregroundColor(accentColor)
                                 .padding(4)
@@ -505,6 +514,8 @@ struct PerformanceChartsView: View {
                                 .cornerRadius(4)
                         }
                 }
+                .chartYScale(domain: 0...max(Double(maxKills) * 1.1, 1.0))
+                .chartXScale(domain: safeXDomain(for: dailyData.map { $0.0 }))
                 .chartYAxis {
                     AxisMarks(position: .leading) { _ in
                         AxisGridLine()
@@ -538,7 +549,7 @@ struct PerformanceChartsView: View {
                     SmallStatCard(
                         icon: "chart.line.flattrend.xyaxis",
                         label: "Average",
-                        value: String(format: "%.0f", avgKills),
+                        value: String(format: "%.0f", sanitize(avgKills)),
                         color: .orange
                     )
                     SmallStatCard(
@@ -573,7 +584,7 @@ struct PerformanceChartsView: View {
                     .foregroundColor(Theme.textSecondary)
             }
 
-            if snapshots.isEmpty {
+            if snapshots.count < 2 {
                 noDataView
             } else {
                 // Calculate deltas for each snapshot
@@ -612,6 +623,8 @@ struct PerformanceChartsView: View {
                         }
                     }
                 }
+                .chartYScale(domain: 0...max(Double(snapshotDeltas.map { max($0.deltaKills, $0.deltaDeaths) }.max() ?? 1) * 1.1, 1.0))
+                .chartXScale(domain: safeXDomain(for: snapshotDeltas.map { $0.timestamp }))
                 .chartYAxis {
                     AxisMarks(position: .leading) { _ in
                         AxisGridLine()
@@ -657,7 +670,8 @@ struct PerformanceChartsView: View {
                 // Summary stats
                 let totalDeltaKills = snapshotDeltas.reduce(0) { $0 + $1.deltaKills }
                 let totalDeltaDeaths = snapshotDeltas.reduce(0) { $0 + $1.deltaDeaths }
-                let overallKD = totalDeltaDeaths > 0 ? Double(totalDeltaKills) / Double(totalDeltaDeaths) : Double(totalDeltaKills)
+                let rawOverallKD = totalDeltaDeaths > 0 ? Double(totalDeltaKills) / Double(totalDeltaDeaths) : Double(totalDeltaKills)
+                let overallKD = sanitize(rawOverallKD)
 
                 HStack(spacing: 12) {
                     SmallStatCard(
@@ -675,7 +689,7 @@ struct PerformanceChartsView: View {
                     SmallStatCard(
                         icon: "chart.bar",
                         label: "K/D Ratio",
-                        value: String(format: "%.2f", overallKD),
+                        value: String(format: "%.2f", sanitize(overallKD)),
                         color: overallKD >= 1.0 ? .green : .red
                     )
                 }
@@ -723,25 +737,26 @@ struct PerformanceChartsView: View {
             }
 
             let snapshots = cachedSnapshots
+            let hourlyData = cachedHourlyData
+            let activeHours = hourlyData.filter { $0.sessionCount > 0 }
 
-            if snapshots.isEmpty {
+            if snapshots.count < 2 || activeHours.count < 2 {
                 noDataView
             } else {
-                let hourlyData = cachedHourlyData
-
                 // K/D by Hour
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Average K/D by Hour")
                         .font(.subheadline)
                         .foregroundColor(Theme.textSecondary)
 
-                    Chart(hourlyData.filter { $0.sessionCount > 0 }, id: \.hour) { data in
+                    Chart(activeHours, id: \.hour) { data in
                         BarMark(
                             x: .value("Hour", data.hour),
-                            y: .value("Avg K/D", data.avgKD)
+                            y: .value("Avg K/D", sanitize(data.avgKD))
                         )
-                        .foregroundStyle(by: .value("Performance", performanceLevel(data.avgKD)))
+                        .foregroundStyle(by: .value("Performance", performanceLevel(sanitize(data.avgKD))))
                     }
+                    .chartYScale(domain: safeYDomain(for: activeHours.map { $0.avgKD }))
                     .chartYAxis {
                         AxisMarks(position: .leading) { _ in
                             AxisGridLine()
@@ -767,13 +782,14 @@ struct PerformanceChartsView: View {
                         .font(.subheadline)
                         .foregroundColor(Theme.textSecondary)
 
-                    Chart(hourlyData.filter { $0.sessionCount > 0 }, id: \.hour) { data in
+                    Chart(activeHours, id: \.hour) { data in
                         BarMark(
                             x: .value("Hour", data.hour),
                             y: .value("Kills", data.totalKills)
                         )
                         .foregroundStyle(Theme.bf6Green.gradient)
                     }
+                    .chartYScale(domain: 0...max(Double(activeHours.map { $0.totalKills }.max() ?? 1) * 1.1, 1.0))
                     .chartYAxis {
                         AxisMarks(position: .leading) { _ in
                             AxisGridLine()
@@ -799,13 +815,14 @@ struct PerformanceChartsView: View {
                         .font(.subheadline)
                         .foregroundColor(Theme.textSecondary)
 
-                    Chart(hourlyData.filter { $0.sessionCount > 0 }, id: \.hour) { data in
+                    Chart(activeHours, id: \.hour) { data in
                         BarMark(
                             x: .value("Hour", data.hour),
                             y: .value("Sessions", data.sessionCount)
                         )
                         .foregroundStyle(Color.blue.gradient)
                     }
+                    .chartYScale(domain: 0...max(Double(activeHours.map { $0.sessionCount }.max() ?? 1) * 1.1, 1.0))
                     .chartYAxis {
                         AxisMarks(position: .leading) { _ in
                             AxisGridLine()
@@ -824,11 +841,11 @@ struct PerformanceChartsView: View {
                 }
 
                 // Best time of day
-                if let bestHour = hourlyData.filter({ $0.sessionCount > 0 }).max(by: { $0.avgKD < $1.avgKD }) {
+                if let bestHour = hourlyData.filter({ $0.sessionCount > 0 && $0.avgKD.isFinite }).max(by: { $0.avgKD < $1.avgKD }) {
                     HStack {
                         Image(systemName: "star.fill")
                             .foregroundColor(Theme.warning)
-                        Text("Peak Performance: \(bestHour.hour):00 - \(bestHour.hour + 1):00 (K/D: \(String(format: "%.2f", bestHour.avgKD)))")
+                        Text("Peak Performance: \(bestHour.hour):00 - \(bestHour.hour + 1):00 (K/D: \(String(format: "%.2f", sanitize(bestHour.avgKD))))")
                             .font(.caption)
                             .foregroundColor(Theme.textPrimary)
                     }
@@ -855,7 +872,9 @@ struct PerformanceChartsView: View {
             }
 
             // Weekend vs Weekday
-            let (weekendKD, weekdayKD) = historyManager.getWeekendVsWeekdayStats(days: selectedPeriod.days)
+            let (rawWeekendKD, rawWeekdayKD) = historyManager.getWeekendVsWeekdayStats(days: selectedPeriod.days)
+            let weekendKD = sanitize(rawWeekendKD)
+            let weekdayKD = sanitize(rawWeekdayKD)
 
             if weekendKD > 0 || weekdayKD > 0 {
                 VStack(spacing: 12) {
@@ -887,7 +906,7 @@ struct PerformanceChartsView: View {
 
                     let difference = abs(weekendKD - weekdayKD)
                     let percentDiff = weekdayKD > 0 ? (difference / weekdayKD) * 100 : 0
-                    Text("\(weekendKD > weekdayKD ? "Weekends" : "Weekdays") perform \(String(format: "%.1f%%", percentDiff)) better")
+                    Text("\(weekendKD > weekdayKD ? "Weekends" : "Weekdays") perform \(String(format: "%.1f%%", sanitize(percentDiff))) better")
                         .font(.caption)
                         .foregroundColor(Theme.textSecondary)
                 }
@@ -895,8 +914,8 @@ struct PerformanceChartsView: View {
 
             // Week over week (if enough data)
             if selectedPeriod.days >= 14 {
-                let thisWeekKD = historyManager.getAverageDailyKD(days: 7)
-                let lastWeekKD = calculateLastWeekKD()
+                let thisWeekKD = sanitize(historyManager.getAverageDailyKD(days: 7))
+                let lastWeekKD = sanitize(calculateLastWeekKD())
 
                 if thisWeekKD > 0 && lastWeekKD > 0 {
                     Divider()
@@ -929,7 +948,7 @@ struct PerformanceChartsView: View {
                         }
 
                         let change = thisWeekKD - lastWeekKD
-                        let percentChange = lastWeekKD > 0 ? (change / lastWeekKD) * 100 : 0
+                        let percentChange = sanitize(lastWeekKD > 0 ? (change / lastWeekKD) * 100 : 0)
                         HStack {
                             Image(systemName: change >= 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
                                 .foregroundColor(change >= 0 ? .green : .red)
@@ -958,10 +977,10 @@ struct PerformanceChartsView: View {
                 Spacer()
             }
 
-            if !viewModel.topWeapons.isEmpty {
+            if viewModel.topWeapons.count >= 2 {
                 Chart(viewModel.topWeapons.prefix(5)) { weapon in
                     SectorMark(
-                        angle: .value("Kills", weapon.kills),
+                        angle: .value("Kills", max(weapon.kills, 1)),
                         innerRadius: .ratio(0.5),
                         angularInset: 1.5
                     )
@@ -1038,25 +1057,50 @@ struct PerformanceChartsView: View {
         }
     }
 
+    /// Sanitize a Double value, replacing NaN or Infinity with a default value
+    private func sanitize(_ value: Double, default defaultValue: Double = 0.0) -> Double {
+        value.isFinite ? value : defaultValue
+    }
+
+    /// Calculate a safe Y-axis domain that ensures a minimum range to prevent NaN in chart rendering
+    private func safeYDomain(for values: [Double], minRange: Double = 0.1) -> ClosedRange<Double> {
+        let finiteValues = values.filter { $0.isFinite }
+        guard !finiteValues.isEmpty else { return 0...minRange }
+        let minVal = finiteValues.min() ?? 0
+        let maxVal = finiteValues.max() ?? minRange
+        let range = maxVal - minVal
+        if range < minRange {
+            // Expand the range symmetrically
+            let center = (minVal + maxVal) / 2
+            return max(0, center - minRange / 2)...(center + minRange / 2)
+        }
+        return max(0, minVal * 0.9)...(maxVal * 1.1)
+    }
+
     private func colorForKD(_ kd: Double, avg: Double) -> Color {
-        if kd >= avg * 1.2 { return .green }
-        if kd >= avg * 0.8 { return .yellow }
+        let safeKD = sanitize(kd)
+        let safeAvg = sanitize(avg, default: 1.0)
+        if safeKD >= safeAvg * 1.2 { return .green }
+        if safeKD >= safeAvg * 0.8 { return .yellow }
         return .red
     }
 
     private func gradientForKD(_ kd: Double, avg: Double) -> LinearGradient {
+        let safeKD = sanitize(kd)
+        let safeAvg = sanitize(avg, default: 1.0)
         let color: Color
-        if kd >= avg * 1.2 { color = .green }
-        else if kd >= avg * 0.8 { color = .orange }
+        if safeKD >= safeAvg * 1.2 { color = .green }
+        else if safeKD >= safeAvg * 0.8 { color = .orange }
         else { color = .red }
 
         return LinearGradient(colors: [color, color.opacity(0.6)], startPoint: .top, endPoint: .bottom)
     }
 
     private func gradientForKills(_ kills: Int, avg: Double, max: Int) -> LinearGradient {
+        let safeAvg = sanitize(avg, default: 1.0)
         let color: Color
-        if Double(kills) >= avg * 1.2 { color = Theme.bf6Green }
-        else if Double(kills) >= avg * 0.8 { color = accentColor }
+        if Double(kills) >= safeAvg * 1.2 { color = Theme.bf6Green }
+        else if Double(kills) >= safeAvg * 0.8 { color = accentColor }
         else { color = Theme.bf6Red }
 
         return LinearGradient(colors: [color, color.opacity(0.6)], startPoint: .top, endPoint: .bottom)
@@ -1067,6 +1111,31 @@ struct PerformanceChartsView: View {
         if kd >= 1.5 { return "Good" }
         if kd >= 1.0 { return "Average" }
         return "Below Average"
+    }
+
+    /// Calculate a safe X-axis domain for Date-based charts to prevent NaN in axis calculation
+    /// When all dates are too close together, the chart framework can produce NaN for axis marks
+    private func safeXDomain(for dates: [Date]) -> ClosedRange<Date> {
+        guard !dates.isEmpty else {
+            let now = Date()
+            return now...now.addingTimeInterval(3600) // 1 hour default
+        }
+
+        let sortedDates = dates.sorted()
+        let minDate = sortedDates.first!
+        let maxDate = sortedDates.last!
+
+        let timeRange = maxDate.timeIntervalSince(minDate)
+
+        // If time range is too small (less than 1 hour), expand it to prevent NaN
+        if timeRange < 3600 {
+            let center = minDate.addingTimeInterval(timeRange / 2)
+            return center.addingTimeInterval(-1800)...center.addingTimeInterval(1800) // 1 hour range centered
+        }
+
+        // Add 5% padding on each side
+        let padding = timeRange * 0.05
+        return minDate.addingTimeInterval(-padding)...maxDate.addingTimeInterval(padding)
     }
 
     private func formatDateForChart(_ date: Date) -> String {
@@ -1104,7 +1173,10 @@ struct PerformanceChartsView: View {
 
         guard let snapshots = try? context.fetch(descriptor), !snapshots.isEmpty else { return 0.0 }
 
-        return snapshots.map { $0.kdRatio }.reduce(0.0, +) / Double(snapshots.count)
+        let finiteValues = snapshots.map { $0.kdRatio }.filter { $0.isFinite }
+        guard !finiteValues.isEmpty else { return 0.0 }
+        let result = finiteValues.reduce(0.0, +) / Double(finiteValues.count)
+        return result.isFinite ? result : 0.0
     }
 
     // MARK: - Cache Update
@@ -1129,10 +1201,12 @@ struct PerformanceChartsView: View {
 
     private func calculateStdDev(_ data: [(Date, Double)]) -> Double {
         guard !data.isEmpty else { return 0.0 }
-        let values = data.map { $0.1 }
+        let values = data.map { $0.1 }.filter { $0.isFinite }
+        guard !values.isEmpty else { return 0.0 }
         let avg = values.reduce(0.0, +) / Double(values.count)
         let variance = values.map { pow($0 - avg, 2) }.reduce(0.0, +) / Double(values.count)
-        return sqrt(variance)
+        let result = sqrt(variance)
+        return result.isFinite ? result : 0.0
     }
 }
 
@@ -1195,8 +1269,14 @@ struct SessionCard: View {
     let session: [StatsSnapshot]
     let index: Int
 
+    /// Sanitize a Double value, replacing NaN or Infinity with a default value
+    private func sanitize(_ value: Double, default defaultValue: Double = 0.0) -> Double {
+        value.isFinite ? value : defaultValue
+    }
+
     var body: some View {
-        let sessionKD = session.isEmpty ? 0.0 : session.map { $0.kdRatio }.reduce(0, +) / Double(session.count)
+        let kdValues = session.map { $0.kdRatio }.filter { $0.isFinite }
+        let sessionKD = kdValues.isEmpty ? 0.0 : sanitize(kdValues.reduce(0, +) / Double(kdValues.count))
         let duration = session.count > 1 ? session.last!.timestamp.timeIntervalSince(session.first!.timestamp) : 0
         let kills = session.isEmpty ? 0 : (session.last!.kills - session.first!.kills)
 
@@ -1215,7 +1295,7 @@ struct SessionCard: View {
                 HStack {
                     Image(systemName: "chart.line.uptrend.xyaxis")
                         .font(.caption2)
-                    Text("K/D: \(String(format: "%.2f", sessionKD))")
+                    Text("K/D: \(String(format: "%.2f", sanitize(sessionKD)))")
                         .font(.caption2)
                 }
 
@@ -1329,8 +1409,14 @@ struct RadarStatRow: View {
     let value: Double
     let maxValue: Double
 
-    var percentage: Double {
-        min(value / maxValue, 1.0)
+    private var safeValue: Double {
+        value.isFinite ? value : 0.0
+    }
+
+    private var percentage: Double {
+        guard maxValue > 0, safeValue.isFinite else { return 0.0 }
+        let result = safeValue / maxValue
+        return result.isFinite ? min(max(result, 0.0), 1.0) : 0.0
     }
 
     var body: some View {
@@ -1342,7 +1428,7 @@ struct RadarStatRow: View {
 
                 Spacer()
 
-                Text(String(format: "%.1f", value))
+                Text(String(format: "%.1f", safeValue))
                     .font(.caption)
                     .fontWeight(.bold)
             }

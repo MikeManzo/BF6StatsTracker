@@ -27,7 +27,9 @@ struct ProgressBarView: View {
     @State private var shimmerOffset: CGFloat = -1.0
 
     init(value: Double, color: Color = .blue, height: CGFloat = 8, animated: Bool = true, showShimmer: Bool = true) {
-        self.value = min(max(value, 0), 1)
+        // Guard against NaN and Infinity - clamp to valid range
+        let safeValue = value.isFinite ? value : 0.0
+        self.value = min(max(safeValue, 0), 1)
         self.color = color
         self.height = height
         self.animated = animated
@@ -110,13 +112,15 @@ struct ComparisonProgressBarView: View {
     }
 
     private var progress: Double {
-        guard yesterdayValue > 0 else { return 0 }
-        return min(todayValue / yesterdayValue, 1.5) / 1.5 // Cap at 150%
+        guard yesterdayValue > 0, todayValue.isFinite, yesterdayValue.isFinite else { return 0 }
+        let result = min(todayValue / yesterdayValue, 1.5) / 1.5 // Cap at 150%
+        return result.isFinite ? result : 0.0
     }
 
     private var percentChange: Double {
-        guard yesterdayValue > 0 else { return 0 }
-        return ((todayValue - yesterdayValue) / yesterdayValue) * 100
+        guard yesterdayValue > 0, todayValue.isFinite, yesterdayValue.isFinite else { return 0 }
+        let result = ((todayValue - yesterdayValue) / yesterdayValue) * 100
+        return result.isFinite ? result : 0.0
     }
 
     private var isImprovement: Bool {

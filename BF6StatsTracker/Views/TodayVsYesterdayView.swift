@@ -680,6 +680,42 @@ struct TodayVsYesterdayView: View {
         return formatter.string(from: date)
     }
 
+    /// Sanitize a Double value, replacing NaN or Infinity with a default value
+    private func sanitize(_ value: Double, default defaultValue: Double = 0.0) -> Double {
+        value.isFinite ? value : defaultValue
+    }
+
+    /// Calculate a safe Y-axis domain for the K/D & KDA chart to prevent NaN in chart rendering
+    private var kdKdaChartYDomain: ClosedRange<Double> {
+        var allValues: [Double] = []
+
+        // Collect all KD and KDA values from snapshots
+        for item in snapshotsForChart {
+            if item.sessionKD.isFinite { allValues.append(item.sessionKD) }
+            if item.sessionKDA.isFinite { allValues.append(item.sessionKDA) }
+        }
+
+        // Collect from daily averages
+        for performance in last7Days {
+            if performance.dailyKD.isFinite { allValues.append(performance.dailyKD) }
+            if performance.computedDailyKDA.isFinite { allValues.append(performance.computedDailyKDA) }
+        }
+
+        guard !allValues.isEmpty else { return 0...2 }
+
+        let minVal = allValues.min() ?? 0
+        let maxVal = allValues.max() ?? 2
+        let range = maxVal - minVal
+
+        if range < 0.1 {
+            // All values are essentially the same - create artificial range
+            let center = (minVal + maxVal) / 2
+            return max(0, center - 0.5)...(center + 0.5)
+        }
+
+        return max(0, minVal * 0.9)...(maxVal * 1.1)
+    }
+
     /// Get snapshot deltas from the last 7 days with their x-position for the chart
     /// Shows discrete K/D and KDA for each gaming session (delta from previous snapshot)
     private var snapshotsForChart: [(sessionKD: Double, sessionKDA: Double, xPosition: Double)] {
@@ -1076,6 +1112,7 @@ struct TodayVsYesterdayView: View {
             }
             .chartXAxis(.hidden)
             .chartYAxis(.hidden)
+            .chartYScale(domain: kdKdaChartYDomain)
             .chartLegend(.hidden)
             .frame(height: 120)
 
