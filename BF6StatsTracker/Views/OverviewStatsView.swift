@@ -97,7 +97,7 @@ struct OverviewStatsView: View {
 //                previousSnapshot: historyManager.getRecentSnapshots(limit: 2).dropFirst().first
 //            )
 
-            HStack(spacing: 16) {
+            HStack(alignment: .top, spacing: 16) {
                 // Enhanced Class Card
                 if let topClass = viewModel.topClass, let stats = viewModel.playerStats {
                     EnhancedClassCard(
@@ -106,35 +106,36 @@ struct OverviewStatsView: View {
                         overallWinRate: stats.wlRatio,
                         totalTimePlayed: stats.timePlayed
                     )
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 } else {
                     VStack(alignment: .leading, spacing: 16) {
                         SectionHeader(title: "Most Played Class", icon: "person.fill")
                         Text("No class data available")
                             .foregroundColor(Theme.textSecondary)
+                        Spacer()
                     }
                     .cardStyle()
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
 
                 // Top Weapons
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 10) {
                     SectionHeader(title: "Top Weapons", icon: "scope")
 
                     if viewModel.topWeapons.isEmpty {
                         Text("No weapon data available")
                             .foregroundColor(Theme.textSecondary)
                     } else {
-                        ForEach(viewModel.topWeapons.prefix(3), id: \.weaponName) { weapon in
+                        ForEach(viewModel.topWeapons.prefix(4), id: \.weaponName) { weapon in
                             HStack {
                                 AsyncGameImage(
                                     url: URL(string: weapon.image),
                                     placeholder: Image(systemName: "scope")
                                 )
-                                .frame(width: 40, height: 40)
-                                .cornerRadius(8)
+                                .frame(width: 36, height: 36)
+                                .cornerRadius(6)
 
-                                VStack(alignment: .leading) {
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text(weapon.weaponName)
                                         .fontWeight(.medium)
                                         .foregroundColor(Theme.textPrimary)
@@ -146,7 +147,7 @@ struct OverviewStatsView: View {
 
                                 Spacer()
 
-                                VStack(alignment: .trailing) {
+                                VStack(alignment: .trailing, spacing: 2) {
                                     Text("\(weapon.kills)")
                                         .fontWeight(.bold)
                                         .foregroundColor(Theme.bf6Red)
@@ -156,13 +157,15 @@ struct OverviewStatsView: View {
                                         .foregroundColor(Theme.textSecondary)
                                 }
                             }
-                            .padding(.vertical, 4)
                         }
                     }
+
+                    Spacer()
                 }
                 .cardStyle()
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
