@@ -28,6 +28,7 @@
 		0000000000000020 /* LastCompletedMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000022 /* LastCompletedMatchView.swift */; };
 		2719F33C2EF8819400C42191 /* DailyPerformanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */; };
 		2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33D2EF881AA00C42191 /* DailyPerformance.swift */; };
+		27AIC0012F4EABC100000001 /* AICoachAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */; };
 		271CA0FE2F26DCD00037D232 /* AICoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271CA0FD2F26DCD00037D232 /* AICoachView.swift */; };
 		271CA1002F26DCF30037D232 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271CA0FF2F26DCF30037D232 /* LocalAIService.swift */; };
 		274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */; };
@@ -111,6 +112,7 @@
 		1000000000000022 /* LastCompletedMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastCompletedMatchView.swift; sourceTree = "<group>"; };
 		2719F33B2EF8819400C42191 /* DailyPerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformanceView.swift; sourceTree = "<group>"; };
 		2719F33D2EF881AA00C42191 /* DailyPerformance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformance.swift; sourceTree = "<group>"; };
+		27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachAnalysis.swift; sourceTree = "<group>"; };
 		271CA0FD2F26DCD00037D232 /* AICoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachView.swift; sourceTree = "<group>"; };
 		271CA0FF2F26DCF30037D232 /* LocalAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIService.swift; sourceTree = "<group>"; };
 		274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatsViewModel+Logout.swift"; sourceTree = "<group>"; };
@@ -256,6 +258,7 @@
 		3000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */,
 				2719F33D2EF881AA00C42191 /* DailyPerformance.swift */,
 				274F854F2F141A87000B1B90 /* LogEntry.swift */,
 				1000000000000004 /* Models.swift */,
@@ -486,6 +489,7 @@
 				27E798092EE646350002311A /* EALoginView.swift in Sources */,
 				274F85502F141A87000B1B90 /* LogEntry.swift in Sources */,
 				2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */,
+				27AIC0012F4EABC100000001 /* AICoachAnalysis.swift in Sources */,
 				2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */,
 				0000000000000014 /* Extensions.swift in Sources */,
 				2749FA1C2F05DD5C004D2E1D /* UnifiedStatCard.swift in Sources */,

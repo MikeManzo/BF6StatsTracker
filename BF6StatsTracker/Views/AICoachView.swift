@@ -20,11 +20,15 @@ import SwiftData
 
 struct AICoachView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var viewModel: StatsViewModel
     @StateObject private var aiService = LocalAIService.shared
 
     @Query(sort: \StatsSnapshot.timestamp, order: .reverse)
     private var recentSnapshots: [StatsSnapshot]
+
+    @Query(sort: \AICoachAnalysis.generatedAt, order: .reverse)
+    private var savedAnalyses: [AICoachAnalysis]
 
     @State private var isGenerating = false
     @State private var showModelInfo = false
@@ -86,6 +90,14 @@ struct AICoachView: View {
         }
         .background(Theme.backgroundPrimary)
         .onAppear {
+            // Load persisted analysis for current player if no response in memory
+            if aiService.lastResponse == nil, let playerName = viewModel.playerStats?.userName {
+                if let savedAnalysis = savedAnalyses.first(where: { $0.playerName == playerName }) {
+                    aiService.lastResponse = savedAnalysis.toResponse()
+                    logInfo("Loaded persisted AI Coach analysis from \(savedAnalysis.formattedGeneratedAt)", category: .general)
+                }
+            }
+
             // Auto-generate if we have stats, model is downloaded, and no response
             if viewModel.playerStats != nil && aiService.status.isDownloaded && aiService.lastResponse == nil {
                 generateAdvice()
@@ -938,14 +950,58 @@ struct AICoachView: View {
     // MARK: - Footer
 
     private func generatedAtFooter(response: AICoachResponse) -> some View {
-        HStack {
-            Image(systemName: "clock")
-                .font(.caption2)
+        HStack(spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Theme.bf6Green)
+                    .font(.caption)
 
-            Text("Generated \(response.generatedAt.formatted(.relative(presentation: .named)))")
-                .font(.caption)
+                Text("Analysis saved")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+
+            Text("•")
+                .foregroundColor(Theme.textSecondary.opacity(0.5))
+
+            HStack(spacing: 6) {
+                Image(systemName: "clock")
+                    .font(.caption)
+
+                Text("Last analyzed: \(formattedAnalysisDate(response.generatedAt))")
+                    .font(.caption)
+            }
+            .foregroundColor(Theme.textSecondary)
         }
-        .foregroundColor(Theme.textSecondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Theme.cardBackground)
+        .cornerRadius(8)
+    }
+
+    /// Format the analysis date for display
+    private func formattedAnalysisDate(_ date: Date) -> String {
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(date) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "h:mm a"
+            return "Today at \(formatter.string(from: date))"
+        } else if calendar.isDateInYesterday(date) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "h:mm a"
+            return "Yesterday at \(formatter.string(from: date))"
+        } else {
+            let days = calendar.dateComponents([.day], from: date, to: Date()).day ?? 0
+            if days < 7 {
+                return "\(days) day\(days == 1 ? "" : "s") ago"
+            } else {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                formatter.timeStyle = .short
+                return formatter.string(from: date)
+            }
+        }
     }
 
     // MARK: - Analysis Loading Animation
@@ -1120,7 +1176,7 @@ struct AICoachView: View {
             )
             let trendData = aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
 
-            _ = await aiService.generateCoachingAdvice(
+            let response = await aiService.generateCoachingAdvice(
                 stats: stats,
                 dailyPerformances: dailyPerformances,
                 recentSnapshots: snapshotsToUse,
@@ -1128,7 +1184,30 @@ struct AICoachView: View {
                 playerNickname: playerNickname
             )
 
+            // Persist the analysis result
+            saveAnalysis(response: response, playerName: stats.userName)
+
             isGenerating = false
+        }
+    }
+
+    /// Save the AI Coach analysis to SwiftData
+    private func saveAnalysis(response: AICoachResponse, playerName: String) {
+        // Delete any existing analysis for this player
+        let existingAnalyses = savedAnalyses.filter { $0.playerName == playerName }
+        for analysis in existingAnalyses {
+            modelContext.delete(analysis)
+        }
+
+        // Create and save new analysis
+        let newAnalysis = AICoachAnalysis(from: response, playerName: playerName)
+        modelContext.insert(newAnalysis)
+
+        do {
+            try modelContext.save()
+            logSuccess("AI Coach analysis saved for \(playerName)", category: .success)
+        } catch {
+            logError("Failed to save AI Coach analysis: \(error.localizedDescription)", category: .error)
         }
     }
 }

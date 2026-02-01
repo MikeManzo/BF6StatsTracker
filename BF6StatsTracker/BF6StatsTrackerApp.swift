@@ -40,7 +40,8 @@ struct BF6StatsTrackerApp: App {
                 StatsSnapshot.self,
                 PlaySession.self,
                 MapStats.self,
-                DailyPerformance.self
+                DailyPerformance.self,
+                AICoachAnalysis.self
             ])
 
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

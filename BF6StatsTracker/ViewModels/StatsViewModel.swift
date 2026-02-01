@@ -830,6 +830,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         }
     }
 
+    // Sub Tab Order
     var subTabs: [StatTab]? {
         switch self {
         case .overview, .history, .aiCoach:
@@ -841,7 +842,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .analysis:
             return [.charts, .maps, .modeEfficiency]
         case .teamplay:
-            return [.classes, .support, .intel, .loadout]
+            return [.loadout, .support, .intel, .classes]
         case .tools:
             return [.logViewer, .servers, .xpCalculator]
         }
