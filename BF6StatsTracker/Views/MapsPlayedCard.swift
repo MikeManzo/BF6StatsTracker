@@ -166,8 +166,140 @@ struct MapsPlayedCard: View {
     }
 }
 
+// MARK: - Maps Played Content (for embedding in disclosure groups)
+
+struct MapsPlayedContent: View {
+    @Environment(\.accentColor) private var accentColor
+    @EnvironmentObject var historyManager: HistoryManager
+
+    var body: some View {
+        Group {
+            if let mapsPlayed = getMapsPlayed() {
+                if mapsPlayed.isEmpty {
+                    emptyState(message: "No map activity detected")
+                } else if mapsPlayed.count == 1 {
+                    singleMapView(mapsPlayed[0])
+                } else {
+                    multipleMapsList(mapsPlayed)
+                }
+            } else {
+                emptyState(message: "No snapshot history available")
+            }
+        }
+    }
+
+    private func getMapsPlayed() -> [MapActivity]? {
+        let snapshots = historyManager.getRecentSnapshots(limit: 2)
+        guard let latest = snapshots.first,
+              snapshots.count >= 2 else {
+            return nil
+        }
+
+        let previous = snapshots[1]
+        return latest.mapsPlayedSince(previous)
+    }
+
+    private func emptyState(message: String) -> some View {
+        Text(message)
+            .foregroundColor(Theme.textSecondary)
+            .font(.caption)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func singleMapView(_ mapActivity: MapActivity) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "map.circle.fill")
+                .font(.system(size: 32))
+                .foregroundColor(accentColor)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(mapActivity.mapName)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+
+                HStack(spacing: 12) {
+                    Label("\(mapActivity.matchesPlayed) match\(mapActivity.matchesPlayed == 1 ? "" : "es")", systemImage: "flag.checkered")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+
+                    Label(mapActivity.timePlayedFormatted, systemImage: "clock.fill")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+
+                    Label(mapActivity.recordFormatted, systemImage: mapActivity.hasWins ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundColor(mapActivity.hasWins ? .green : .red)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(10)
+        .background(accentColor.opacity(0.08))
+        .cornerRadius(8)
+    }
+
+    private func multipleMapsList(_ maps: [MapActivity]) -> some View {
+        VStack(spacing: 6) {
+            ForEach(maps.prefix(5)) { mapActivity in
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(accentColor)
+                        .frame(width: 6, height: 6)
+
+                    Text(mapActivity.mapName)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(Theme.textPrimary)
+
+                    Spacer()
+
+                    HStack(spacing: 6) {
+                        Text("\(mapActivity.matchesPlayed)")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Text(mapActivity.timePlayedShort)
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+
+                        Text(mapActivity.recordFormatted)
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundColor(mapActivity.hasWins ? .green : .red)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+
+            if maps.count > 5 {
+                Text("+ \(maps.count - 5) more map\(maps.count - 5 == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+                    .padding(.top, 2)
+            }
+        }
+    }
+}
+
 #Preview {
     MapsPlayedCard()
+        .padding()
+        .background(Theme.backgroundPrimary)
+        .environmentObject(HistoryManager.shared)
+}
+
+#Preview("Maps Played Content") {
+    MapsPlayedContent()
         .padding()
         .background(Theme.backgroundPrimary)
         .environmentObject(HistoryManager.shared)

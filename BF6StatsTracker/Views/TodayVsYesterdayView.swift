@@ -23,6 +23,8 @@ struct TodayVsYesterdayView: View {
     @EnvironmentObject var historyManager: HistoryManager
     @State private var hasAnimated = false
     @State private var showSingleSnapshotInfo = false
+    @State private var isMapsExpanded = true
+    @State private var isCombatBreakdownExpanded = true
 
     // Get current and previous snapshots for comparison
     private var currentSnapshot: StatsSnapshot? {
@@ -822,22 +824,12 @@ struct TodayVsYesterdayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             if currentSnapshot != nil {
-                // Header
-                header
-
-                // Main comparison cards
-                mainStatsGrid
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Maps Played
-                mapsPlayedSection
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Combat performance breakdown
-                combatBreakdown
+                // Most Recent Performance - unified container
+                mostRecentPerformanceCard
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // 7-day trend (full width) - show if we have at least 2 days of data
+                // Kept separate as it's a historical view, not "most recent"
                 if last7Days.count >= 2 {
                     kdKdaTrendView
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -857,6 +849,163 @@ struct TodayVsYesterdayView: View {
         } message: {
             Text("You currently have only one snapshot. Comparison data will be available after you play a match and stats change.")
         }
+    }
+
+    // MARK: - Most Recent Performance Card (Unified Container)
+
+    private var mostRecentPerformanceCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            header
+
+            // Main comparison cards
+            mainStatsGrid
+
+            // Collapsible sub-sections
+            VStack(alignment: .leading, spacing: 12) {
+                // Maps Played - Collapsible
+                mapsPlayedDisclosure
+
+                // Combat Breakdown - Collapsible
+                combatBreakdownDisclosure
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(accentColor.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Maps Played Disclosure
+
+    private var mapsPlayedDisclosure: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Disclosure header
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isMapsExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: isMapsExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 16)
+
+                    Image(systemName: "map.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(accentColor)
+
+                    Text("Maps Played")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Theme.textPrimary)
+
+                    // Badge showing count
+                    if let count = mapsPlayedCount, count > 0 {
+                        Text("\(count)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(accentColor)
+                            .cornerRadius(8)
+                    }
+
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Expandable content
+            if isMapsExpanded {
+                MapsPlayedContent()
+                    .environmentObject(historyManager)
+                    .padding(.top, 8)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(12)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(accentColor.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    private var mapsPlayedCount: Int? {
+        let snapshots = historyManager.getRecentSnapshots(limit: 2)
+        guard let latest = snapshots.first,
+              snapshots.count >= 2 else {
+            return nil
+        }
+        let previous = snapshots[1]
+        return latest.mapsPlayedSince(previous).count
+    }
+
+    // MARK: - Combat Breakdown Disclosure
+
+    private var combatBreakdownDisclosure: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Disclosure header
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isCombatBreakdownExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: isCombatBreakdownExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 16)
+
+                    Image(systemName: "chart.bar.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(accentColor)
+
+                    Text("Combat Breakdown")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Spacer()
+
+                    // Show comparison context
+                    HStack(spacing: 4) {
+                        Image(systemName: isComparingToYesterday ? "calendar" : "chart.bar")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(isComparingToYesterday ? "vs Yesterday" : "vs Historical Avg")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Expandable content
+            if isCombatBreakdownExpanded {
+                combatBreakdownContent
+                    .padding(.top, 8)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(12)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(accentColor.opacity(0.1), lineWidth: 1)
+        )
     }
 
     // MARK: - Header
@@ -991,12 +1140,6 @@ struct TodayVsYesterdayView: View {
                 rightSuffix: "%"
             )
         }
-    }
-
-    // MARK: - Maps Played Section
-
-    private var mapsPlayedSection: some View {
-        MapsPlayedCard()
     }
 
     // MARK: - K/D & KDA Trend View
@@ -1331,6 +1474,116 @@ struct TodayVsYesterdayView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color(NSColor.controlBackgroundColor))
                 )
+            }
+        }
+    }
+
+    // MARK: - Combat Breakdown Content (for disclosure group)
+
+    private var combatBreakdownContent: some View {
+        Group {
+            if let todayAvg = todayAveragePerformance, let baselineAvg = comparisonBaseline {
+                VStack(spacing: 10) {
+                    // Info button row
+                    HStack {
+                        Spacer()
+                        Button {
+                            showCombatBreakdownInfo = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "info.circle")
+                                    .font(.caption2)
+                                Text("What's this?")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $showCombatBreakdownInfo, arrowEdge: .bottom) {
+                            combatBreakdownInfoPopover
+                        }
+                    }
+
+                    // Headshots per match
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.headshotsPerMatch,
+                        yesterdayValue: baselineAvg.headshotsPerMatch,
+                        label: "🎯 Headshots / Match",
+                        accentColor: .purple,
+                        delay: 0.0,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Accuracy
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.accuracy,
+                        yesterdayValue: baselineAvg.accuracy,
+                        label: "🎪 Accuracy",
+                        accentColor: .orange,
+                        delay: 0.1,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // KPM
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.killsPerMinute,
+                        yesterdayValue: baselineAvg.killsPerMinute,
+                        label: "⚡ Kills Per Minute",
+                        accentColor: .yellow,
+                        delay: 0.2,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Assists per match
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.assistsPerMatch,
+                        yesterdayValue: baselineAvg.assistsPerMatch,
+                        label: "🤝 Assists / Match",
+                        accentColor: .cyan,
+                        delay: 0.3,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Win Rate
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.winRate,
+                        yesterdayValue: baselineAvg.winRate,
+                        label: "🏆 Win Rate",
+                        accentColor: .green,
+                        delay: 0.4,
+                        shouldAnimate: !hasAnimated
+                    )
+
+                    // Score per match
+                    AnimatedComparisonProgressBar(
+                        todayValue: todayAvg.scorePerMatch / 1000,
+                        yesterdayValue: baselineAvg.scorePerMatch / 1000,
+                        label: "🎖️ Score / Match (K)",
+                        accentColor: .blue,
+                        delay: 0.5,
+                        shouldAnimate: !hasAnimated
+                    )
+                }
+                .onAppear {
+                    if !hasAnimated {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                            hasAnimated = true
+                        }
+                    }
+                }
+            } else {
+                // No data available
+                VStack(spacing: 8) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                    Text("No snapshot data available. Play some matches to see your combat breakdown.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
             }
         }
     }
