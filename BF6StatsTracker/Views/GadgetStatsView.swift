@@ -247,11 +247,52 @@ struct GadgetCard: View {
     private var gadgetImage: some View {
         AsyncGameImage(
             url: URL(string: gadget.image),
-            placeholder: Image(systemName: "wrench.fill")
+            placeholder: Image(systemName: placeholderIcon)
         )
         .frame(width: 60, height: 60)
         .background(Theme.overlayColor)
         .cornerRadius(12)
+    }
+
+    /// Returns an appropriate SF Symbol based on gadget ID for gadgets without images
+    private var placeholderIcon: String {
+        switch gadget.gadgetId {
+        // Repair & Support
+        case "repair": return "wrench.and.screwdriver.fill"
+        case "sup_bag", "vehsupcra": return "shippingbox.fill"
+        case "adren": return "syringe.fill"
+
+        // Recon & Sensors
+        case "recondrone": return "airplane"
+        case "laserdes": return "scope"
+        case "tugs", "msensor": return "sensor.fill"
+        case "decoy": return "person.fill.questionmark"
+
+        // Deployables
+        case "ladder": return "ladder.fill"
+        case "deplocover", "deployable": return "shield.fill"
+        case "deploymortar": return "burst.fill"
+        case "deploybeacon": return "antenna.radiowaves.left.and.right"
+
+        // Explosives & Mines
+        case "mine_ap", "mine_tws", "mine_mosen": return "exclamationmark.triangle.fill"
+        case "eodbot": return "ant.fill"
+
+        // Launchers
+        case "rl_longra", "rl_surtoair": return "arrow.up.right.circle.fill"
+        case "il_airburst": return "cloud.bolt.fill"
+
+        // Grenade Launchers
+        case "gl_breach", "gl_smoke": return "circle.circle.fill"
+
+        // Throwables
+        case "tknife": return "scissors"
+        case "gren_stun", "gren_flash": return "bolt.circle.fill"
+        case "gren_smoke": return "smoke.fill"
+        case "gren_mfrag": return "circle.fill"
+
+        default: return "wrench.fill"
+        }
     }
     
     private var gadgetInfo: some View {
