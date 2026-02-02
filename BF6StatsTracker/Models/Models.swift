@@ -877,6 +877,10 @@ struct GadgetStats: Codable, Identifiable, Hashable {
     let assists: Int
     let kpm: Double
 
+    // Spotting Stats
+    let spotAssists: Int
+    let spots: Int
+
     // Usage Stats
     let uses: Int
     let spawns: Int
@@ -910,6 +914,9 @@ struct GadgetStats: Codable, Identifiable, Hashable {
         case assists
         case kpm
 
+        case spotAssists
+        case spots
+
         case uses
         case spawns
 
@@ -921,13 +928,40 @@ struct GadgetStats: Codable, Identifiable, Hashable {
 
         case secondsPlayed
     }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(gadgetName)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        gadgetId = try container.decodeIfPresent(String.self, forKey: .gadgetId) ?? UUID().uuidString
+        gadgetName = try container.decodeIfPresent(String.self, forKey: .gadgetName) ?? "Unknown"
+        type = try container.decodeIfPresent(String.self, forKey: .type) ?? ""
+        image = try container.decodeIfPresent(String.self, forKey: .image) ?? ""
+
+        kills = try container.decodeIfPresent(Int.self, forKey: .kills) ?? 0
+        multiKills = try container.decodeIfPresent(Int.self, forKey: .multiKills) ?? 0
+        assists = try container.decodeIfPresent(Int.self, forKey: .assists) ?? 0
+        kpm = try container.decodeIfPresent(Double.self, forKey: .kpm) ?? 0.0
+
+        spotAssists = try container.decodeIfPresent(Int.self, forKey: .spotAssists) ?? 0
+        spots = try container.decodeIfPresent(Int.self, forKey: .spots) ?? 0
+
+        uses = try container.decodeIfPresent(Int.self, forKey: .uses) ?? 0
+        spawns = try container.decodeIfPresent(Int.self, forKey: .spawns) ?? 0
+
+        damage = try container.decodeIfPresent(Int.self, forKey: .damage) ?? 0
+        assistsDamage = try container.decodeIfPresent(Int.self, forKey: .assistsDamage) ?? 0
+        dpm = try container.decodeIfPresent(Double.self, forKey: .dpm) ?? 0.0
+
+        vehiclesDestroyedWith = try container.decodeIfPresent(Int.self, forKey: .vehiclesDestroyedWith) ?? 0
+
+        secondsPlayed = try container.decodeIfPresent(Int.self, forKey: .secondsPlayed) ?? 0
     }
-    
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(gadgetId)
+    }
+
     static func == (lhs: GadgetStats, rhs: GadgetStats) -> Bool {
-        lhs.gadgetName == rhs.gadgetName
+        lhs.gadgetId == rhs.gadgetId
     }
 }
 

@@ -158,7 +158,7 @@ struct GadgetStatsView: View {
             LazyVGrid(columns: [
                 GridItem(.adaptive(minimum: 350, maximum: 450), spacing: 16)
             ], spacing: 16) {
-                ForEach(filteredGadgets, id: \.gadgetName) { gadget in
+                ForEach(filteredGadgets) { gadget in
                     GadgetCard(gadget: gadget)
                 }
             }
@@ -435,33 +435,49 @@ struct DetailRow: View {
 // MARK: - Gadget Type Enum
 
 enum GadgetType: String, CaseIterable, Identifiable {
-    case explosives = "Explosives"
-    case deployable = "Deployable Gadgets"
-    case strikePackages = "Strike Packages"
+    case equipment = ""                      // 28 gadgets - no type in API
+    case deployable = "Deployable Gadgets"   // 2 gadgets
+    case explosives = "Explosives"           // 2 gadgets
+    case grenade = "Grenade"                 // 2 gadgets
+    case grenadeLaunchers = "Grenade Launchers"  // 2 gadgets
+    case launchers = "Launchers"             // 2 gadgets
+    case strikePackages = "Strike Packages"  // 1 gadget
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .explosives: return "Explosives"
+        case .equipment: return "Equipment"
         case .deployable: return "Deployable"
-        case .strikePackages: return "Strike Packages"
+        case .explosives: return "Explosives"
+        case .grenade: return "Grenades"
+        case .grenadeLaunchers: return "GL"
+        case .launchers: return "Launchers"
+        case .strikePackages: return "Strikes"
         }
     }
 
     var iconName: String {
         switch self {
-        case .explosives: return "flame.fill"
+        case .equipment: return "wrench.and.screwdriver.fill"
         case .deployable: return "cube.box.fill"
+        case .explosives: return "flame.fill"
+        case .grenade: return "circle.fill"
+        case .grenadeLaunchers: return "scope"
+        case .launchers: return "arrow.up.right"
         case .strikePackages: return "airplane"
         }
     }
 
     var color: Color {
         switch self {
-        case .explosives: return Theme.bf6Red
+        case .equipment: return Theme.bf6Orange
         case .deployable: return Theme.bf6Green
-        case .strikePackages: return Theme.bf6Blue
+        case .explosives: return Theme.bf6Red
+        case .grenade: return Theme.warning
+        case .grenadeLaunchers: return Theme.info
+        case .launchers: return Theme.bf6Blue
+        case .strikePackages: return Theme.success
         }
     }
 }
