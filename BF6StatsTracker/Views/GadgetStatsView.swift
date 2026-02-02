@@ -29,7 +29,7 @@ struct GadgetStatsView: View {
 
         // Filter by gadget type
         if let selectedGadgetType = selectedGadgetType {
-            gadgets = gadgets.filter { $0.type == selectedGadgetType.rawValue }
+            gadgets = gadgets.filter { selectedGadgetType.matches($0) }
         }
 
         // Filter by search
@@ -478,6 +478,31 @@ enum GadgetType: String, CaseIterable, Identifiable {
         case .grenadeLaunchers: return Theme.info
         case .launchers: return Theme.bf6Blue
         case .strikePackages: return Theme.success
+        }
+    }
+
+    /// Determines if a gadget matches this category
+    /// Uses smart matching to handle API inconsistencies (e.g., grenades with empty type)
+    func matches(_ gadget: GadgetStats) -> Bool {
+        // First check exact type match
+        if gadget.type == self.rawValue {
+            return true
+        }
+
+        // Smart matching for categories where API is inconsistent
+        switch self {
+        case .grenade:
+            // Include gadgets with "Grenade" in name (Stun, Smoke, Flash, Mini grenades have empty type)
+            return gadget.gadgetName.localizedCaseInsensitiveContains("Grenade")
+        case .equipment:
+            // Equipment is empty type, but exclude items that belong to other smart-matched categories
+            if gadget.type.isEmpty {
+                // Exclude grenades (they belong in .grenade category)
+                return !gadget.gadgetName.localizedCaseInsensitiveContains("Grenade")
+            }
+            return false
+        default:
+            return false
         }
     }
 }
