@@ -853,11 +853,11 @@ struct VehicleStats: Codable, Identifiable, Hashable {
     }
     
     func hash(into hasher: inout Hasher) {
-        hasher.combine(vehicleName)
+        hasher.combine(vehicleId)
     }
-    
+
     static func == (lhs: VehicleStats, rhs: VehicleStats) -> Bool {
-        lhs.vehicleName == rhs.vehicleName
+        lhs.vehicleId == rhs.vehicleId
     }
 }
 
@@ -1125,27 +1125,32 @@ enum WeaponCategory: String, CaseIterable, Identifiable {
 
 // MARK: - Vehicle Category Enum
 enum VehicleCategory: String, CaseIterable, Identifiable {
-    case mainBattleTank = "Main Battle Tank"
-    case lightArmor = "Light Armor"
-    case antiAircraft = "Anti-Aircraft"
-    case attackHelicopter = "Attack Helicopter"
-    case transportHelicopter = "Transport Helicopter"
-    case jet = "Jet"
-    case transportVehicle = "Transport Vehicle"
-    case watercraft = "Watercraft"
-    
+    case airCombat = "Air Combat"
+    case airTransport = "Air Transport"
+    case groundCombat = "Ground Combat"
+    case groundTransport = "Ground Transport"
+
     var id: String { rawValue }
-    
+
+    var displayName: String {
+        rawValue
+    }
+
     var icon: String {
         switch self {
-        case .mainBattleTank: return "shield.fill"
-        case .lightArmor: return "car.fill"
-        case .antiAircraft: return "target"
-        case .attackHelicopter: return "airplane"
-        case .transportHelicopter: return "xmark"
-        case .jet: return "airplane"
-        case .transportVehicle: return "bus.fill"
-        case .watercraft: return "ferry.fill"
+        case .airCombat: return "airplane"
+        case .airTransport: return "helicopter.fill"
+        case .groundCombat: return "shield.fill"
+        case .groundTransport: return "car.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .airCombat: return Theme.bf6Red
+        case .airTransport: return Theme.bf6Blue
+        case .groundCombat: return Theme.bf6Orange
+        case .groundTransport: return Theme.bf6Green
         }
     }
 }

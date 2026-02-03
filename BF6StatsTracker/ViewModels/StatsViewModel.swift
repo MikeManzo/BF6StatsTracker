@@ -753,16 +753,13 @@ class StatsViewModel: ObservableObject {
     
     var vehiclesByCategory: [VehicleCategory: [VehicleStats]] {
         Dictionary(grouping: vehicleStats) { vehicle -> VehicleCategory in
-            switch vehicle.type.lowercased() {
-            case let t where t.contains("tank") || t.contains("mbt"): return .mainBattleTank
-            case let t where t.contains("light") || t.contains("ifv"): return .lightArmor
-            case let t where t.contains("aa") || t.contains("anti-air"): return .antiAircraft
-            case let t where t.contains("attack") && t.contains("heli"): return .attackHelicopter
-            case let t where t.contains("transport") && t.contains("heli"): return .transportHelicopter
-            case let t where t.contains("jet") || t.contains("fighter"): return .jet
-            case let t where t.contains("transport"): return .transportVehicle
-            case let t where t.contains("boat") || t.contains("water"): return .watercraft
-            default: return .lightArmor
+            // Match exact API category names
+            switch vehicle.type {
+            case "Air Combat": return .airCombat
+            case "Air Transport": return .airTransport
+            case "Ground Combat": return .groundCombat
+            case "Ground Transport": return .groundTransport
+            default: return .groundTransport  // Fallback for unknown types
             }
         }
     }

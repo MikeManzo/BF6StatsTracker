@@ -194,16 +194,7 @@ struct VehicleStatsView: View {
     // MARK: - Helpers
     
     private func categoryColor(for category: VehicleCategory) -> Color {
-        switch category {
-        case .mainBattleTank: return Theme.textSecondary
-        case .lightArmor: return .green
-        case .antiAircraft: return .blue
-        case .attackHelicopter: return .red
-        case .transportHelicopter: return .teal
-        case .jet: return .purple
-        case .transportVehicle: return .orange
-        case .watercraft: return .cyan
-        }
+        category.color
     }
 }
 

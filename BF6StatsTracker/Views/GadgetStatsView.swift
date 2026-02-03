@@ -525,25 +525,20 @@ enum GadgetType: String, CaseIterable, Identifiable {
     /// Determines if a gadget matches this category
     /// Uses smart matching to handle API inconsistencies (e.g., grenades with empty type)
     func matches(_ gadget: GadgetStats) -> Bool {
-        // First check exact type match
-        if gadget.type == self.rawValue {
-            return true
-        }
-
-        // Smart matching for categories where API is inconsistent
         switch self {
         case .grenade:
-            // Include gadgets with "Grenade" in name (Stun, Smoke, Flash, Mini grenades have empty type)
-            return gadget.gadgetName.localizedCaseInsensitiveContains("Grenade")
+            // Match by exact type OR by name (for Stun, Smoke, Flash, Mini grenades with empty type)
+            return gadget.type == "Grenade" || gadget.gadgetName.localizedCaseInsensitiveContains("Grenade")
+
         case .equipment:
             // Equipment is empty type, but exclude items that belong to other smart-matched categories
-            if gadget.type.isEmpty {
-                // Exclude grenades (they belong in .grenade category)
-                return !gadget.gadgetName.localizedCaseInsensitiveContains("Grenade")
-            }
-            return false
+            guard gadget.type.isEmpty else { return false }
+            // Exclude grenades (they belong in .grenade category)
+            return !gadget.gadgetName.localizedCaseInsensitiveContains("Grenade")
+
         default:
-            return false
+            // All other categories use exact type match only
+            return gadget.type == self.rawValue
         }
     }
 }
