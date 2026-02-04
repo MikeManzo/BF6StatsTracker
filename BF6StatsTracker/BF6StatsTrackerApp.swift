@@ -62,6 +62,7 @@ struct BF6StatsTrackerApp: App {
                 .environmentObject(historyManager)
                 .environmentObject(themeManager)
                 .environment(\.accentColor, themeManager.accent)
+                .environment(\.liquidGlassEnabled, viewModel.settings.liquidGlassEnabled)
                 .frame(minWidth: 1200, minHeight: 800)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
                 .onAppear {
@@ -116,6 +117,7 @@ struct BF6StatsTrackerApp: App {
                 .environmentObject(viewModel)
                 .environmentObject(themeManager)
                 .environment(\.accentColor, themeManager.accent)
+                .environment(\.liquidGlassEnabled, viewModel.settings.liquidGlassEnabled)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
         }
 
@@ -135,6 +137,7 @@ struct BF6StatsTrackerApp: App {
                 .environmentObject(viewModel)
                 .environmentObject(themeManager)
                 .environment(\.accentColor, themeManager.accent)
+                .environment(\.liquidGlassEnabled, viewModel.settings.liquidGlassEnabled)
         } label: {
             Image("MenuBarIcon")
                 .renderingMode(.template)

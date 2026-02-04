@@ -1423,6 +1423,9 @@ struct AppSettings: Codable {
     // Experimental features
     var aiCoachEnabled: Bool      // Enable on-device AI coaching feature
 
+    // Liquid Glass (macOS 26+)
+    var liquidGlassEnabled: Bool  // Use Liquid Glass material on navigation chrome
+
     init() {
         self.playerName = ""
         self.platform = .pc
@@ -1442,6 +1445,7 @@ struct AppSettings: Codable {
         self.eaId = nil
         self.isEAAuthenticated = false
         self.aiCoachEnabled = false
+        self.liquidGlassEnabled = true  // On by default when running on Tahoe
     }
 
     /// Update settings with EA identity information
@@ -1468,6 +1472,7 @@ struct AppSettings: Codable {
         case playSoundOnSnapshot, selectedSound, menuBarOnlyMode, appearanceMode
         case nucleusId, personaId, eaId, isEAAuthenticated
         case aiCoachEnabled
+        case liquidGlassEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -1503,6 +1508,9 @@ struct AppSettings: Codable {
 
         // Default to false if aiCoachEnabled doesn't exist in saved settings
         aiCoachEnabled = try container.decodeIfPresent(Bool.self, forKey: .aiCoachEnabled) ?? false
+
+        // Default to true if liquidGlassEnabled doesn't exist in saved settings
+        liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? true
     }
 }
 

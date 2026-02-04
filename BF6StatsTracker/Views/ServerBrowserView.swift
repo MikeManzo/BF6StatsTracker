@@ -18,11 +18,17 @@
 import SwiftUI
 
 struct ServerBrowserView: View {
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var servers: [BF6Server] = []
     @State private var isLoading = false
     @State private var searchText = ""
     @State private var selectedPlatform: Platform = .pc
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
     @State private var selectedRegion: ServerRegion = .all
     @State private var selectedMode: ServerMode = .all
     @State private var showFullServers = true
@@ -162,13 +168,13 @@ struct ServerBrowserView: View {
             }
 
             // Platform & Sort selector
+            GlassContainerWrapper(usesGlass: usesGlass) {
             HStack(spacing: 12) {
                 // Platform selector (client-side filtering)
                 HStack(spacing: 8) {
                     ForEach([Platform.pc, Platform.playstation, Platform.xbox], id: \.self) { platform in
                         Button(action: {
                             selectedPlatform = platform
-                            // No need to reload - filtering is done client-side
                         }) {
                             HStack(spacing: 4) {
                                 PlatformIconView(platform: platform, size: 14)
@@ -178,9 +184,14 @@ struct ServerBrowserView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(selectedPlatform == platform ? Color.green : Theme.overlayColor)
-                            .foregroundColor(selectedPlatform == platform ? .black : Theme.textPrimary)
+                            .background(usesGlass ? Color.clear : (selectedPlatform == platform ? Theme.success.opacity(0.2) : Theme.overlayColor))
+                            .foregroundColor(selectedPlatform == platform ? Theme.textPrimary : Theme.textSecondary)
                             .cornerRadius(8)
+                            .modifier(SubTabGlassModifier(
+                                isSelected: selectedPlatform == platform,
+                                accentColor: Theme.success,
+                                usesGlass: usesGlass
+                            ))
                         }
                         .buttonStyle(.plain)
                     }
@@ -206,12 +217,19 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Theme.info.opacity(0.2))
+                        .background(usesGlass ? Color.clear : Theme.info.opacity(0.2))
                         .cornerRadius(8)
+                        .modifier(SubTabGlassModifier(
+                            isSelected: true,
+                            accentColor: Theme.info,
+                            usesGlass: usesGlass
+                        ))
                 }
+            }
             }
 
             // Filter row
+            GlassContainerWrapper(usesGlass: usesGlass) {
             HStack(spacing: 12) {
                 // Region filter
                 Menu {
@@ -231,8 +249,13 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(selectedRegion != .all ? Theme.bf6Purple.opacity(0.2) : Theme.overlayColor)
+                        .background(usesGlass ? Color.clear : (selectedRegion != .all ? Theme.bf6Purple.opacity(0.2) : Theme.overlayColor))
                         .cornerRadius(8)
+                        .modifier(SubTabGlassModifier(
+                            isSelected: selectedRegion != .all,
+                            accentColor: Theme.bf6Purple,
+                            usesGlass: usesGlass
+                        ))
                 }
 
                 // Mode filter
@@ -253,8 +276,13 @@ struct ServerBrowserView: View {
                         .font(.caption)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(selectedMode != .all ? Theme.warning.opacity(0.2) : Theme.overlayColor)
+                        .background(usesGlass ? Color.clear : (selectedMode != .all ? Theme.warning.opacity(0.2) : Theme.overlayColor))
                         .cornerRadius(8)
+                        .modifier(SubTabGlassModifier(
+                            isSelected: selectedMode != .all,
+                            accentColor: Theme.warning,
+                            usesGlass: usesGlass
+                        ))
                 }
 
                 // Capacity toggles
@@ -273,6 +301,7 @@ struct ServerBrowserView: View {
                 .toggleStyle(.button)
                 .tint(showEmptyServers ? Theme.textSecondary.opacity(0.3) : .secondary.opacity(0.2))
                 .buttonStyle(.plain)
+            }
             }
 
             // Search bar

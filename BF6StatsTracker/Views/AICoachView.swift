@@ -20,9 +20,15 @@ import SwiftData
 
 struct AICoachView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var viewModel: StatsViewModel
     @StateObject private var aiService = LocalAIService.shared
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
 
     @Query(sort: \StatsSnapshot.timestamp, order: .reverse)
     private var recentSnapshots: [StatsSnapshot]
@@ -163,8 +169,13 @@ struct AICoachView: View {
                     .foregroundColor(Theme.selectedText)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(accentColor)
+                    .background(usesGlass ? Color.clear : accentColor)
                     .cornerRadius(8)
+                    .modifier(SubTabGlassModifier(
+                        isSelected: true,
+                        accentColor: accentColor,
+                        usesGlass: usesGlass
+                    ))
                 }
                 .buttonStyle(.plain)
                 .disabled(isGenerating || viewModel.playerStats == nil)
@@ -294,8 +305,13 @@ struct AICoachView: View {
                         .foregroundColor(Theme.selectedText)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        .background(Theme.bf6Purple)
+                        .background(usesGlass ? Color.clear : Theme.bf6Purple)
                         .cornerRadius(10)
+                        .modifier(SubTabGlassModifier(
+                            isSelected: true,
+                            accentColor: Theme.bf6Purple,
+                            usesGlass: usesGlass
+                        ))
                     }
                     .buttonStyle(.plain)
                 }
@@ -313,8 +329,13 @@ struct AICoachView: View {
                     .foregroundColor(Theme.selectedText)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(Theme.bf6Purple)
+                    .background(usesGlass ? Color.clear : Theme.bf6Purple)
                     .cornerRadius(10)
+                    .modifier(SubTabGlassModifier(
+                        isSelected: true,
+                        accentColor: Theme.bf6Purple,
+                        usesGlass: usesGlass
+                    ))
                 }
                 .buttonStyle(.plain)
             }

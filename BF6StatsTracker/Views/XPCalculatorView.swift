@@ -19,7 +19,13 @@ import SwiftUI
 
 struct XPCalculatorView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
 
     // Input fields
     @State private var kills: String = "20"
@@ -98,16 +104,19 @@ struct XPCalculatorView: View {
                 .font(.headline)
                 .foregroundColor(Theme.textPrimary)
 
+            GlassContainerWrapper(usesGlass: usesGlass) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(viewModel.progressionModes) { mode in
                         ModeSelectorCard(
                             mode: mode,
                             isSelected: selectedMode?.id == mode.id,
+                            usesGlass: usesGlass,
                             action: { selectedMode = mode }
                         )
                     }
                 }
+            }
             }
         }
         .padding()
@@ -445,6 +454,7 @@ struct ModeSelectorCard: View {
 
     let mode: ProgressionMode
     let isSelected: Bool
+    let usesGlass: Bool
     let action: () -> Void
 
     var body: some View {
@@ -468,11 +478,18 @@ struct ModeSelectorCard: View {
             }
             .padding()
             .frame(width: 160, height: 80)
-            .background(isSelected ? accentColor.opacity(0.2) : Theme.backgroundSecondary)
+            .background(usesGlass ? Color.clear : (isSelected ? accentColor.opacity(0.2) : Theme.backgroundSecondary))
             .cornerRadius(8)
+            .modifier(SubTabGlassModifier(
+                isSelected: isSelected,
+                accentColor: accentColor,
+                usesGlass: usesGlass
+            ))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? accentColor : Color.clear, lineWidth: 2)
+                !usesGlass ?
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? accentColor : Color.clear, lineWidth: 2) :
+                    nil
             )
         }
         .buttonStyle(.plain)

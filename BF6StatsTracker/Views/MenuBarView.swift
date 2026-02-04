@@ -19,31 +19,38 @@ import SwiftUI
 
 struct MenuBarView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
 
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
+
     var body: some View {
+        GlassContainerWrapper(usesGlass: usesGlass) {
         VStack(spacing: 0) {
             if viewModel.hasPlayerData, let stats = viewModel.playerStats {
                 // Player Header
                 playerHeader(stats: stats)
-                
+
                 Divider()
                     .padding(.vertical, 8)
-                
+
                 // Quick Stats
                 quickStatsSection(stats: stats)
-                
+
                 Divider()
                     .padding(.vertical, 8)
-                
+
                 // Top Class
                 if let topClass = viewModel.topClass {
                     topClassSection(classStats: topClass)
-                    
+
                     Divider()
                         .padding(.vertical, 8)
                 }
-                
+
                 // Actions
                 actionsSection
             } else {
@@ -52,6 +59,7 @@ struct MenuBarView: View {
         }
         .padding()
         .frame(width: 300)
+        }
     }
     
     // MARK: - Player Header
@@ -266,8 +274,13 @@ struct MenuBarView: View {
                     .foregroundColor(classStats.kdRatio >= 1 ? Theme.bf6Green : accentColor)
             }
             .padding(10)
-            .background(Theme.overlayColor)
+            .background(usesGlass ? Color.clear : Theme.overlayColor)
             .cornerRadius(10)
+            .modifier(SubTabGlassModifier(
+                isSelected: true,
+                accentColor: accentColor.opacity(0.4),
+                usesGlass: usesGlass
+            ))
             .help("Your most played class with its K/D ratio")
         }
     }
@@ -290,8 +303,13 @@ struct MenuBarView: View {
                 .foregroundColor(Theme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(Theme.bf6Blue.opacity(0.2))
+                .background(usesGlass ? Color.clear : Theme.bf6Blue.opacity(0.2))
                 .cornerRadius(8)
+                .modifier(SubTabGlassModifier(
+                    isSelected: true,
+                    accentColor: Theme.bf6Blue.opacity(0.4),
+                    usesGlass: usesGlass
+                ))
             }
             .buttonStyle(.plain)
             .disabled(viewModel.isLoading)
@@ -309,8 +327,13 @@ struct MenuBarView: View {
                 .foregroundColor(Theme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(Theme.overlayColor)
+                .background(usesGlass ? Color.clear : Theme.overlayColor)
                 .cornerRadius(8)
+                .modifier(SubTabGlassModifier(
+                    isSelected: true,
+                    accentColor: accentColor.opacity(0.4),
+                    usesGlass: usesGlass
+                ))
             }
             .buttonStyle(.plain)
             .help("Open the main application window with detailed stats")
@@ -368,8 +391,13 @@ struct MenuBarView: View {
                 .foregroundColor(Theme.textPrimary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 8)
-                .background(Theme.bf6Blue)
+                .background(usesGlass ? Color.clear : Theme.bf6Blue)
                 .cornerRadius(8)
+                .modifier(SubTabGlassModifier(
+                    isSelected: true,
+                    accentColor: Theme.bf6Blue,
+                    usesGlass: usesGlass
+                ))
             }
             .buttonStyle(.plain)
             .help("Open the main window to search for a player")
@@ -550,11 +578,18 @@ struct MenuBarModeToggle: View {
 // MARK: - Menu Bar Stat Item
 
 struct MenuBarStatItem: View {
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
+
     let icon: String
     let label: String
     let value: String
     let color: Color
     var tooltip: String = ""
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
 
     var body: some View {
         HStack(spacing: 8) {
@@ -576,8 +611,13 @@ struct MenuBarStatItem: View {
             Spacer()
         }
         .padding(8)
-        .background(Theme.overlayColor)
+        .background(usesGlass ? Color.clear : Theme.overlayColor)
         .cornerRadius(8)
+        .modifier(SubTabGlassModifier(
+            isSelected: true,
+            accentColor: color.opacity(0.4),
+            usesGlass: usesGlass
+        ))
         .help(tooltip.isEmpty ? label : tooltip)
     }
 }

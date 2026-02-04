@@ -21,6 +21,12 @@ import SwiftUI
 
 struct SearchableListView<Item: Identifiable, FilterType: Hashable, Content: View>: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
 
     let items: [Item]
     let searchPlaceholder: String
@@ -120,30 +126,32 @@ struct SearchableListView<Item: Identifiable, FilterType: Hashable, Content: Vie
 
             // Filter pills (if provided)
             if let filterOptions = filters, !filterOptions.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        // "All" filter
-                        FilterPill(
-                            title: "All",
-                            icon: "square.grid.2x2.fill",
-                            isSelected: selectedFilter == nil,
-                            color: accentColor
-                        ) {
-                            selectedFilter = nil
-                        }
-
-                        ForEach(filterOptions) { filter in
+                GlassContainerWrapper(usesGlass: usesGlass) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            // "All" filter
                             FilterPill(
-                                title: filter.label,
-                                icon: filter.icon,
-                                isSelected: selectedFilter == filter.value,
-                                color: filter.color
+                                title: "All",
+                                icon: "square.grid.2x2.fill",
+                                isSelected: selectedFilter == nil,
+                                color: accentColor
                             ) {
-                                selectedFilter = filter.value
+                                selectedFilter = nil
+                            }
+
+                            ForEach(filterOptions) { filter in
+                                FilterPill(
+                                    title: filter.label,
+                                    icon: filter.icon,
+                                    isSelected: selectedFilter == filter.value,
+                                    color: filter.color
+                                ) {
+                                    selectedFilter = filter.value
+                                }
                             }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
                 }
             }
 
@@ -203,6 +211,13 @@ struct FilterPill: View {
     let color: Color
     let action: () -> Void
 
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
@@ -217,8 +232,13 @@ struct FilterPill: View {
             .foregroundColor(isSelected ? Theme.selectedText : Theme.textSecondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(isSelected ? color : Theme.overlayColor)
+            .background(usesGlass ? Color.clear : (isSelected ? color : Theme.overlayColor))
             .cornerRadius(20)
+            .modifier(SubTabGlassModifier(
+                isSelected: isSelected,
+                accentColor: color,
+                usesGlass: usesGlass
+            ))
         }
         .buttonStyle(.plain)
         .help("\(isSelected ? "Showing" : "Show") \(title.lowercased())")

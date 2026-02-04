@@ -20,10 +20,16 @@ import Charts
 
 struct LoadoutAnalyzerView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
 
     @State private var selectedCategory: LoadoutCategory = .overview
     @State private var showingDetails = false
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -94,29 +100,37 @@ struct LoadoutAnalyzerView: View {
     // MARK: - Category Picker
 
     private var categoryPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(LoadoutCategory.allCases) { category in
-                    Button(action: { withAnimation { selectedCategory = category } }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: category.icon)
-                            Text(category.rawValue)
+        GlassContainerWrapper(usesGlass: usesGlass) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(LoadoutCategory.allCases) { category in
+                        let isSelected = selectedCategory == category
+                        Button(action: { withAnimation { selectedCategory = category } }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: category.icon)
+                                Text(category.rawValue)
+                            }
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(isSelected ? Theme.selectedText : Theme.textSecondary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(isSelected && !usesGlass ? accentColor : (!isSelected && !usesGlass ? Theme.overlayColor : Color.clear))
+                            .cornerRadius(8)
+                            .modifier(SubTabGlassModifier(
+                                isSelected: isSelected,
+                                accentColor: accentColor,
+                                usesGlass: usesGlass
+                            ))
                         }
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(selectedCategory == category ? Theme.selectedText : Theme.textSecondary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(selectedCategory == category ? accentColor : Theme.overlayColor)
-                        .cornerRadius(8)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(usesGlass ? Color.clear : Theme.overlayColor)
         }
-        .padding(.vertical, 8)
-        .background(Theme.overlayColor)
     }
 
     // MARK: - Overview Content

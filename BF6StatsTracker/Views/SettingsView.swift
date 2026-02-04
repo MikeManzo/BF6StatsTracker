@@ -93,6 +93,7 @@ struct SettingsView: View {
     @State private var accountToDelete: StoredEAAccount?
     @State private var showDeleteAccountAlert = false
     @State private var aiCoachEnabled: Bool = false
+    @State private var liquidGlassEnabled: Bool = true
 
     private var filteredCategories: [SettingsCategory] {
         if searchText.isEmpty {
@@ -316,6 +317,18 @@ struct SettingsView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Liquid Glass toggle — only shown on macOS 26 (Tahoe) and later
+            if #available(macOS 26, *) {
+                SettingsGroupBox {
+                    SettingsToggleRow(
+                        title: "Liquid Glass",
+                        subtitle: "Use the system Liquid Glass material on navigation chrome and toolbar buttons",
+                        isOn: $liquidGlassEnabled
+                    )
+                    .onChange(of: liquidGlassEnabled) { _, _ in saveSettings() }
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -659,6 +672,7 @@ struct SettingsView: View {
         menuBarOnlyMode = viewModel.settings.menuBarOnlyMode
         appearanceMode = viewModel.settings.appearanceMode
         aiCoachEnabled = viewModel.settings.aiCoachEnabled
+        liquidGlassEnabled = viewModel.settings.liquidGlassEnabled
         themeManager.setColorScheme(selectedColorScheme)
     }
 
@@ -676,6 +690,7 @@ struct SettingsView: View {
         viewModel.settings.menuBarOnlyMode = menuBarOnlyMode
         viewModel.settings.appearanceMode = appearanceMode
         viewModel.settings.aiCoachEnabled = aiCoachEnabled
+        viewModel.settings.liquidGlassEnabled = liquidGlassEnabled
         themeManager.setColorScheme(selectedColorScheme)
 
         Task {

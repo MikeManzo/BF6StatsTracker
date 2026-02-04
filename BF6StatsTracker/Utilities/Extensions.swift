@@ -103,6 +103,22 @@ extension View {
     }
 }
 
+// MARK: - Liquid Glass Environment Key
+
+/// Whether the user has opted into Liquid Glass on macOS 26+.
+/// Propagated from the app entry point; defaults to true so that on Tahoe
+/// glass is on out-of-the-box even before settings have loaded.
+private struct LiquidGlassEnabledKey: EnvironmentKey {
+    static let defaultValue: Bool = true
+}
+
+extension EnvironmentValues {
+    var liquidGlassEnabled: Bool {
+        get { self[LiquidGlassEnabledKey.self] }
+        set { self[LiquidGlassEnabledKey.self] = newValue }
+    }
+}
+
 // MARK: - Theme Colors (Light/Dark Mode Support)
 
 // Theme provides convenient access to Asset Catalog colors without name collisions.
@@ -175,10 +191,18 @@ extension View {
             )
     }
 
+    /// Applies a glass-like background. On macOS 26+ with Liquid Glass enabled this
+    /// uses the system glassEffect(); otherwise it falls back to ultraThinMaterial.
+    @ViewBuilder
     func glassStyle() -> some View {
-        self
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
+        if #available(macOS 26, *) {
+            self
+                .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        } else {
+            self
+                .background(.ultraThinMaterial)
+                .cornerRadius(12)
+        }
     }
 
     @ViewBuilder

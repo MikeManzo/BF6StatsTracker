@@ -21,9 +21,15 @@ import Charts
 
 struct WeaponMasteryView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedWeapon: WeaponStats?
     @State private var selectedCategory: WeaponCategory?
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
 
     var body: some View {
         ScrollView {
@@ -71,19 +77,22 @@ struct WeaponMasteryView: View {
     // MARK: - Category Filter
 
     private var categoryFilterView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                categoryButton(category: nil, label: "All Weapons")
+        GlassContainerWrapper(usesGlass: usesGlass) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    categoryButton(category: nil, label: "All Weapons")
 
-                ForEach(WeaponCategory.allCases) { category in
-                    categoryButton(category: category, label: category.displayName)
+                    ForEach(WeaponCategory.allCases) { category in
+                        categoryButton(category: category, label: category.displayName)
+                    }
                 }
             }
         }
     }
 
     private func categoryButton(category: WeaponCategory?, label: String) -> some View {
-        Button {
+        let isSelected = selectedCategory == category
+        return Button {
             withAnimation {
                 selectedCategory = category
             }
@@ -91,11 +100,16 @@ struct WeaponMasteryView: View {
             Text(label)
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundColor(selectedCategory == category ? Theme.selectedText : Theme.textPrimary)
+                .foregroundColor(isSelected ? Theme.selectedText : Theme.textPrimary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(selectedCategory == category ? accentColor : Theme.overlayColor)
+                .background(isSelected && !usesGlass ? accentColor : (!isSelected && !usesGlass ? Theme.overlayColor : Color.clear))
                 .cornerRadius(8)
+                .modifier(SubTabGlassModifier(
+                    isSelected: isSelected,
+                    accentColor: accentColor,
+                    usesGlass: usesGlass
+                ))
         }
         .buttonStyle(.plain)
     }

@@ -19,8 +19,14 @@ import SwiftUI
 
 struct LogViewerView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @StateObject private var viewModel = LogViewModel()
     @State private var selectedLogId: UUID?
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,6 +87,7 @@ struct LogViewerView: View {
 
     private var toolbar: some View {
         VStack(spacing: 12) {
+            GlassContainerWrapper(usesGlass: usesGlass) {
             HStack(spacing: 12) {
                 // Search field
                 HStack {
@@ -127,11 +134,21 @@ struct LogViewerView: View {
                         Text("Clear")
                     }
                     .font(.caption)
+                    .foregroundColor(Theme.error)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
+                    .background(Color.clear)
+                    .cornerRadius(6)
+                    .modifier(SubTabGlassModifier(
+                        isSelected: true,
+                        accentColor: accentColor,
+                        usesGlass: usesGlass
+                    ))
+                    .overlay(
+                        !usesGlass ? RoundedRectangle(cornerRadius: 6).stroke(Theme.error.opacity(0.5), lineWidth: 0.5) : nil
+                    )
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.error)
+                .buttonStyle(.plain)
 
                 // Copy all
                 Button(action: { viewModel.copyAllToClipboard() }) {
@@ -140,10 +157,21 @@ struct LogViewerView: View {
                         Text("Copy All")
                     }
                     .font(.caption)
+                    .foregroundColor(Theme.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
+                    .background(Color.clear)
+                    .cornerRadius(6)
+                    .modifier(SubTabGlassModifier(
+                        isSelected: true,
+                        accentColor: accentColor,
+                        usesGlass: usesGlass
+                    ))
+                    .overlay(
+                        !usesGlass ? RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.4), lineWidth: 0.5) : nil
+                    )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
 
                 // Export
                 Button(action: { viewModel.exportLogs() }) {
@@ -152,13 +180,26 @@ struct LogViewerView: View {
                         Text("Export")
                     }
                     .font(.caption)
+                    .foregroundColor(Theme.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
+                    .background(Color.clear)
+                    .cornerRadius(6)
+                    .modifier(SubTabGlassModifier(
+                        isSelected: true,
+                        accentColor: accentColor,
+                        usesGlass: usesGlass
+                    ))
+                    .overlay(
+                        !usesGlass ? RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.4), lineWidth: 0.5) : nil
+                    )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+            }
             }
 
             // Filters
+            GlassContainerWrapper(usesGlass: usesGlass) {
             HStack(spacing: 12) {
                 // Level filters
                 Text("Level:")
@@ -212,6 +253,7 @@ struct LogViewerView: View {
                     .padding(.vertical, 6)
                 }
                 .buttonStyle(.bordered)
+            }
             }
         }
         .padding()
@@ -383,6 +425,13 @@ struct LogFilterChip: View {
     let color: Color
     let action: () -> Void
 
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
@@ -392,13 +441,18 @@ struct LogFilterChip: View {
             .font(.caption)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(isSelected ? color.opacity(0.2) : Theme.backgroundSecondary)
+            .background(usesGlass ? Color.clear : (isSelected ? color.opacity(0.2) : Theme.backgroundSecondary))
             .foregroundColor(isSelected ? color : .secondary)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? color : Color.clear, lineWidth: 1)
+                    .stroke(usesGlass ? Color.clear : (isSelected ? color : Color.clear), lineWidth: 1)
             )
+            .modifier(SubTabGlassModifier(
+                isSelected: isSelected,
+                accentColor: color,
+                usesGlass: usesGlass
+            ))
         }
         .buttonStyle(.plain)
     }

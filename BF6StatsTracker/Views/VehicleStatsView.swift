@@ -19,10 +19,16 @@ import SwiftUI
 
 struct VehicleStatsView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedCategory: VehicleCategory?
     @State private var sortOption: VehicleSortOption = .kills
     @State private var searchText = ""
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
     
     private var filteredVehicles: [VehicleStats] {
         var vehicles = viewModel.vehicleStats
@@ -138,29 +144,31 @@ struct VehicleStatsView: View {
     // MARK: - Category Pills
     
     private var categoryPills: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                VehicleCategoryPill(
-                    title: "All",
-                    icon: "square.grid.2x2.fill",
-                    isSelected: selectedCategory == nil,
-                    color: accentColor
-                ) {
-                    selectedCategory = nil
-                }
-                
-                ForEach(VehicleCategory.allCases) { category in
+        GlassContainerWrapper(usesGlass: usesGlass) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
                     VehicleCategoryPill(
-                        title: category.rawValue,
-                        icon: category.icon,
-                        isSelected: selectedCategory == category,
-                        color: categoryColor(for: category)
+                        title: "All",
+                        icon: "square.grid.2x2.fill",
+                        isSelected: selectedCategory == nil,
+                        color: accentColor
                     ) {
-                        selectedCategory = category
+                        selectedCategory = nil
+                    }
+
+                    ForEach(VehicleCategory.allCases) { category in
+                        VehicleCategoryPill(
+                            title: category.rawValue,
+                            icon: category.icon,
+                            isSelected: selectedCategory == category,
+                            color: categoryColor(for: category)
+                        ) {
+                            selectedCategory = category
+                        }
                     }
                 }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
         }
     }
     
@@ -235,13 +243,20 @@ struct VehicleCategoryPill: View {
     let isSelected: Bool
     let color: Color
     let action: () -> Void
-    
+
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
+
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.caption)
-                
+
                 Text(title)
                     .font(.caption)
                     .fontWeight(.medium)
@@ -250,8 +265,13 @@ struct VehicleCategoryPill: View {
             .foregroundColor(isSelected ? Theme.selectedText : Theme.textSecondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(isSelected ? color : Theme.overlayColor)
+            .background(usesGlass ? Color.clear : (isSelected ? color : Theme.overlayColor))
             .cornerRadius(20)
+            .modifier(SubTabGlassModifier(
+                isSelected: isSelected,
+                accentColor: color,
+                usesGlass: usesGlass
+            ))
         }
         .buttonStyle(.plain)
     }
