@@ -140,6 +140,7 @@ struct ContentView: View {
                 subMenuView(subTabs: subTabs)
             }
         }
+        .conditionalBackground(apply: usesLiquidGlass)
     }
 
     @ViewBuilder
@@ -186,9 +187,11 @@ struct ContentView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .frame(height: 76)
-        .background(.ultraThinMaterial)
+        .conditionalBackground(apply: !usesLiquidGlass)
         .overlay(alignment: .bottom) {
-            Divider()
+            if !usesLiquidGlass {
+                Divider()
+            }
         }
     }
 
@@ -483,7 +486,7 @@ struct ContentView: View {
                 }
             }
         }
-        .background(.ultraThinMaterial)
+        .conditionalBackground(apply: !usesLiquidGlass)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Navigation tabs")
     }
@@ -532,7 +535,7 @@ struct ContentView: View {
                 .padding(.vertical, 10)
             }
         }
-        .background(.ultraThinMaterial)
+        .conditionalBackground(apply: !usesLiquidGlass)
         .frame(height: 52)
     }
     
@@ -1035,6 +1038,18 @@ struct PlayerAvatarView: View {
     }
 }
 
+// MARK: - Conditional ultraThinMaterial background
+
+extension View {
+    /// Conditionally applies `.ultraThinMaterial` backdrop blur.
+    func conditionalBackground(apply: Bool) -> AnyView {
+        if apply {
+            return AnyView(self.background(.ultraThinMaterial))
+        }
+        return AnyView(self)
+    }
+}
+
 // MARK: - Liquid Glass ViewModifiers (availability-gated)
 
 /// Applies glassEffect to a main-tab pill on macOS 26+; no-op on older OS.
@@ -1048,7 +1063,7 @@ struct TabGlassModifier: ViewModifier {
         if #available(macOS 26, *), usesGlass {
             content
                 .glassEffect(
-                    .regular.tint(isSelected ? (isExperimental ? Theme.bf6Purple : Theme.bf6Blue) : .clear),
+                    .regular.tint(isSelected ? (isExperimental ? Theme.bf6Purple : Theme.bf6Blue) : Color.white.opacity(0.12)),
                     in: .rect(cornerRadius: 8)
                 )
         } else {
