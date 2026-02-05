@@ -29,6 +29,8 @@ class HistoryManager: ObservableObject {
     @Published var snapshots: [StatsSnapshot] = []
     @Published var sessions: [PlaySession] = []
     @Published var recentSnapshots: [StatsSnapshot] = []
+    /// Incremented each time a new snapshot is persisted. Views observe this to refresh cached snapshot data.
+    @Published var snapshotVersion: Int = 0
     @Published var todayPerformance: DailyPerformance?
     @Published var yesterdayPerformance: DailyPerformance?
     @Published var recentDailyPerformances: [DailyPerformance] = []
@@ -141,6 +143,7 @@ class HistoryManager: ObservableObject {
         try? context.save()
         loadRecentData()
         loadDailyPerformances(playerName: stats.userName)
+        snapshotVersion += 1
     }
 
     /// Create a synthetic snapshot for debugging (randomly increments stats)

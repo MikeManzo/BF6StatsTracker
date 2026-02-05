@@ -25,6 +25,7 @@ struct TodayVsYesterdayView: View {
     @State private var showSingleSnapshotInfo = false
     @State private var isMapsExpanded = true
     @State private var isCombatBreakdownExpanded = true
+    @State private var snapshots: [StatsSnapshot] = []
 
     // Combat Breakdown graph colors (persisted via AppStorage)
     @AppStorage("combatGraphColor_headshots") private var headshotsColor: Color = .purple
@@ -36,18 +37,15 @@ struct TodayVsYesterdayView: View {
 
     // Get current and previous snapshots for comparison
     private var currentSnapshot: StatsSnapshot? {
-        let snapshots = historyManager.getAllSnapshots()
-        return snapshots.first
+        snapshots.first
     }
 
     private var previousSnapshot: StatsSnapshot? {
-        let snapshots = historyManager.getAllSnapshots()
         guard snapshots.count >= 2 else { return nil }
         return snapshots[1]
     }
 
     private var thirdSnapshot: StatsSnapshot? {
-        let snapshots = historyManager.getAllSnapshots()
         guard snapshots.count >= 3 else { return nil }
         return snapshots[2]
     }
@@ -95,8 +93,6 @@ struct TodayVsYesterdayView: View {
         let now = Date()
         let today = calendar.startOfDay(for: now)
 
-        let snapshots = historyManager.getAllSnapshots()
-
         // Get last snapshot from before today (previous day)
         let beforeTodaySnapshots = snapshots.filter { snapshot in
             snapshot.timestamp < today
@@ -121,8 +117,6 @@ struct TodayVsYesterdayView: View {
         let calendar = Calendar.current
         let now = Date()
         let today = calendar.startOfDay(for: now)
-
-        let snapshots = historyManager.getAllSnapshots()
 
         // Get last snapshot from before today (previous day)
         let beforeTodaySnapshots = snapshots.filter { snapshot in
@@ -232,7 +226,6 @@ struct TodayVsYesterdayView: View {
         let now = Date()
         let today = calendar.startOfDay(for: now)
 
-        let snapshots = historyManager.getAllSnapshots()
         let todaySnapshots = snapshots.filter { snapshot in
             calendar.isDate(snapshot.timestamp, inSameDayAs: now)
         }
@@ -312,8 +305,6 @@ struct TodayVsYesterdayView: View {
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
         let dayBeforeYesterday = calendar.date(byAdding: .day, value: -2, to: today) ?? today
 
-        let snapshots = historyManager.getAllSnapshots()
-
         // Get snapshots from yesterday, sorted chronologically
         let yesterdaySnapshots = snapshots.filter { snapshot in
             calendar.isDate(snapshot.timestamp, inSameDayAs: yesterday)
@@ -364,7 +355,6 @@ struct TodayVsYesterdayView: View {
     private var todayAveragePerformance: CombatAverages? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let snapshots = historyManager.getAllSnapshots()
 
         // Get today's snapshots
         let todaySnapshots = snapshots.filter { snapshot in
@@ -432,8 +422,6 @@ struct TodayVsYesterdayView: View {
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
         let dayBeforeYesterday = calendar.date(byAdding: .day, value: -2, to: today) ?? today
 
-        let snapshots = historyManager.getAllSnapshots()
-
         // Get yesterday's snapshots
         let yesterdaySnapshots = snapshots.filter { snapshot in
             calendar.isDate(snapshot.timestamp, inSameDayAs: yesterday)
@@ -469,7 +457,6 @@ struct TodayVsYesterdayView: View {
 
     /// Cumulative historical average (fallback when yesterday's data is unavailable)
     private var historicalAveragePerformance: CombatAverages? {
-        let snapshots = historyManager.getAllSnapshots()
         guard let latest = snapshots.first, let oldest = snapshots.last else { return nil }
 
         // Need at least some match history
@@ -517,12 +504,11 @@ struct TodayVsYesterdayView: View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        // Get all snapshots
-        let allSnapshots = historyManager.getAllSnapshots()
-        guard !allSnapshots.isEmpty else {
+        guard !snapshots.isEmpty else {
             logInfo("last7Days: No snapshots available", category: .api)
             return []
         }
+        let allSnapshots = snapshots
 
         // Build daily performance from snapshots for up to the last 7 days
         var result: [DailyPerformance] = []
@@ -731,7 +717,7 @@ struct TodayVsYesterdayView: View {
     private var snapshotsForChart: [(sessionKD: Double, sessionKDA: Double, xPosition: Double)] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let allSnapshots = historyManager.getAllSnapshots().sorted { $0.timestamp < $1.timestamp }
+        let allSnapshots = snapshots.sorted { $0.timestamp < $1.timestamp }
 
         guard !allSnapshots.isEmpty else { return [] }
 
@@ -848,6 +834,10 @@ struct TodayVsYesterdayView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear { snapshots = historyManager.getAllSnapshots() }
+        .onChange(of: historyManager.snapshotVersion) { _, _ in
+            snapshots = historyManager.getAllSnapshots()
+        }
         .onDisappear {
             // Reset animation state when view disappears so it animates again on next view
             hasAnimated = false

@@ -384,12 +384,16 @@ class StatsViewModel: ObservableObject {
             logInfo("Fetching fresh stats from API", category: .network)
             let stats = try await APIService.shared.fetchPlayerStats(identifier: identifier)
 
-            self.playerStats = stats
+            // Do async/background work first (before setting any @Published properties)
+            // so we don't yield to the run loop mid-update and cause partial renders
+            await CacheManager.shared.cache(stats: stats, playerName: playerName, platform: platform)
 
-            // Filter out invalid entries with "Unknown" className and no meaningful data
-            self.classStats = (stats.classes ?? []).filter { classItem in
+            // Now set all @Published properties in one synchronous block — SwiftUI coalesces into a single update
+            let filteredClasses = (stats.classes ?? []).filter { classItem in
                 classItem.className != "Unknown" || (classItem.kills > 0 || classItem.timePlayed > 0)
             }
+            self.playerStats = stats
+            self.classStats = filteredClasses
             self.weaponStats = stats.weapons ?? []
             self.vehicleStats = stats.vehicles ?? []
             self.gadgetStats = stats.gadgets ?? []
@@ -398,22 +402,15 @@ class StatsViewModel: ObservableObject {
 
             logInfo("Fresh stats loaded - Classes: \(self.classStats.count), Weapons: \(self.weaponStats.count), Vehicles: \(self.vehicleStats.count), Gadgets: \(self.gadgetStats.count)", category: .network)
 
-            // Cache the results
-            await CacheManager.shared.cache(stats: stats, playerName: playerName, platform: platform)
+            // Save snapshot to SwiftData for historical tracking (synchronous on MainActor, no yield)
+            let eaId = settings.eaId ?? EAAccountStore.shared.mostRecentAccount?.eaId
+            let progressionModeId = self.currentProgressionMode?.progressionMode
+            HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId, playSoundNotification: settings.showNotifications, settings: settings)
+            MapTracker.shared.updateMapStats(from: stats)
 
-            // Save snapshot to SwiftData for historical tracking
-            await MainActor.run {
-                // Try to get EA ID from settings first, then fall back to most recent account
-                let eaId = settings.eaId ?? EAAccountStore.shared.mostRecentAccount?.eaId
-                let progressionModeId = self.currentProgressionMode?.progressionMode
-                HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId, playSoundNotification: settings.showNotifications, settings: settings)
-                MapTracker.shared.updateMapStats(from: stats)
-
-                // Rebuild DailyPerformance records if needed (only on first load)
-                if HistoryManager.shared.recentDailyPerformances.isEmpty {
-                    logInfo("No DailyPerformance records found, rebuilding...", category: .general)
-                    HistoryManager.shared.rebuildDailyPerformances(playerName: stats.userName)
-                }
+            if HistoryManager.shared.recentDailyPerformances.isEmpty {
+                logInfo("No DailyPerformance records found, rebuilding...", category: .general)
+                HistoryManager.shared.rebuildDailyPerformances(playerName: stats.userName)
             }
 
             // Fetch additional detailed stats if main stats are incomplete
@@ -427,6 +424,7 @@ class StatsViewModel: ObservableObject {
             self.error = .networkError(error)
         }
 
+        refreshTrends()
         isLoading = false
         logSuccess("fetchStats completed", category: .success)
     }
@@ -674,22 +672,18 @@ class StatsViewModel: ObservableObject {
         return !classStats.isEmpty && !weaponStats.isEmpty
     }
 
-    // MARK: - Trend Indicators
+    // MARK: - Trend Indicators (cached — refreshed after data loads, not on every access)
 
-    var killsTrend: TrendDirection {
-        HistoryManager.shared.calculateKillsTrend(days: 7)
-    }
+    @Published private(set) var killsTrend: TrendDirection = .stable
+    @Published private(set) var assistsTrend: TrendDirection = .stable
+    @Published private(set) var kdTrend: TrendDirection = .stable
+    @Published private(set) var wlTrend: TrendDirection = .stable
 
-    var assistsTrend: TrendDirection {
-        HistoryManager.shared.calculateAssistsTrend(days: 7)
-    }
-
-    var kdTrend: TrendDirection {
-        HistoryManager.shared.calculateKDTrend(days: 7)
-    }
-
-    var wlTrend: TrendDirection {
-        HistoryManager.shared.calculateWLTrend(days: 7)
+    private func refreshTrends() {
+        killsTrend = HistoryManager.shared.calculateKillsTrend(days: 7)
+        assistsTrend = HistoryManager.shared.calculateAssistsTrend(days: 7)
+        kdTrend = HistoryManager.shared.calculateKDTrend(days: 7)
+        wlTrend = HistoryManager.shared.calculateWLTrend(days: 7)
     }
 
     var dataCompletenessPercentage: Double {
