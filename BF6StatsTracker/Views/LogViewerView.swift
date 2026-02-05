@@ -134,7 +134,7 @@ struct LogViewerView: View {
                         Text("Clear")
                     }
                     .font(.caption)
-                    .foregroundColor(Theme.error)
+                    .foregroundColor(Theme.adaptiveWhite)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Color.clear)
@@ -324,10 +324,10 @@ struct LogViewerView: View {
 
     private func colorForLevel(_ level: LogLevel) -> Color {
         switch level {
-        case .debug: return .gray
-        case .info: return .blue
-        case .warning: return .orange
-        case .error: return .red
+        case .debug: return .gray.opacity(0.6)
+        case .info: return .blue.opacity(0.7)
+        case .warning: return .orange.opacity(0.75)
+        case .error: return .red.opacity(0.8)
         }
     }
 }
@@ -408,10 +408,10 @@ struct LogRowView: View {
 
     private func colorForLevel(_ level: LogLevel) -> Color {
         switch level {
-        case .debug: return .gray
-        case .info: return .blue
-        case .warning: return .orange
-        case .error: return .red
+        case .debug: return .gray.opacity(0.6)
+        case .info: return .blue.opacity(0.7)
+        case .warning: return .orange.opacity(0.75)
+        case .error: return .red.opacity(0.8)
         }
     }
 }
@@ -442,11 +442,11 @@ struct LogFilterChip: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(usesGlass ? Color.clear : (isSelected ? color.opacity(0.2) : Theme.backgroundSecondary))
-            .foregroundColor(isSelected ? color : .secondary)
+            .foregroundColor(isSelected ? Theme.adaptiveWhite : .secondary)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(usesGlass ? Color.clear : (isSelected ? color : Color.clear), lineWidth: 1)
+                    .stroke(usesGlass ? Color.clear : (isSelected ? color.opacity(0.5) : Color.clear), lineWidth: 1)
             )
             .modifier(SubTabGlassModifier(
                 isSelected: isSelected,
