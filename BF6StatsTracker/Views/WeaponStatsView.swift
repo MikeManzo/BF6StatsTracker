@@ -146,6 +146,7 @@ struct WeaponStatsView: View {
                     ) {
                         selectedCategory = nil
                     }
+                    .id("all")
 
                     ForEach(WeaponCategory.allCases) { category in
                         CategoryPill(
@@ -156,6 +157,7 @@ struct WeaponStatsView: View {
                         ) {
                             selectedCategory = category
                         }
+                        .id(category.rawValue)
                     }
                 }
                 .padding(.horizontal)
@@ -257,6 +259,7 @@ struct CategoryPill: View {
             ))
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 }
 
@@ -264,30 +267,33 @@ struct CategoryPill: View {
 
 struct WeaponCard: View {
     let weapon: WeaponStats
-    @State private var isHovered = false
     @Environment(\.accentColor) private var accentColor
 
     var body: some View {
         VStack(spacing: 0) {
+            // Header with weapon info and primary metric
             headerSection
+                .padding(16)
             
+            // Separator
             Divider()
+                .background(Theme.borderColor.opacity(0.3))
+            
+            // Key performance metrics - 2 column layout
+            keyMetricsSection
+                .padding(16)
+            
+            // Additional details footer
+            Divider()
+                .background(Theme.borderColor.opacity(0.3))
+            
+            detailsFooter
+                .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-            
-            statsGrid
-            
-            if isHovered {
-                additionalStats
-            }
         }
-        .padding()
         .background(cardBackground)
         .overlay(cardBorder)
-        .scaleEffect(isHovered ? 1.02 : 1.0)
-        .animation(.spring(response: 0.3), value: isHovered)
-        .onHover { hovering in
-            isHovered = hovering
-        }
+        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
     
     // MARK: - Subviews
@@ -296,15 +302,14 @@ struct WeaponCard: View {
         HStack(spacing: 12) {
             weaponImage
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(weapon.weaponName)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .lineLimit(1)
+                    .font(.system(.body, design: .default, weight: .semibold))
                     .foregroundColor(Theme.textPrimary)
+                    .lineLimit(1)
 
                 Text(weapon.type)
-                    .font(.caption)
+                    .font(.system(.caption, design: .default))
                     .foregroundColor(Theme.textSecondary)
             }
 
@@ -319,62 +324,86 @@ struct WeaponCard: View {
             url: URL(string: weapon.image),
             placeholder: Image(systemName: "scope")
         )
-        .frame(width: 70, height: 50)
-        .background(Theme.overlayColor)
-        .cornerRadius(8)
+        .frame(width: 80, height: 56)
+        .background(Theme.overlayColor.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
     
     private var killsBadge: some View {
         VStack(alignment: .trailing, spacing: 2) {
             Text("\(weapon.kills)")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(Theme.bf6Red)
 
-            Text("kills")
-                .font(.caption2)
+            Text("KILLS")
+                .font(.system(.caption2, design: .default, weight: .medium))
                 .foregroundColor(Theme.textSecondary)
+                .tracking(0.5)
         }
     }
     
-    private var statsGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            WeaponStatItem(label: "Kills", value: "\(weapon.kills)", color: Theme.bf6Red)
-            WeaponStatItem(label: "Accuracy", value: String(format: "%.1f%%", weapon.accuracy), color: Theme.bf6Blue)
-            WeaponStatItem(label: "Headshots", value: "\(weapon.headshots)", color: .yellow)
-            WeaponStatItem(label: "HS %", value: String(format: "%.1f%%", weapon.headshotPercentage), color: Theme.bf6Purple)
-            WeaponStatItem(label: "KPM", value: String(format: "%.2f", weapon.killsPerMinute), color: accentColor)
-            WeaponStatItem(label: "Time", value: formatTime(weapon.timePlayed), color: Theme.textSecondary)
-        }
-    }
-    
-    private var additionalStats: some View {
-        VStack(spacing: 8) {
-            Divider()
-            
-            HStack {
-                Label("\(weapon.shotsFired.formatted()) shots", systemImage: "burst.fill")
-                Spacer()
-                Label("\(weapon.shotsHit.formatted()) hits", systemImage: "target")
-                Spacer()
-                Label("\(weapon.multiKills) multi-kills", systemImage: "star.fill")
+    private var keyMetricsSection: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                MetricCard(
+                    icon: "scope",
+                    label: "Accuracy",
+                    value: String(format: "%.1f%%", weapon.accuracy),
+                    color: Theme.bf6Blue
+                )
+                
+                MetricCard(
+                    icon: "headphones",
+                    label: "Headshots",
+                    value: "\(weapon.headshots) (\(String(format: "%.1f%%", weapon.headshotPercentage)))",
+                    color: Theme.bf6Purple
+                )
             }
-            .font(.caption)
-            .foregroundColor(Theme.textSecondary)
+            
+            HStack(spacing: 12) {
+                MetricCard(
+                    icon: "timer",
+                    label: "KPM",
+                    value: String(format: "%.2f", weapon.killsPerMinute),
+                    color: accentColor
+                )
+                
+                MetricCard(
+                    icon: "clock",
+                    label: "Time",
+                    value: formatTime(weapon.timePlayed),
+                    color: .green
+                )
+            }
+        }
+    }
+    
+    private var detailsFooter: some View {
+        HStack(spacing: 0) {
+            FooterStat(label: "Shots Fired", value: weapon.shotsFired.formatted())
+            
+            Divider()
+                .frame(height: 20)
+                .background(Theme.borderColor.opacity(0.3))
+            
+            FooterStat(label: "Shots Hit", value: weapon.shotsHit.formatted())
+            
+            Divider()
+                .frame(height: 20)
+                .background(Theme.borderColor.opacity(0.3))
+            
+            FooterStat(label: "Multi-kills", value: "\(weapon.multiKills)")
         }
     }
     
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 16)
+        RoundedRectangle(cornerRadius: 12)
             .fill(Theme.cardBackground)
     }
     
     private var cardBorder: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .stroke(Theme.borderColor.opacity(isHovered ? 1.0 : 0.5), lineWidth: 1)
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(Theme.borderColor.opacity(0.5), lineWidth: 1)
     }
 
     // MARK: - Helpers
@@ -386,6 +415,61 @@ struct WeaponCard: View {
             return "\(hours)h \(minutes)m"
         }
         return "\(minutes)m"
+    }
+}
+
+// MARK: - Metric Card Component
+
+struct MetricCard: View {
+    let icon: String
+    let label: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(color.opacity(0.8))
+                .frame(width: 24, height: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(.caption, design: .default))
+                    .foregroundColor(Theme.textSecondary)
+                
+                Text(value)
+                    .font(.system(.callout, design: .rounded, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
+                    .lineLimit(1)
+            }
+            
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Theme.overlayColor.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - Footer Stat Component
+
+struct FooterStat: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(.system(.caption, design: .rounded, weight: .semibold))
+                .foregroundColor(Theme.textPrimary)
+            
+            Text(label)
+                .font(.system(.caption2, design: .default))
+                .foregroundColor(Theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
