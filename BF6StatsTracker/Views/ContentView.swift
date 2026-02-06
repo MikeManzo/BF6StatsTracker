@@ -840,16 +840,16 @@ struct ToolbarButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Pulsating background circle — suppressed when glass provides its own feedback
-                if shouldPulsate && !usesLiquidGlass {
+                // Pulsating background circle — always show when needed to alert user of upcoming refresh
+                if shouldPulsate {
                     PulsatingCircle(color: buttonColor ?? .primary)
                         .frame(width: 28, height: 28)
                 }
 
-                // Icon
+                // Icon with color progression (green -> yellow -> red)
                 Image(systemName: icon)
                     .font(.body)
-                    .foregroundColor(usesLiquidGlass ? .primary : (buttonColor ?? .primary))
+                    .foregroundColor(buttonColor ?? .primary)
                     .frame(width: 28, height: 28)
                     .contentShape(Rectangle())
                     .rotationEffect(.degrees(isLoading ? 360 : 0))

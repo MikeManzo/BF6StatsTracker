@@ -575,8 +575,8 @@ class StatsViewModel: ObservableObject {
         let nextBoundary: Double
         if refreshProgress < 0.33 {
             nextBoundary = interval * 0.33  // Green -> Yellow
-        } else if refreshProgress < 0.66 {
-            nextBoundary = interval * 0.66  // Yellow -> Red (start pulsing)
+        } else if refreshProgress < 0.80 {
+            nextBoundary = interval * 0.80  // Yellow -> Red (start pulsing)
         } else {
             // We're in the red zone, no more transitions until refresh
             return
@@ -655,7 +655,7 @@ class StatsViewModel: ObservableObject {
     var refreshButtonColor: Color {
         if refreshProgress < 0.33 {
             return .green
-        } else if refreshProgress < 0.66 {
+        } else if refreshProgress < 0.80 {
             return .yellow
         } else {
             return .red
@@ -664,7 +664,7 @@ class StatsViewModel: ObservableObject {
 
     // Whether the refresh button should pulsate
     var shouldPulsateRefreshButton: Bool {
-        return refreshProgress >= 0.66
+        return refreshProgress >= 0.80
     }
 
     var hasCompleteData: Bool {

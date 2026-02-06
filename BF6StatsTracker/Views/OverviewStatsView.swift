@@ -379,7 +379,7 @@ struct OverviewStatsView: View {
                     StatRow(label: "Headshots", value: stats.headshots.formatted())
                     StatRow(label: "HS %", value: "\(String(format: "%.1f", stats.headshotPercentage))%")
                     StatRow(label: "Accuracy", value: "\(String(format: "%.1f", stats.accuracy))%")
-                    StatRow(label: "Longest HS", value: "\(String(format: "%.0f", stats.longestHeadshot))m")
+                    StatRow(label: "Savior Kills", value: stats.saviorKills.formatted())
                     StatRow(label: "Assists", value: stats.assists.formatted())
                     StatRow(label: "Revives", value: stats.revives.formatted())
                 }
