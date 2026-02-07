@@ -59,6 +59,7 @@ class StatsViewModel: ObservableObject {
         switch selectedMainTab {
         case .overview: return .overview
         case .history: return .history
+        case .squad: return .squad
         case .aiCoach: return .aiCoach
         default: return selectedMainTab.defaultSubTab ?? .overview
         }
@@ -803,6 +804,7 @@ enum MainTab: String, CaseIterable, Identifiable {
     case vehicles = "Vehicles"
     case analysis = "Analysis"
     case teamplay = "Teamplay"
+    case squad = "Squad"
     case tools = "Tools"
     case aiCoach = "AI Coach"
 
@@ -816,6 +818,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .vehicles: return "car.fill"
         case .analysis: return "chart.xyaxis.line"
         case .teamplay: return "person.3.fill"
+        case .squad: return "person.3.sequence.fill"
         case .tools: return "wrench.and.screwdriver.fill"
         case .aiCoach: return "brain.head.profile"
         }
@@ -824,7 +827,7 @@ enum MainTab: String, CaseIterable, Identifiable {
     // Sub Tab Order
     var subTabs: [StatTab]? {
         switch self {
-        case .overview, .history, .aiCoach:
+        case .overview, .history, .squad, .aiCoach:
             return nil // No sub-tabs for these
         case .combat:
             return [.weapons, .weaponMastery, .gadgets, .utility]
@@ -858,6 +861,7 @@ enum StatTab: String, CaseIterable, Identifiable {
     // Top-level tabs (no parent)
     case overview = "Overview"
     case history = "History"
+    case squad = "Squad"
     case aiCoach = "AI Coach"
 
     // Combat sub-tabs
@@ -892,6 +896,7 @@ enum StatTab: String, CaseIterable, Identifiable {
         switch self {
         case .overview: return "chart.bar.fill"
         case .history: return "clock.arrow.circlepath"
+        case .squad: return "person.3.sequence.fill"
         case .aiCoach: return "brain.head.profile"
         case .weapons: return "scope"
         case .weaponMastery: return "target"

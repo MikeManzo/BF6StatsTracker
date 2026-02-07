@@ -85,6 +85,8 @@ struct ContentView: View {
                         OverviewStatsView()
                     case .history:
                         SessionHistoryView()
+                    case .squad:
+                        SquadComparisonView()
                     case .maps:
                         MapStatsView()
                     case .charts:

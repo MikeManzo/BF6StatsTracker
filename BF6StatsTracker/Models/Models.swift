@@ -1523,4 +1523,234 @@ enum BF6TrackerError: LocalizedError {
     }
 }
 
+// MARK: - Squad Comparison Models
+
+/// Represents a squad member for comparison
+struct SquadMember: Identifiable, Codable, Hashable {
+    let id: UUID
+    var eaId: String
+    var platform: Platform
+    var displayName: String?
+    var stats: PlayerStats?
+    var lastFetched: Date?
+    var fetchError: String?
+    
+    var isLoaded: Bool { stats != nil }
+    var hasError: Bool { fetchError != nil }
+    
+    var effectiveName: String {
+        displayName ?? eaId
+    }
+    
+    init(id: UUID = UUID(), eaId: String, platform: Platform, displayName: String? = nil) {
+        self.id = id
+        self.eaId = eaId
+        self.platform = platform
+        self.displayName = displayName
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: SquadMember, rhs: SquadMember) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+/// Metric categories for organizing comparisons
+enum MetricCategory: String, CaseIterable, Identifiable {
+    case combat = "Combat"
+    case teamSupport = "Team Support"
+    case progression = "Progression"
+    case winRate = "Win Performance"
+    
+    var id: String { rawValue }
+    
+    var icon: String {
+        switch self {
+        case .combat: return "scope"
+        case .teamSupport: return "person.2.fill"
+        case .progression: return "chart.line.uptrend.xyaxis"
+        case .winRate: return "trophy.fill"
+        }
+    }
+}
+
+/// Individual metrics for comparison
+enum ComparisonMetric: String, CaseIterable, Identifiable {
+    // Combat Performance
+    case kdRatio = "K/D Ratio"
+    case kdaRatio = "KDA Ratio"
+    case kills = "Kills"
+    case deaths = "Deaths"
+    case headshotPercent = "Headshot %"
+    case accuracy = "Accuracy %"
+    case killsPerMinute = "Kills/Min"
+    case scorePerMinute = "Score/Min"
+    
+    // Team Support
+    case revives = "Revives"
+    case assists = "Assists"
+    case spotAssists = "Spot Assists"
+    case resupplies = "Resupplies"
+    
+    // Progression
+    case rank = "Rank"
+    case totalXP = "Total XP"
+    case playtime = "Hours Played"
+    case matchesPlayed = "Matches"
+    
+    // Win Performance
+    case winPercent = "Win %"
+    case wins = "Wins"
+    case matchesWon = "Matches Won"
+    
+    var id: String { rawValue }
+    
+    var category: MetricCategory {
+        switch self {
+        case .kdRatio, .kdaRatio, .kills, .deaths, .headshotPercent, .accuracy, .killsPerMinute, .scorePerMinute:
+            return .combat
+        case .revives, .assists, .spotAssists, .resupplies:
+            return .teamSupport
+        case .rank, .totalXP, .playtime, .matchesPlayed:
+            return .progression
+        case .winPercent, .wins, .matchesWon:
+            return .winRate
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .kdRatio, .kdaRatio: return "chart.line.uptrend.xyaxis"
+        case .kills: return "target"
+        case .deaths: return "xmark.circle"
+        case .headshotPercent: return "scope"
+        case .accuracy: return "target"
+        case .killsPerMinute: return "bolt.fill"
+        case .scorePerMinute: return "star.fill"
+        case .revives: return "heart.fill"
+        case .assists: return "hand.thumbsup.fill"
+        case .spotAssists: return "eye.fill"
+        case .resupplies: return "shippingbox.fill"
+        case .rank: return "number"
+        case .totalXP: return "star.circle.fill"
+        case .playtime: return "clock.fill"
+        case .matchesPlayed: return "gamecontroller.fill"
+        case .winPercent: return "percent"
+        case .wins: return "trophy.fill"
+        case .matchesWon: return "checkmark.circle.fill"
+        }
+    }
+    
+    var higherIsBetter: Bool {
+        self != .deaths
+    }
+    
+    func extractValue(from stats: PlayerStats) -> Double {
+        switch self {
+        case .kdRatio: return stats.kdRatio
+        case .kdaRatio:
+            // Calculate KDA: (Kills + Assists) / Deaths
+            let killsAndAssists = stats.kills + stats.assists
+            return stats.deaths > 0 ? Double(killsAndAssists) / Double(stats.deaths) : Double(killsAndAssists)
+        case .kills: return Double(stats.kills)
+        case .deaths: return Double(stats.deaths)
+        case .headshotPercent: return stats.headshotPercentage
+        case .accuracy: return stats.accuracy
+        case .killsPerMinute: return stats.killsPerMinute
+        case .scorePerMinute: return stats.scorePerMinute
+        case .revives: return Double(stats.revives)
+        case .assists: return Double(stats.assists)
+        case .spotAssists: return Double(stats.enemiesSpotted)
+        case .resupplies: return Double(stats.resupplies)
+        case .rank: return Double(stats.rank)
+        case .totalXP: return Double(stats.totalScore)
+        case .playtime: return Double(stats.secondsPlayed) / 3600.0
+        case .matchesPlayed: return Double(stats.matchesPlayed)
+        case .winPercent: return stats.wlRatio
+        case .wins: return Double(stats.wins)
+        case .matchesWon: return Double(stats.wins)
+        }
+    }
+    
+    func formatValue(_ value: Double) -> String {
+        switch self {
+        case .kdRatio, .kdaRatio:
+            return String(format: "%.2f", value)
+        case .headshotPercent, .accuracy, .winPercent:
+            return String(format: "%.1f%%", value)
+        case .killsPerMinute, .scorePerMinute:
+            return String(format: "%.2f", value)
+        case .playtime:
+            return String(format: "%.1f hrs", value)
+        case .totalXP:
+            if value >= 1_000_000 {
+                return String(format: "%.1fM", value / 1_000_000)
+            } else if value >= 1_000 {
+                return String(format: "%.1fK", value / 1_000)
+            } else {
+                return String(format: "%.0f", value)
+            }
+        default:
+            return String(format: "%.0f", value)
+        }
+    }
+}
+
+/// Squad comparison data with ranking calculations
+struct SquadComparison {
+    let members: [SquadMember]
+    
+    var loadedMembers: [SquadMember] {
+        members.filter { $0.isLoaded }
+    }
+    
+    /// Calculate rankings for a specific metric
+    func rankings(for metric: ComparisonMetric) -> [UUID: Int] {
+        let membersWithStats = loadedMembers
+        
+        guard !membersWithStats.isEmpty else { return [:] }
+        
+        // Extract values
+        let values: [(UUID, Double)] = membersWithStats.compactMap { member in
+            guard let stats = member.stats else { return nil }
+            return (member.id, metric.extractValue(from: stats))
+        }
+        
+        // Sort based on higherIsBetter
+        let sorted = metric.higherIsBetter
+            ? values.sorted { $0.1 > $1.1 }  // Descending
+            : values.sorted { $0.1 < $1.1 }  // Ascending
+        
+        // Assign ranks (handle ties)
+        var rankings: [UUID: Int] = [:]
+        var currentRank = 1
+        var previousValue: Double? = nil
+        var sameRankCount = 0
+        
+        for (id, value) in sorted {
+            if let prev = previousValue, abs(value - prev) < 0.001 {
+                // Tie - use same rank
+                rankings[id] = currentRank - 1
+                sameRankCount += 1
+            } else {
+                currentRank += sameRankCount
+                rankings[id] = currentRank
+                sameRankCount = 1
+            }
+            previousValue = value
+        }
+        
+        return rankings
+    }
+    
+    /// Get value for a specific member and metric
+    func value(for member: SquadMember, metric: ComparisonMetric) -> Double? {
+        guard let stats = member.stats else { return nil }
+        return metric.extractValue(from: stats)
+    }
+}
+
 
