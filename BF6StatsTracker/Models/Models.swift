@@ -284,43 +284,22 @@ struct PlayerStats: Codable, Identifiable {
     ///
     /// BF2042 has 1,098 total ranks: 1-99 (standard) + 100-1098 (S001-S999)
     ///
-    /// **Formula:** rank = 131 + (xp - 7,774,370) / 105,621
+    /// **Formula:** Empirically derived from known rank-to-XP ratio
+    /// Testing shows: xpData.total at rank 168 produces ~68,800 XP per rank
+    /// This suggests total includes cumulative game score, not just rank XP
     ///
-    /// **Calibration:** Based on two data points in the S-rank range:
-    /// - 7,774,370 total XP = Rank 131 (S032)
-    /// - 8,408,095 total XP = Rank 137 (S038)
-    /// - XP per rank: ~105,621
-    ///
-    /// **Accuracy:** This formula is most accurate for S001-S050 range.
-    /// High S-ranks (S150+) may be less accurate due to possible season XP resets
-    /// where rank persists but XP resets each season.
+    /// **Calibration:** Rank 168 with xpData.total value
+    /// Using direct ratio: rank ≈ total / 68,800
     var rank: Int {
         let xp = xpData?.first?.total ?? 0
+        
+        guard xp > 0 else { return 1 }
 
-        // Debug logging
-//        Task { @MainActor in
-//            LoggerService.shared.info("Rank Calculation - Total XP: \(xp)", category: .calculation)
-//        }
-
-        // Linear calculation: approximately 105,621 XP per rank
-        // Based on calibration: (8,408,095 - 7,774,370) / (137 - 131) = 105,621
-        let calculatedRank: Int
-
-        if xp >= 7_774_370 {
-            // Standard progression from Rank 131 upward
-            let ranksAbove131 = (xp - 7_774_370) / 105_621
-            calculatedRank = 131 + ranksAbove131
-        } else {
-            // Extrapolate backward for lower ranks
-            let ranksBelow131 = (7_774_370 - xp) / 105_621
-            calculatedRank = max(1, 131 - ranksBelow131)
-        }
-
-        let finalRank = max(1, min(1000, calculatedRank))
-
-        Task { @MainActor in
-//            LoggerService.shared.info("Calculated Rank: \(finalRank)", category: .calculation)
-        }
+        // Empirical formula: approximately 68,800 total XP per rank
+        // Derived from: rank 168 calculation showing 948 → xp/168 ≈ 68,800
+        let calculatedRank = Int(Double(xp) / 68_800.0)
+        
+        let finalRank = max(1, min(1098, calculatedRank))
 
         return finalRank
     }
