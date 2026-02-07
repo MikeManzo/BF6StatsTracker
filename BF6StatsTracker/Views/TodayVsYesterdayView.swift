@@ -1252,7 +1252,19 @@ struct TodayVsYesterdayView: View {
                 }
             }
             .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                        .foregroundStyle(Color.secondary.opacity(0.2))
+                    AxisValueLabel {
+                        if let doubleValue = value.as(Double.self) {
+                            Text(String(format: "%.1f", doubleValue))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
             .chartYScale(domain: kdKdaChartYDomain)
             .chartLegend(.hidden)
             .frame(height: 120)

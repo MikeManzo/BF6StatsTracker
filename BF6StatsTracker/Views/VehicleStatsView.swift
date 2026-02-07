@@ -155,6 +155,7 @@ struct VehicleStatsView: View {
                     ) {
                         selectedCategory = nil
                     }
+                    .id("all")
 
                     ForEach(VehicleCategory.allCases) { category in
                         VehicleCategoryPill(
@@ -165,6 +166,7 @@ struct VehicleStatsView: View {
                         ) {
                             selectedCategory = category
                         }
+                        .id(category.rawValue)
                     }
                 }
                 .padding(.horizontal)
@@ -274,6 +276,7 @@ struct VehicleCategoryPill: View {
             ))
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 }
 
@@ -281,51 +284,49 @@ struct VehicleCategoryPill: View {
 
 struct VehicleCard: View {
     let vehicle: VehicleStats
-    @State private var isHovered = false
     
     var body: some View {
         VStack(spacing: 0) {
+            // Header with vehicle info and primary metric
             cardHeader
+                .padding(16)
             
+            // Separator
             Divider()
+                .background(Theme.borderColor.opacity(0.3))
+            
+            // Key performance metrics
+            mainStatsSection
+                .padding(16)
+            
+            // Additional details footer
+            Divider()
+                .background(Theme.borderColor.opacity(0.3))
+            
+            additionalStatsFooter
+                .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-            
-            mainStatsGrid
-            
-            if isHovered {
-                Divider()
-                    .padding(.vertical, 8)
-                
-                additionalStatsGrid
-            }
         }
-        .padding()
         .background(cardBackgroundView)
         .overlay(cardBorderView)
-        .scaleEffect(isHovered ? 1.01 : 1.0)
-        .animation(.spring(response: 0.3), value: isHovered)
-        .onHover { hovering in
-            isHovered = hovering
-        }
+        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
     
     // MARK: - Subviews
     
     private var cardHeader: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             vehicleImageView
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(vehicle.vehicleName)
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.system(.body, design: .default, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
                 
-                HStack(spacing: 8) {
-                    Label(vehicle.type, systemImage: vehicleIcon)
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
+                Label(vehicle.type, systemImage: vehicleIcon)
+                    .font(.system(.caption, design: .default))
+                    .foregroundColor(Theme.textSecondary)
             }
             
             Spacer()
@@ -336,16 +337,16 @@ struct VehicleCard: View {
     
     private var vehicleImageView: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 8)
                 .fill(vehicleGradient)
             
             AsyncGameImage(
                 url: URL(string: vehicle.image),
                 placeholder: Image(systemName: vehicleIcon)
             )
-            .frame(width: 60, height: 60)
+            .frame(width: 70, height: 56)
         }
-        .frame(width: 80, height: 60)
+        .frame(width: 80, height: 56)
     }
     
     private var vehicleGradient: LinearGradient {
@@ -360,108 +361,83 @@ struct VehicleCard: View {
         VStack(alignment: .trailing, spacing: 2) {
             Text("\(vehicle.kills)")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(Theme.error)
+                .foregroundColor(Theme.bf6Red)
             
-            Text("kills")
-                .font(.caption2)
+            Text("KILLS")
+                .font(.system(.caption2, design: .default, weight: .medium))
                 .foregroundColor(Theme.textSecondary)
+                .tracking(0.5)
         }
     }
     
-    private var mainStatsGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 16) {
-            VehicleStatItem(
-                icon: "xmark.circle",
-                label: "Deaths",
-                value: "\(vehicle.deaths)",
-                color: Theme.textSecondary
-            )
+    private var mainStatsSection: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                VehicleMetricCard(
+                    icon: "chart.line.uptrend.xyaxis",
+                    label: "K/D Ratio",
+                    value: String(format: "%.2f", vehicle.kdRatio),
+                    color: kdColor
+                )
+                
+                VehicleMetricCard(
+                    icon: "flame.fill",
+                    label: "Destroyed",
+                    value: "\(vehicle.destroyed)",
+                    color: .orange
+                )
+            }
             
-            VehicleStatItem(
-                icon: "chart.line.uptrend.xyaxis",
-                label: "K/D",
-                value: String(format: "%.2f", vehicle.kdRatio),
-                color: kdColor
-            )
-            
-            VehicleStatItem(
-                icon: "flame.fill",
-                label: "Destroyed",
-                value: "\(vehicle.destroyed)",
-                color: .accentColor
-            )
-            
-            VehicleStatItem(
-                icon: "clock.fill",
-                label: "Time",
-                value: formatTime(vehicle.timePlayed),
-                color: Theme.bf6Blue
-            )
+            HStack(spacing: 12) {
+                VehicleMetricCard(
+                    icon: "speedometer",
+                    label: "KPM",
+                    value: String(format: "%.2f", vehicle.killsPerMinute),
+                    color: Theme.bf6Red
+                )
+                
+                VehicleMetricCard(
+                    icon: "clock",
+                    label: "Time Played",
+                    value: formatTime(vehicle.timePlayed),
+                    color: Theme.bf6Blue
+                )
+            }
         }
     }
     
-    private var additionalStatsGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            VehicleStatItem(
-                icon: "speedometer",
-                label: "KPM",
-                value: String(format: "%.2f", vehicle.killsPerMinute),
-                color: Theme.bf6Red
-            )
+    private var additionalStatsFooter: some View {
+        HStack(spacing: 0) {
+            VehicleFooterStat(label: "Deaths", value: "\(vehicle.deaths)")
             
-            VehicleStatItem(
-                icon: "figure.walk",
-                label: "Roadkills",
-                value: "\(vehicle.roadKills)",
-                color: Theme.bf6Purple
-            )
+            Divider()
+                .frame(height: 24)
+                .background(Theme.borderColor.opacity(0.3))
             
-            VehicleStatItem(
-                icon: "person.2.fill",
-                label: "Driver Assists",
-                value: "\(vehicle.driverAssists)",
-                color: .teal
-            )
+            VehicleFooterStat(label: "Roadkills", value: "\(vehicle.roadKills)")
             
-            VehicleStatItem(
-                icon: "arrow.left.arrow.right",
-                label: "Distance",
-                value: formatDistance(Double(vehicle.distanceTraveled)),
-                color: .cyan
-            )
+            Divider()
+                .frame(height: 24)
+                .background(Theme.borderColor.opacity(0.3))
+            
+            VehicleFooterStat(label: "Driver Assists", value: "\(vehicle.driverAssists)")
+            
+            Divider()
+                .frame(height: 24)
+                .background(Theme.borderColor.opacity(0.3))
+            
+            VehicleFooterStat(label: "Distance", value: formatDistance(Double(vehicle.distanceTraveled)))
         }
     }
     
     private var cardBackgroundView: some View {
-        RoundedRectangle(cornerRadius: 16)
+        RoundedRectangle(cornerRadius: 12)
             .fill(Theme.cardBackground)
     }
     
     private var cardBorderView: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .stroke(borderGradient, lineWidth: borderWidth)
-    }
-    
-    private var borderGradient: LinearGradient {
-        LinearGradient(
-            colors: [vehicleColor.opacity(isHovered ? 0.5 : 0.2), vehicleColor.opacity(0.1)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-    
-    private var borderWidth: CGFloat {
-        isHovered ? 2 : 1
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(Theme.borderColor.opacity(0.5), lineWidth: 1)
     }
     
     private var kdColor: Color {
@@ -506,28 +482,58 @@ struct VehicleCard: View {
     }
 }
 
-// MARK: - Vehicle Stat Item
+// MARK: - Vehicle Metric Card Component
 
-struct VehicleStatItem: View {
+struct VehicleMetricCard: View {
     let icon: String
     let label: String
     let value: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 4) {
+        HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(color)
+                .font(.system(size: 16))
+                .foregroundColor(color.opacity(0.8))
+                .frame(width: 24, height: 24)
             
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(.caption, design: .default))
+                    .foregroundColor(Theme.textSecondary)
+                
+                Text(value)
+                    .font(.system(.callout, design: .rounded, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
+                    .lineLimit(1)
+            }
+            
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Theme.overlayColor.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - Vehicle Footer Stat Component
+
+struct VehicleFooterStat: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .semibold))
                 .foregroundColor(Theme.textPrimary)
             
             Text(label)
-                .font(.caption2)
+                .font(.system(.caption2, design: .default))
                 .foregroundColor(Theme.textSecondary)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
