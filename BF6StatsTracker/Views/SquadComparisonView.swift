@@ -22,6 +22,7 @@ struct SquadComparisonView: View {
     @EnvironmentObject var viewModel: StatsViewModel
     @StateObject private var squadService = SquadService.shared
     @State private var showAddMemberSheet = false
+    @State private var showInfoSheet = false
     @State private var expandedCategories: Set<MetricCategory> = Set(MetricCategory.allCases)
     
     private var allMembers: [SquadMember] {
@@ -71,6 +72,9 @@ struct SquadComparisonView: View {
         .sheet(isPresented: $showAddMemberSheet) {
             AddMemberSheet(squadService: squadService)
         }
+        .sheet(isPresented: $showInfoSheet) {
+            InfoSheet()
+        }
     }
     
     // MARK: - Header
@@ -87,6 +91,19 @@ struct SquadComparisonView: View {
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.textPrimary)
+                    
+                    // Info Button
+                    Button(action: {
+                        showInfoSheet = true
+                    }) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 16))
+                            .foregroundColor(Theme.textPrimary)
+                            .padding(8)
+ //                           .background(Theme.backgroundSecondary)
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
                 }
                 
                 if let lastRefresh = squadService.lastRefreshDate {
@@ -380,32 +397,32 @@ struct SquadMemberCard: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 // Header
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Text(member.effectiveName)
-                                .font(.headline)
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(Theme.textPrimary)
                                 .lineLimit(1)
                             
                             if isCurrentUser {
                                 Text("YOU")
-                                    .font(.system(size: 9, weight: .black))
+                                    .font(.system(size: 8, weight: .black))
                                     .foregroundColor(.white)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 3)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
                                     .background(accentColor)
-                                    .cornerRadius(4)
+                                    .cornerRadius(3)
                             }
                         }
                         
                         HStack(spacing: 4) {
                             Image(systemName: member.platform.icon)
-                                .font(.caption2)
+                                .font(.system(size: 9))
                             Text(member.platform.displayName)
-                                .font(.caption2)
+                                .font(.system(size: 9))
                         }
                         .foregroundColor(Theme.textSecondary)
                     }
@@ -415,94 +432,93 @@ struct SquadMemberCard: View {
                     if !isCurrentUser, let onRemove = onRemove {
                         Button(action: onRemove) {
                             Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 16))
                                 .foregroundColor(Theme.textSecondary)
                         }
                         .buttonStyle(.plain)
                     }
                 }
                 
-                Divider()
-                    .overlay(isCurrentUser ? accentColor.opacity(0.3) : Color.secondary.opacity(0.2))
-                
                 // Stats
                 if member.isLoaded, let stats = member.stats {
-                    VStack(spacing: 6) {
-                        statRowEnhanced(
-                            icon: "chart.line.uptrend.xyaxis",
-                            label: "K/D Ratio",
-                            value: String(format: "%.2f", stats.kdRatio),
-                            color: .orange
-                        )
-                        statRowEnhanced(
-                            icon: "scope",
-                            label: "Kills",
-                            value: "\(stats.kills)",
-                            color: .red
-                        )
-                        statRowEnhanced(
-                            icon: "target",
-                            label: "Accuracy",
-                            value: String(format: "%.1f%%", stats.accuracy),
-                            color: .blue
-                        )
+                    VStack(spacing: 8) {
+                        // Top row - Primary combat stats
+                        HStack(spacing: 8) {
+                            statBoxCompact(
+                                label: "K/D",
+                                value: String(format: "%.2f", stats.kdRatio),
+                                icon: "chart.line.uptrend.xyaxis",
+                                color: .orange
+                            )
+                            
+                            statBoxCompact(
+                                label: "Kills",
+                                value: "\(stats.kills)",
+                                icon: "scope",
+                                color: .red
+                            )
+                            
+                            statBoxCompact(
+                                label: "Deaths",
+                                value: "\(stats.deaths)",
+                                icon: "xmark",
+                                color: .gray
+                            )
+                        }
                         
-                        // Win Rate Progress Bar
-                        VStack(spacing: 2) {
-                            HStack {
-                                Text("Win Rate")
-                                    .font(.system(size: 9))
-                                    .foregroundColor(Theme.textSecondary)
-                                Spacer()
-                                Text(String(format: "%.1f%%", stats.wlRatio))
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.green)
-                            }
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    RoundedRectangle(cornerRadius: 2)
-                                        .fill(Color.secondary.opacity(0.2))
-                                    
-                                    RoundedRectangle(cornerRadius: 2)
-                                        .fill(LinearGradient(
-                                            colors: [.green, .green.opacity(0.7)],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        ))
-                                        .frame(width: geo.size.width * (min(stats.wlRatio / 100, 1.0)))
-                                }
-                            }
-                            .frame(height: 4)
+                        // Bottom row - Secondary stats
+                        HStack(spacing: 8) {
+                            statBoxCompact(
+                                label: "Accuracy",
+                                value: String(format: "%.1f%%", stats.accuracy),
+                                icon: "target",
+                                color: .blue
+                            )
+                            
+                            statBoxCompact(
+                                label: "Win Rate",
+                                value: String(format: "%.1f%%", stats.wlRatio),
+                                icon: "flag.fill",
+                                color: .green
+                            )
+                            
+                            statBoxCompact(
+                                label: "Rank",
+                                value: "\(stats.rank)",
+                                icon: "star.fill",
+                                color: .purple
+                            )
                         }
                     }
                 } else if member.hasError {
                     VStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.title2)
+                            .font(.system(size: 20))
                             .foregroundColor(.red)
                         
                         Text("Failed to load")
-                            .font(.caption)
+                            .font(.system(size: 11))
                             .foregroundColor(.red)
                         
                         if let onRetry = onRetry {
                             Button("Retry") {
                                 onRetry()
                             }
-                            .font(.caption)
+                            .font(.system(size: 10))
                             .foregroundColor(accentColor)
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding()
+                    .padding(.vertical, 8)
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity)
-                        .padding()
+                        .padding(.vertical, 20)
                 }
             }
             .padding(12)
         }
-        .frame(width: 180)
+        .frame(width: 280)
         .background(cardGradient)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
@@ -517,30 +533,30 @@ struct SquadMemberCard: View {
         .shadow(color: isCurrentUser ? accentColor.opacity(0.3) : Color.black.opacity(0.1), radius: isCurrentUser ? 12 : 6, y: 4)
     }
     
-    private func statRowEnhanced(icon: String, label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 6) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.2))
-                    .frame(width: 20, height: 20)
-                
+    private func statBoxCompact(label: String, value: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.system(size: 9))
+                    .font(.system(size: 8))
                     .foregroundColor(color)
-            }
-            
-            VStack(alignment: .leading, spacing: 1) {
+                
                 Text(label)
                     .font(.system(size: 9))
                     .foregroundColor(Theme.textSecondary)
-                
-                Text(value)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Theme.textPrimary)
             }
             
-            Spacer()
+            Text(value)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Theme.textPrimary)
+                .lineLimit(1)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(color.opacity(0.1))
+        )
     }
 }
 
@@ -725,77 +741,168 @@ struct MetricComparisonRow: View {
     }
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
             // Metric Label
-            HStack(spacing: 6) {
-                Image(systemName: metric.icon)
-                    .font(.system(size: 10))
-                    .foregroundColor(accentColor)
-                    .frame(width: 14)
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(accentColor.opacity(0.15))
+                        .frame(width: 28, height: 28)
+                    
+                    Image(systemName: metric.icon)
+                        .font(.system(size: 12))
+                        .foregroundColor(accentColor)
+                }
                 
                 Text(metric.rawValue)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Theme.textPrimary)
                 
                 Spacer()
             }
-            .frame(width: 140, alignment: .leading)
+            .frame(width: 180, alignment: .leading)
             
-            // Rankings for each member with background bars
-            HStack(spacing: 6) {
+            // Rankings for each member with full stat display
+            HStack(spacing: 10) {
                 ForEach(comparison.members) { member in
                     if let value = comparison.value(for: member, metric: metric),
                        let rank = rankings[member.id] {
-                        ZStack(alignment: .leading) {
-                            // Background performance bar
-                            GeometryReader { geo in
-                                let barWidth = maxValue > 0 ? (value / maxValue) * geo.size.width : 0
+                        VStack(spacing: 4) {
+                            // Rank badge
+                            ZStack {
+                                Circle()
+                                    .fill(rankBadgeGradient(for: rank))
+                                    .frame(width: 20, height: 20)
+                                    .shadow(color: rankBadgeColor(for: rank).opacity(0.4), radius: 2)
                                 
-                                RoundedRectangle(cornerRadius: 5)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: barGradientColors(for: rank),
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .frame(width: barWidth)
-                                    .opacity(0.25)
+                                if rank == 1 {
+                                    Image(systemName: "trophy.fill")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.white)
+                                } else if rank == 2 {
+                                    Image(systemName: "medal.fill")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.white)
+                                } else if rank == 3 {
+                                    Image(systemName: "medal.fill")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.white)
+                                } else {
+                                    Text("\(rank)")
+                                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
                             }
                             
-                            // Badge on top
-                            RankingBadge(
-                                rank: rank,
-                                value: metric.formatValue(value),
-                                accentColor: accentColor
-                            )
+                            // Value with background bar
+                            ZStack {
+                                // Background bar
+                                GeometryReader { geo in
+                                    let barWidth = maxValue > 0 ? (value / maxValue) * geo.size.width : 0
+                                    
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: barGradientColors(for: rank),
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: barWidth)
+                                }
+                                
+                                // Value text
+                                Text(metric.formatValue(value))
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(Theme.textPrimary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 4)
+                            }
+                            .frame(height: 24)
                         }
-                        .frame(width: 65, height: 40)
+                        .frame(width: 85)
                     } else {
-                        Text("—")
-                            .font(.caption)
-                            .foregroundColor(Theme.textSecondary)
-                            .frame(width: 65)
+                        VStack(spacing: 4) {
+                            Circle()
+                                .fill(Color.secondary.opacity(0.2))
+                                .frame(width: 20, height: 20)
+                            
+                            Text("—")
+                                .font(.system(size: 12))
+                                .foregroundColor(Theme.textSecondary)
+                                .frame(height: 24)
+                        }
+                        .frame(width: 85)
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
         .background(Theme.backgroundSecondary.opacity(0.5))
-        .cornerRadius(6)
+        .cornerRadius(8)
     }
     
     private func barGradientColors(for rank: Int) -> [Color] {
         switch rank {
         case 1:
-            return [Color.green.opacity(0.8), Color.green.opacity(0.4)]
+            return [Color.green.opacity(0.6), Color.green.opacity(0.3)]
         case 2:
-            return [Color.yellow.opacity(0.8), Color.yellow.opacity(0.4)]
+            return [Color.yellow.opacity(0.6), Color.yellow.opacity(0.3)]
         case 3:
-            return [Color.orange.opacity(0.8), Color.orange.opacity(0.4)]
+            return [Color.orange.opacity(0.6), Color.orange.opacity(0.3)]
         default:
-            return [Color.red.opacity(0.8), Color.red.opacity(0.4)]
+            return [Color.red.opacity(0.5), Color.red.opacity(0.2)]
+        }
+    }
+    
+    private func rankBadgeGradient(for rank: Int) -> LinearGradient {
+        switch rank {
+        case 1:
+            return LinearGradient(
+                colors: [
+                    Color(red: 1.0, green: 0.92, blue: 0.23),
+                    Color(red: 1.0, green: 0.84, blue: 0.0),
+                    Color(red: 0.85, green: 0.65, blue: 0.13)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case 2:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.85, green: 0.85, blue: 0.85),
+                    Color(red: 0.7, green: 0.7, blue: 0.7),
+                    Color(red: 0.55, green: 0.55, blue: 0.55)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case 3:
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.85, green: 0.58, blue: 0.35),
+                    Color(red: 0.72, green: 0.45, blue: 0.2),
+                    Color(red: 0.6, green: 0.35, blue: 0.15)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        default:
+            return LinearGradient(
+                colors: [Color.secondary.opacity(0.6), Color.secondary.opacity(0.4)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+    
+    private func rankBadgeColor(for rank: Int) -> Color {
+        switch rank {
+        case 1: return Color(red: 1.0, green: 0.84, blue: 0.0)
+        case 2: return Color(red: 0.75, green: 0.75, blue: 0.75)
+        case 3: return Color(red: 0.8, green: 0.5, blue: 0.2)
+        default: return Color.clear
         }
     }
 }
@@ -922,6 +1029,219 @@ struct RankingBadge: View {
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundColor(rank <= 3 ? glowColor : Theme.textPrimary)
                 .lineLimit(1)
+        }
+    }
+}
+
+// MARK: - Info Sheet
+
+struct InfoSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accentColor) private var accentColor
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Squad Comparison Guide")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Spacer()
+                
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding()
+            .background(Theme.backgroundSecondary)
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Ranking Badges Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Ranking Badges")
+                            .font(.headline)
+                            .foregroundColor(Theme.textPrimary)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            infoRow(
+                                icon: "trophy.fill",
+                                iconColor: Color(red: 1.0, green: 0.84, blue: 0.0),
+                                title: "1st Place - Gold",
+                                description: "Highest performance in this metric"
+                            )
+                            
+                            infoRow(
+                                icon: "medal.fill",
+                                iconColor: Color(red: 0.75, green: 0.75, blue: 0.75),
+                                title: "2nd Place - Silver",
+                                description: "Second highest performance"
+                            )
+                            
+                            infoRow(
+                                icon: "medal.fill",
+                                iconColor: Color(red: 0.8, green: 0.5, blue: 0.2),
+                                title: "3rd Place - Bronze",
+                                description: "Third highest performance"
+                            )
+                            
+                            infoRow(
+                                icon: "4.circle.fill",
+                                iconColor: Color.secondary,
+                                title: "4th Place",
+                                description: "Lowest performance in the squad"
+                            )
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    // Background Bars Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Performance Bars")
+                            .font(.headline)
+                            .foregroundColor(Theme.textPrimary)
+                        
+                        Text("Each stat displays a colored background bar showing relative performance:")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.textSecondary)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            barExample(color: .green, title: "Green Bar", description: "1st place performance")
+                            barExample(color: .yellow, title: "Yellow Bar", description: "2nd place performance")
+                            barExample(color: .orange, title: "Orange Bar", description: "3rd place performance")
+                            barExample(color: .red, title: "Red Bar", description: "4th place performance")
+                        }
+                        
+                        Text("The bar width shows the value relative to the best performer (100% width = highest value).")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+                            .padding(.top, 4)
+                    }
+                    
+                    Divider()
+                    
+                    // Category Winners Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Category Winners")
+                            .font(.headline)
+                            .foregroundColor(Theme.textPrimary)
+                        
+                        HStack(spacing: 8) {
+                            Image(systemName: "crown.fill")
+                                .font(.caption)
+                                .foregroundColor(Color(red: 1.0, green: 0.84, blue: 0.0))
+                            
+                            Text("Example Name")
+                                .font(.caption)
+                                .foregroundColor(Theme.textSecondary)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.15))
+                        )
+                        
+                        Text("The crown badge shows who won the most metrics in each category (Combat, Team Support, etc.).")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.textSecondary)
+                    }
+                    
+                    Divider()
+                    
+                    // Tips Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Tips")
+                            .font(.headline)
+                            .foregroundColor(Theme.textPrimary)
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            tipRow("Click category headers to expand or collapse sections")
+                            tipRow("Use the Refresh button to update all squad stats")
+                            tipRow("Add up to 3 squadmates to compare")
+                            tipRow("Your card is highlighted with a border and \"YOU\" badge")
+                        }
+                    }
+                }
+                .padding()
+            }
+        }
+        .frame(width: 500, height: 700)
+        .background(Theme.backgroundPrimary)
+    }
+    
+    private func infoRow(icon: String, iconColor: Color, title: String, description: String) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.2))
+                    .frame(width: 32, height: 32)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(iconColor)
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+    
+    private func barExample(color: Color, title: String, description: String) -> some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(
+                    LinearGradient(
+                        colors: [color.opacity(0.6), color.opacity(0.3)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: 60, height: 20)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private func tipRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.caption)
+                .foregroundColor(accentColor)
+            
+            Text(text)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+            
+            Spacer()
         }
     }
 }
