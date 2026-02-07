@@ -71,8 +71,8 @@ struct PerformanceDualComparisonCardDouble: View {
                     .foregroundStyle(accentColor)
 
                 Text(title.uppercased())
-                    .font(.caption2)
-                    .fontWeight(.semibold)
+                    .font(.headline)
+                    .fontWeight(.bold)
                     .foregroundStyle(.secondary)
 
                 Spacer()
