@@ -24,7 +24,10 @@ struct WeaponMasteryView: View {
     @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedWeapon: WeaponStats?
-    @State private var selectedCategory: WeaponCategory?
+    @State private var searchText = ""
+    @AppStorage("weaponMastery_collapsedCategories") private var collapsedCategoriesData: Data = Data()
+    
+    @State private var collapsedCategories: Set<String> = []
 
     private var usesGlass: Bool {
         if #available(macOS 26, *) { return liquidGlassEnabled }
@@ -32,100 +35,279 @@ struct WeaponMasteryView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header
+        HStack(spacing: 0) {
+            // Sidebar
+            sidebar
+                .frame(width: 250)
+            
+            Divider()
+            
+            // Detail Panel
+            detailPanel
+                .frame(maxWidth: .infinity)
+        }
+        .onAppear {
+            loadCollapsedCategories()
+            // Auto-select first weapon if none selected
+            if selectedWeapon == nil, let first = viewModel.weaponStats.first {
+                selectedWeapon = first
+            }
+        }
+    }
+
+    // MARK: - Sidebar
+    
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Image(systemName: "scope")
-                        .font(.title)
+                        .font(.title3)
                         .foregroundColor(accentColor)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Weapon Mastery Analytics")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Theme.textPrimary)
-
-                        Text("Deep dive into weapon performance and playstyle")
-                            .font(.caption)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-
-                    Spacer()
+                    
+                    Text("Weapons")
+                        .font(.headline)
+                        .fontWeight(.bold)
                 }
-
-                if !viewModel.weaponStats.isEmpty {
-                    // Category Filter
-                    categoryFilterView
-
-                    // Weapons Grid
-                    weaponsGridView(weapons: filteredWeapons)
-
-                    // Detailed Stats for Selected Weapon
-                    if let weapon = selectedWeapon {
-                        weaponDetailView(weapon: weapon)
+                
+                // Search
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    TextField("Search...", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.caption)
+                    
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
-                } else {
-                    Text("No weapon stats available")
-                        .foregroundColor(Theme.textSecondary)
                 }
+                .padding(6)
+                .background(Theme.overlayColor)
+                .cornerRadius(6)
             }
             .padding()
-        }
-    }
-
-    // MARK: - Category Filter
-
-    private var categoryFilterView: some View {
-        GlassContainerWrapper(usesGlass: usesGlass) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    categoryButton(category: nil, label: "All Weapons")
-
+            
+            Divider()
+            
+            // Weapon List
+            ScrollView {
+                LazyVStack(spacing: 2) {
                     ForEach(WeaponCategory.allCases) { category in
-                        categoryButton(category: category, label: category.displayName)
+                        categorySection(category: category)
                     }
                 }
             }
         }
+        .background(Theme.backgroundSecondary)
     }
-
-    private func categoryButton(category: WeaponCategory?, label: String) -> some View {
-        let isSelected = selectedCategory == category
-        return Button {
-            withAnimation {
-                selectedCategory = category
-            }
-        } label: {
-            Text(label)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(isSelected ? Theme.selectedText : Theme.textPrimary)
-                .padding(.horizontal, 16)
+    
+    private func categorySection(category: WeaponCategory) -> some View {
+        let weapons = weaponsInCategory(category)
+        let isCollapsed = collapsedCategories.contains(category.rawValue)
+        
+        return VStack(spacing: 0) {
+            // Category Header
+            Button(action: {
+                toggleCategory(category)
+            }) {
+                HStack {
+                    Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .frame(width: 12)
+                    
+                    Text(category.displayName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.textPrimary)
+                    
+                    Spacer()
+                    
+                    Text("\(weapons.count)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Theme.overlayColor.opacity(0.5))
+                        .cornerRadius(4)
+                }
+                .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(isSelected && !usesGlass ? accentColor : (!isSelected && !usesGlass ? Theme.overlayColor : Color.clear))
-                .cornerRadius(8)
-                .modifier(SubTabGlassModifier(
-                    isSelected: isSelected,
-                    accentColor: accentColor,
-                    usesGlass: usesGlass
-                ))
+                .background(Theme.overlayColor.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+            
+            // Weapon Items
+            if !isCollapsed {
+                ForEach(weapons) { weapon in
+                    weaponListItem(weapon: weapon)
+                }
+            }
+        }
+    }
+    
+    private func weaponListItem(weapon: WeaponStats) -> some View {
+        let isSelected = selectedWeapon?.weaponId == weapon.weaponId
+        
+        return Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedWeapon = weapon
+            }
+        }) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(weapon.weaponName)
+                        .font(.caption)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                        .foregroundColor(isSelected ? accentColor : Theme.textPrimary)
+                        .lineLimit(1)
+                    
+                    Text("\(weapon.kills) kills")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(accentColor)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 6)
+            .background(isSelected ? accentColor.opacity(0.15) : Color.clear)
         }
         .buttonStyle(.plain)
     }
-
-    // MARK: - Filtered Weapons
-
-    private var filteredWeapons: [WeaponStats] {
-        let weapons = viewModel.weaponStats
-
-        let filtered = selectedCategory == nil
-            ? weapons
-            : weapons.filter { matchesCategory($0, category: selectedCategory!) }
-
-        return filtered.sorted { $0.kills > $1.kills }
+    
+    private func weaponsInCategory(_ category: WeaponCategory) -> [WeaponStats] {
+        let categoryWeapons = viewModel.weaponStats.filter { matchesCategory($0, category: category) }
+        
+        if searchText.isEmpty {
+            return categoryWeapons.sorted { $0.kills > $1.kills }
+        } else {
+            return categoryWeapons
+                .filter { $0.weaponName.localizedCaseInsensitiveContains(searchText) }
+                .sorted { $0.kills > $1.kills }
+        }
     }
-
+    
+    private func toggleCategory(_ category: WeaponCategory) {
+        if collapsedCategories.contains(category.rawValue) {
+            collapsedCategories.remove(category.rawValue)
+        } else {
+            collapsedCategories.insert(category.rawValue)
+        }
+        saveCollapsedCategories()
+    }
+    
+    private func loadCollapsedCategories() {
+        if let decoded = try? JSONDecoder().decode(Set<String>.self, from: collapsedCategoriesData) {
+            collapsedCategories = decoded
+        }
+    }
+    
+    private func saveCollapsedCategories() {
+        if let encoded = try? JSONEncoder().encode(collapsedCategories) {
+            collapsedCategoriesData = encoded
+        }
+    }
+    
+    // MARK: - Detail Panel
+    
+    private var detailPanel: some View {
+        ScrollView {
+            if let weapon = selectedWeapon {
+                VStack(spacing: 20) {
+                    // Weapon Header
+                    weaponHeader(weapon: weapon)
+                    
+                    // Playstyle Analysis
+                    playstyleAnalysis(weapon: weapon)
+                    
+                    // Kill Distribution
+                    killDistribution(weapon: weapon)
+                    
+                    // Efficiency Metrics
+                    efficiencyMetrics(weapon: weapon)
+                    
+                    // Complete Stats Table
+                    completeStatsTable(weapon: weapon)
+                }
+                .padding()
+            } else {
+                VStack(spacing: 16) {
+                    Image(systemName: "scope")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    
+                    Text("Select a weapon")
+                        .font(.title3)
+                        .foregroundColor(Theme.textPrimary)
+                    
+                    Text("Choose a weapon from the sidebar to view detailed statistics")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+    
+    private func weaponHeader(weapon: WeaponStats) -> some View {
+        HStack(spacing: 16) {
+            AsyncGameImage(
+                url: URL(string: weapon.image),
+                placeholder: Image(systemName: "scope")
+            )
+            .frame(width: 100, height: 70)
+            .background(Theme.overlayColor)
+            .cornerRadius(12)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weapon.weaponName)
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Text(displayTypeName(weapon.type))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                HStack(spacing: 16) {
+                    Label("\(weapon.kills)", systemImage: "target")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                    
+                    Label(String(format: "%.1f%%", weapon.accuracy), systemImage: "scope")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    
+                    Label(String(format: "%.2f", weapon.killsPerMinute), systemImage: "timer")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .background(Theme.backgroundSecondary)
+        .cornerRadius(12)
+    }
+    
     /// Flexible category matching that handles various API response formats
     private func matchesCategory(_ weapon: WeaponStats, category: WeaponCategory) -> Bool {
         let type = weapon.type.lowercased()
@@ -148,126 +330,6 @@ struct WeaponMasteryView: View {
         case .pistols:
             return type.contains("pistol") || type.contains("sidearm")
         }
-    }
-
-    // MARK: - Weapons Grid
-
-    private func weaponsGridView(weapons: [WeaponStats]) -> some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            ForEach(weapons) { weapon in
-                weaponCard(weapon: weapon)
-            }
-        }
-    }
-
-    private func weaponCard(weapon: WeaponStats) -> some View {
-        Button {
-            withAnimation {
-                selectedWeapon = weapon
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(weapon.weaponName)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textPrimary)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    if selectedWeapon?.weaponId == weapon.weaponId {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(Theme.success)
-                    }
-                }
-
-                Text(displayTypeName(weapon.type))
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
-
-                Divider()
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(weapon.kills)")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(accentColor)
-
-                        Text("kills")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(String(format: "%.1f%%", weapon.headshotPercentage))
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Theme.error)
-
-                        Text("headshot")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-                }
-            }
-            .padding()
-            .background(selectedWeapon?.weaponId == weapon.weaponId ? accentColor.opacity(0.2) : Theme.overlayColor)
-            .cornerRadius(8)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Weapon Detail View
-
-    private func weaponDetailView(weapon: WeaponStats) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(weapon.weaponName)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.textPrimary)
-
-                    Text(displayTypeName(weapon.type))
-                        .font(.subheadline)
-                        .foregroundColor(Theme.textSecondary)
-                }
-
-                Spacer()
-
-                Button {
-                    withAnimation {
-                        selectedWeapon = nil
-                    }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Playstyle Analysis
-            playstyleAnalysis(weapon: weapon)
-
-            // Kill Distribution
-            killDistribution(weapon: weapon)
-
-            // Efficiency Metrics
-            efficiencyMetrics(weapon: weapon)
-        }
-        .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(12)
     }
 
     // MARK: - Playstyle Analysis
@@ -559,6 +621,95 @@ struct WeaponMasteryView: View {
         .padding()
         .background(Theme.backgroundSecondary)
         .cornerRadius(8)
+    }
+
+    // MARK: - Complete Stats Table
+    
+    private func completeStatsTable(weapon: WeaponStats) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Complete Statistics")
+                .font(.headline)
+                .foregroundColor(Theme.textPrimary)
+            
+            VStack(spacing: 0) {
+                // Kill Stats
+                statTableSection(title: "Kill Statistics", rows: [
+                    ("Total Kills", "\(weapon.kills)"),
+                    ("Body Kills", "\(weapon.bodyKills)"),
+                    ("Headshot Kills", "\(weapon.headshotKills)"),
+                    ("Hipfire Kills", "\(weapon.hipfireKills)"),
+                    ("Scoped Kills", "\(weapon.scopedKills)"),
+                    ("Multi-Kills", "\(weapon.multiKills)")
+                ])
+                
+                Divider()
+                
+                // Damage Stats
+                statTableSection(title: "Damage Statistics", rows: [
+                    ("Total Damage", formatNumber(weapon.damage)),
+                    ("Assist Damage", "\(weapon.assistsDamage)"),
+                    ("Damage Per Minute", String(format: "%.0f", weapon.damagePerMinute))
+                ])
+                
+                Divider()
+                
+                // Accuracy Stats
+                statTableSection(title: "Accuracy Statistics", rows: [
+                    ("Accuracy", weapon.accuracyPercent),
+                    ("Headshot %", weapon.headshotsPercent),
+                    ("Shots Fired", "\(weapon.shotsFired)"),
+                    ("Shots Hit", "\(weapon.shotsHit)"),
+                    ("Hits per Kill", String(format: "%.1f", weapon.hitVKills))
+                ])
+                
+                Divider()
+                
+                // Time Stats
+                statTableSection(title: "Time Statistics", rows: [
+                    ("Time Equipped", formatPlaytime(weapon.timeEquipped)),
+                    ("Spawns", "\(weapon.spawns)"),
+                    ("Kills Per Minute", String(format: "%.2f", weapon.killsPerMinute))
+                ])
+            }
+            .background(Theme.backgroundSecondary)
+            .cornerRadius(8)
+        }
+    }
+    
+    private func statTableSection(title: String, rows: [(String, String)]) -> some View {
+        VStack(spacing: 0) {
+            // Section Header
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Theme.overlayColor.opacity(0.3))
+            
+            // Rows
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                HStack {
+                    Text(row.0)
+                        .font(.caption)
+                        .foregroundColor(Theme.textPrimary)
+                    
+                    Spacer()
+                    
+                    Text(row.1)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.textPrimary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(index % 2 == 0 ? Color.clear : Theme.overlayColor.opacity(0.2))
+            }
+        }
     }
 
     // MARK: - Helper Functions
