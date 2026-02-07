@@ -112,7 +112,7 @@ struct LogEntry: Identifiable, Codable {
 
     var displayTimestamp: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
+        formatter.dateFormat = "h:mm:ss a"
         return formatter.string(from: timestamp)
     }
 
