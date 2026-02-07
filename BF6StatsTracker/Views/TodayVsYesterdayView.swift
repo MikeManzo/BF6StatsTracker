@@ -26,6 +26,8 @@ struct TodayVsYesterdayView: View {
     @State private var isMapsExpanded = true
     @State private var isCombatBreakdownExpanded = true
     @State private var snapshots: [StatsSnapshot] = []
+    @State private var selectedChartPosition: Double? = nil
+    @AppStorage("showKDKDATooltips") private var showTooltips: Bool = true
 
     // Combat Breakdown graph colors (persisted via AppStorage)
     @AppStorage("combatGraphColor_headshots") private var headshotsColor: Color = .purple
@@ -1152,6 +1154,17 @@ struct TodayVsYesterdayView: View {
                         .fontWeight(.bold)
 
                     Spacer()
+                    
+                    // Tooltip toggle
+                    Button(action: {
+                        showTooltips.toggle()
+                    }) {
+                        Image(systemName: showTooltips ? "info.circle.fill" : "info.circle")
+                            .font(.caption)
+                            .foregroundColor(showTooltips ? accentColor : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Toggle hover tooltips")
 
                     HStack(spacing: 12) {
                         // K/D value
@@ -1268,6 +1281,53 @@ struct TodayVsYesterdayView: View {
             .chartYScale(domain: kdKdaChartYDomain)
             .chartLegend(.hidden)
             .frame(height: 120)
+            .chartXSelection(value: $selectedChartPosition)
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    if showTooltips,
+                       let position = selectedChartPosition,
+                       let snapshot = snapshotsForChart.first(where: { abs($0.xPosition - position) < 0.15 }),
+                       let barX = proxy.position(forX: snapshot.xPosition) {
+                        
+                        let tooltipX = barX + geometry[proxy.plotFrame!].origin.x
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Circle()
+                                    .fill(.orange)
+                                    .frame(width: 6, height: 6)
+                                Text("K/D:")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                Text(String(format: "%.2f", snapshot.sessionKD))
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.orange)
+                            }
+                            
+                            HStack(spacing: 4) {
+                                Circle()
+                                    .fill(.cyan)
+                                    .frame(width: 6, height: 6)
+                                Text("KDA:")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                Text(String(format: "%.2f", snapshot.sessionKDA))
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.cyan)
+                            }
+                        }
+                        .padding(8)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(8)
+                        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+                        .position(x: tooltipX, y: -20)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .animation(.easeInOut(duration: 0.15), value: selectedChartPosition)
+                    }
+                }
+            }
 
             // Day labels
             HStack {
