@@ -62,9 +62,6 @@ struct SquadComparisonView: View {
             
             // Comparison Sections
             if !allMembers.isEmpty && allMembers.first?.isLoaded == true {
-                // Squad order header
-                squadOrderHeader
-                
                 // 2x2 Grid layout for categories
                 let categories = MetricCategory.allCases
                 VStack(spacing: 20) {
@@ -165,6 +162,48 @@ struct SquadComparisonView: View {
         .padding(12)
         .background(Theme.overlayColor)
         .cornerRadius(10)
+    }
+    
+    // MARK: - Section Player Header
+    
+    private var sectionPlayerHeader: some View {
+        HStack(spacing: 12) {
+            // Empty space for metric label alignment
+            Spacer()
+                .frame(width: 180)
+            
+            // Member names aligned with metric columns
+            HStack(spacing: 10) {
+                ForEach(allMembers) { member in
+                    VStack(spacing: 2) {
+                        Text(member.effectiveName)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(Theme.textPrimary)
+                            .lineLimit(1)
+                        
+                        // Platform indicator
+                        HStack(spacing: 2) {
+                            Image(systemName: member.platform.icon)
+                                .font(.system(size: 7))
+                            Text(member.platform.displayName)
+                                .font(.system(size: 7))
+                        }
+                        .foregroundColor(Theme.textSecondary)
+                    }
+                    .frame(width: 85)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .background(
+            LinearGradient(
+                colors: [Theme.backgroundSecondary.opacity(0.6), Theme.backgroundSecondary.opacity(0.4)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .cornerRadius(6)
     }
     
     // MARK: - Squad Order Header
@@ -331,6 +370,9 @@ struct SquadComparisonView: View {
             // Metrics
             if expandedCategories.contains(category) {
                 VStack(spacing: 4) {
+                    // Player order header for this section
+                    sectionPlayerHeader
+                    
                     ForEach(ComparisonMetric.allCases.filter { $0.category == category }) { metric in
                         MetricComparisonRow(
                             metric: metric,
