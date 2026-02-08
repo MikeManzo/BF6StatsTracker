@@ -403,15 +403,22 @@ class StatsViewModel: ObservableObject {
 
             logInfo("Fresh stats loaded - Classes: \(self.classStats.count), Weapons: \(self.weaponStats.count), Vehicles: \(self.vehicleStats.count), Gadgets: \(self.gadgetStats.count)", category: .network)
 
-            // Save snapshot to SwiftData for historical tracking (synchronous on MainActor, no yield)
+            // Save snapshot to SwiftData for historical tracking - run in background to avoid blocking UI
             let eaId = settings.eaId ?? EAAccountStore.shared.mostRecentAccount?.eaId
             let progressionModeId = self.currentProgressionMode?.progressionMode
-            HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId, playSoundNotification: settings.showNotifications, settings: settings)
-            MapTracker.shared.updateMapStats(from: stats)
-
-            if HistoryManager.shared.recentDailyPerformances.isEmpty {
-                logInfo("No DailyPerformance records found, rebuilding...", category: .general)
-                HistoryManager.shared.rebuildDailyPerformances(playerName: stats.userName)
+            let shouldNotify = settings.showNotifications
+            let settingsCopy = settings
+            
+            Task.detached(priority: .utility) {
+                await MainActor.run {
+                    HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId, playSoundNotification: shouldNotify, settings: settingsCopy)
+                    MapTracker.shared.updateMapStats(from: stats)
+                    
+                    if HistoryManager.shared.recentDailyPerformances.isEmpty {
+                        logInfo("No DailyPerformance records found, rebuilding...", category: .general)
+                        HistoryManager.shared.rebuildDailyPerformances(playerName: stats.userName)
+                    }
+                }
             }
 
             // Fetch additional detailed stats if main stats are incomplete
