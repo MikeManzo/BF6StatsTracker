@@ -48,9 +48,28 @@ class SquadService: ObservableObject {
         
         var newMember = SquadMember(eaId: eaId, platform: platform, displayName: displayName)
         
-        // Fetch stats immediately
+        // Fetch stats immediately with EA Identity lookup
         do {
-            let identifier = PlayerIdentifier(name: eaId, platform: platform)
+            // Step 1: Lookup EA Identity to get nucleusId and personaId
+            let apiUser = try await apiService.lookupEAIdentity(playerName: eaId)
+            
+            // Step 2: Create identifier with EA Identity if found
+            let identifier: PlayerIdentifier
+            if let apiUser = apiUser {
+                identifier = PlayerIdentifier(
+                    name: apiUser.EAID,
+                    platform: platform,
+                    nucleusId: apiUser.userId,
+                    personaId: apiUser.id
+                )
+                LoggerService.shared.info("Squad member \(eaId) - Found EA Identity: nucleusId=\(apiUser.userId), personaId=\(apiUser.id)", category: .api)
+            } else {
+                // Fallback to name-only lookup if EA Identity not found
+                identifier = PlayerIdentifier(name: eaId, platform: platform)
+                LoggerService.shared.warning("Squad member \(eaId) - No EA Identity found, using name-only lookup", category: .api)
+            }
+            
+            // Step 3: Fetch stats with full identifier
             let stats = try await apiService.fetchPlayerStats(identifier: identifier)
             newMember.stats = stats
             newMember.lastFetched = Date()
@@ -90,8 +109,23 @@ class SquadService: ObservableObject {
         await withTaskGroup(of: (UUID, Result<PlayerStats, Error>).self) { group in
             for member in squadMembers {
                 group.addTask {
-                    let identifier = PlayerIdentifier(name: member.eaId, platform: member.platform)
                     do {
+                        // Lookup EA Identity first
+                        let apiUser = try await self.apiService.lookupEAIdentity(playerName: member.eaId)
+                        
+                        // Create identifier with EA Identity if found
+                        let identifier: PlayerIdentifier
+                        if let apiUser = apiUser {
+                            identifier = PlayerIdentifier(
+                                name: apiUser.EAID,
+                                platform: member.platform,
+                                nucleusId: apiUser.userId,
+                                personaId: apiUser.id
+                            )
+                        } else {
+                            identifier = PlayerIdentifier(name: member.eaId, platform: member.platform)
+                        }
+                        
                         let stats = try await self.apiService.fetchPlayerStats(identifier: identifier)
                         return (member.id, .success(stats))
                     } catch {
@@ -124,9 +158,26 @@ class SquadService: ObservableObject {
         guard let index = squadMembers.firstIndex(where: { $0.id == id }) else { return }
         
         let member = squadMembers[index]
-        let identifier = PlayerIdentifier(name: member.eaId, platform: member.platform)
         
         do {
+            // Lookup EA Identity first
+            let apiUser = try await apiService.lookupEAIdentity(playerName: member.eaId)
+            
+            // Create identifier with EA Identity if found
+            let identifier: PlayerIdentifier
+            if let apiUser = apiUser {
+                identifier = PlayerIdentifier(
+                    name: apiUser.EAID,
+                    platform: member.platform,
+                    nucleusId: apiUser.userId,
+                    personaId: apiUser.id
+                )
+                LoggerService.shared.info("Retry for \(member.eaId) - Found EA Identity", category: .api)
+            } else {
+                identifier = PlayerIdentifier(name: member.eaId, platform: member.platform)
+                LoggerService.shared.warning("Retry for \(member.eaId) - No EA Identity found", category: .api)
+            }
+            
             let stats = try await apiService.fetchPlayerStats(identifier: identifier)
             squadMembers[index].stats = stats
             squadMembers[index].lastFetched = Date()

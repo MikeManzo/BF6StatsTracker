@@ -68,6 +68,38 @@ actor APIService {
         self.session = URLSession(configuration: config)
     }
 
+    // MARK: - EA Identity Lookup
+    
+    /// Lookup EA Identity (nucleusId, personaId) for a player name
+    /// Uses rip-bf.com API to get full EA account details
+    /// - Parameter playerName: The EA ID/player name to lookup
+    /// - Returns: RipBFAPIUser with nucleusId and personaId, or nil if not found
+    func lookupEAIdentity(playerName: String) async throws -> RipBFAPIUser? {
+        guard let url = URL(string: "https://rip-bf.com/api/eaid/?name=\(playerName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? playerName)") else {
+            throw BF6TrackerError.invalidURL
+        }
+        
+        logInfo("Looking up EA identity for: \(playerName)", category: .api)
+        
+        let (data, _) = try await session.data(from: url)
+        let response = try JSONDecoder().decode(RipBFAPIResponse.self, from: data)
+        
+        // Check if there was an error
+        if response.error {
+            logWarning("EA identity lookup failed: \(response.message)", category: .api)
+            return nil
+        }
+        
+        // Get the first user from the response
+        guard let apiUser = response.users?.first else {
+            logWarning("No EA identity found for: \(playerName)", category: .api)
+            return nil
+        }
+        
+        logSuccess("Found EA identity for \(playerName): nucleusId=\(apiUser.userId), personaId=\(apiUser.id)", category: .api)
+        return apiUser
+    }
+    
     // MARK: - Player Stats
 
     /// Fetch player statistics from GameTools.Network API using EA Identity
