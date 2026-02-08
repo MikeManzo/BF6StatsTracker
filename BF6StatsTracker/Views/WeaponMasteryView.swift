@@ -187,6 +187,7 @@ struct WeaponMasteryView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 6)
             .background(isSelected ? accentColor.opacity(0.15) : Color.clear)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
