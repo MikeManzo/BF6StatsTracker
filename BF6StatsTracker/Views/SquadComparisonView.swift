@@ -65,8 +65,28 @@ struct SquadComparisonView: View {
                 // Squad order header
                 squadOrderHeader
                 
-                ForEach(MetricCategory.allCases) { category in
-                    metricCategorySection(category: category)
+                // 2x2 Grid layout for categories
+                let categories = MetricCategory.allCases
+                VStack(spacing: 20) {
+                    // Top row
+                    HStack(alignment: .top, spacing: 20) {
+                        if categories.count > 0 {
+                            metricCategorySection(category: categories[0])
+                        }
+                        if categories.count > 1 {
+                            metricCategorySection(category: categories[1])
+                        }
+                    }
+                    
+                    // Bottom row
+                    HStack(alignment: .top, spacing: 20) {
+                        if categories.count > 2 {
+                            metricCategorySection(category: categories[2])
+                        }
+                        if categories.count > 3 {
+                            metricCategorySection(category: categories[3])
+                        }
+                    }
                 }
             } else {
                 emptyState
