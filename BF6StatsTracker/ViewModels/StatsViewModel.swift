@@ -806,12 +806,12 @@ class StatsViewModel: ObservableObject {
 
 enum MainTab: String, CaseIterable, Identifiable {
     case overview = "Overview"
+    case squad = "Squad"
     case history = "History"
     case combat = "Combat"
     case vehicles = "Vehicles"
     case analysis = "Analysis"
     case teamplay = "Teamplay"
-    case squad = "Squad"
     case tools = "Tools"
     case aiCoach = "AI Coach"
 
