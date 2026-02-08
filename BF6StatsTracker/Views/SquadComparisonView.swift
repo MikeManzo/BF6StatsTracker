@@ -62,6 +62,9 @@ struct SquadComparisonView: View {
             
             // Comparison Sections
             if !allMembers.isEmpty && allMembers.first?.isLoaded == true {
+                // Squad order header
+                squadOrderHeader
+                
                 ForEach(MetricCategory.allCases) { category in
                     metricCategorySection(category: category)
                 }
@@ -140,6 +143,68 @@ struct SquadComparisonView: View {
             .opacity(squadService.isRefreshing ? 0.5 : 1.0)
         }
         .padding(12)
+        .background(Theme.overlayColor)
+        .cornerRadius(10)
+    }
+    
+    // MARK: - Squad Order Header
+    
+    private var squadOrderHeader: some View {
+        HStack(spacing: 12) {
+            // Label section
+            HStack(spacing: 8) {
+                Image(systemName: "list.number")
+                    .font(.system(size: 12))
+                    .foregroundColor(accentColor)
+                
+                Text("Squad Order")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Theme.textPrimary)
+            }
+            .frame(width: 180, alignment: .leading)
+            
+            // Member names
+            HStack(spacing: 10) {
+                ForEach(allMembers) { member in
+                    VStack(spacing: 4) {
+                        // Member name
+                        Text(member.effectiveName)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(Theme.textPrimary)
+                            .lineLimit(1)
+                        
+                        // Platform icon
+                        HStack(spacing: 3) {
+                            Image(systemName: member.platform.icon)
+                                .font(.system(size: 8))
+                            Text(member.platform.displayName)
+                                .font(.system(size: 8))
+                        }
+                        .foregroundColor(Theme.textSecondary)
+                    }
+                    .frame(width: 85)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(member.id.uuidString == "00000000-0000-0000-0000-000000000000" 
+                                ? accentColor.opacity(0.15)
+                                : Theme.backgroundSecondary.opacity(0.5))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(
+                                member.id.uuidString == "00000000-0000-0000-0000-000000000000"
+                                    ? accentColor.opacity(0.3)
+                                    : Color.clear,
+                                lineWidth: 1
+                            )
+                    )
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
         .background(Theme.overlayColor)
         .cornerRadius(10)
     }
@@ -382,7 +447,7 @@ struct SquadMemberCard: View {
     private var cardGradient: LinearGradient {
         if isCurrentUser {
             return LinearGradient(
-                colors: [accentColor.opacity(0.3), accentColor.opacity(0.15)],
+                colors: [accentColor.opacity(0.12), accentColor.opacity(0.06)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -409,11 +474,11 @@ struct SquadMemberCard: View {
                             
                             if isCurrentUser {
                                 Text("YOU")
-                                    .font(.system(size: 8, weight: .black))
+                                    .font(.system(size: 8, weight: .bold))
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 2)
-                                    .background(accentColor)
+                                    .background(accentColor.opacity(0.7))
                                     .cornerRadius(3)
                             }
                         }
@@ -524,13 +589,13 @@ struct SquadMemberCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(
                     isCurrentUser
-                        ? LinearGradient(colors: [accentColor, accentColor.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        ? LinearGradient(colors: [accentColor.opacity(0.4), accentColor.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
                         : LinearGradient(colors: [Color.clear], startPoint: .top, endPoint: .bottom),
-                    lineWidth: isCurrentUser ? 2.5 : 0
+                    lineWidth: isCurrentUser ? 1.5 : 0
                 )
         )
         .cornerRadius(16)
-        .shadow(color: isCurrentUser ? accentColor.opacity(0.3) : Color.black.opacity(0.1), radius: isCurrentUser ? 12 : 6, y: 4)
+        .shadow(color: isCurrentUser ? accentColor.opacity(0.15) : Color.black.opacity(0.1), radius: isCurrentUser ? 8 : 6, y: 4)
     }
     
     private func statBoxCompact(label: String, value: String, icon: String, color: Color) -> some View {
@@ -770,27 +835,51 @@ struct MetricComparisonRow: View {
                         VStack(spacing: 4) {
                             // Rank badge
                             ZStack {
+                                // Outer glow
+                                if rank <= 3 {
+                                    Circle()
+                                        .fill(
+                                            RadialGradient(
+                                                colors: [rankBadgeColor(for: rank).opacity(0.4), rankBadgeColor(for: rank).opacity(0.0)],
+                                                center: .center,
+                                                startRadius: 0,
+                                                endRadius: 16
+                                            )
+                                        )
+                                        .frame(width: 32, height: 32)
+                                        .blur(radius: 2)
+                                }
+                                
                                 Circle()
                                     .fill(rankBadgeGradient(for: rank))
-                                    .frame(width: 20, height: 20)
-                                    .shadow(color: rankBadgeColor(for: rank).opacity(0.4), radius: 2)
+                                    .frame(width: 26, height: 26)
+                                    .shadow(color: .black.opacity(0.3), radius: 3)
+                                
+                                // Dark inner circle for better contrast
+                                Circle()
+                                    .fill(Color.black.opacity(0.3))
+                                    .frame(width: 24, height: 24)
                                 
                                 if rank == 1 {
                                     Image(systemName: "trophy.fill")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(.system(size: 13, weight: .heavy))
                                         .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.7), radius: 1.5)
                                 } else if rank == 2 {
                                     Image(systemName: "medal.fill")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(.system(size: 13, weight: .heavy))
                                         .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.7), radius: 1.5)
                                 } else if rank == 3 {
                                     Image(systemName: "medal.fill")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(.system(size: 13, weight: .heavy))
                                         .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.7), radius: 1.5)
                                 } else {
                                     Text("\(rank)")
-                                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                                        .font(.system(size: 12, weight: .heavy, design: .rounded))
                                         .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.7), radius: 1.5)
                                 }
                             }
                             
@@ -861,9 +950,9 @@ struct MetricComparisonRow: View {
         case 1:
             return LinearGradient(
                 colors: [
-                    Color(red: 1.0, green: 0.92, blue: 0.23),
+                    Color(red: 1.0, green: 0.95, blue: 0.3),
                     Color(red: 1.0, green: 0.84, blue: 0.0),
-                    Color(red: 0.85, green: 0.65, blue: 0.13)
+                    Color(red: 0.9, green: 0.7, blue: 0.0)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -871,9 +960,9 @@ struct MetricComparisonRow: View {
         case 2:
             return LinearGradient(
                 colors: [
-                    Color(red: 0.85, green: 0.85, blue: 0.85),
-                    Color(red: 0.7, green: 0.7, blue: 0.7),
-                    Color(red: 0.55, green: 0.55, blue: 0.55)
+                    Color(red: 0.95, green: 0.95, blue: 0.95),
+                    Color(red: 0.8, green: 0.8, blue: 0.8),
+                    Color(red: 0.65, green: 0.65, blue: 0.65)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -881,16 +970,16 @@ struct MetricComparisonRow: View {
         case 3:
             return LinearGradient(
                 colors: [
-                    Color(red: 0.85, green: 0.58, blue: 0.35),
-                    Color(red: 0.72, green: 0.45, blue: 0.2),
-                    Color(red: 0.6, green: 0.35, blue: 0.15)
+                    Color(red: 0.95, green: 0.65, blue: 0.4),
+                    Color(red: 0.82, green: 0.5, blue: 0.25),
+                    Color(red: 0.7, green: 0.4, blue: 0.2)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         default:
             return LinearGradient(
-                colors: [Color.secondary.opacity(0.6), Color.secondary.opacity(0.4)],
+                colors: [Color.secondary.opacity(0.7), Color.secondary.opacity(0.5)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -900,8 +989,8 @@ struct MetricComparisonRow: View {
     private func rankBadgeColor(for rank: Int) -> Color {
         switch rank {
         case 1: return Color(red: 1.0, green: 0.84, blue: 0.0)
-        case 2: return Color(red: 0.75, green: 0.75, blue: 0.75)
-        case 3: return Color(red: 0.8, green: 0.5, blue: 0.2)
+        case 2: return Color(red: 0.85, green: 0.85, blue: 0.85)
+        case 3: return Color(red: 0.9, green: 0.55, blue: 0.25)
         default: return Color.clear
         }
     }
