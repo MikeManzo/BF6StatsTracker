@@ -486,12 +486,66 @@ struct ContentView: View {
                     }
                     .accessibilityLabel("\(tab.rawValue) tab")
                     .accessibilityAddTraits(viewModel.selectedMainTab == tab ? [.isSelected] : [])
+                    .contextMenu {
+                        Button("Hide Tab") {
+                            hideTab(tab)
+                        }
+                    }
+                    .onDrag {
+                        NSItemProvider(object: tab.rawValue as NSString)
+                    }
+                    .onDrop(of: [.text], delegate: TabDropDelegate(
+                        tab: tab,
+                        tabs: viewModel.visibleMainTabs,
+                        onMove: { from, to in
+                            moveTab(from: from, to: to)
+                        }
+                    ))
                 }
             }
         }
         .conditionalBackground(apply: !usesLiquidGlass)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Navigation tabs")
+    }
+    
+    private func hideTab(_ tab: MainTab) {
+        viewModel.settings.hiddenTabs.insert(tab.rawValue)
+        Task {
+            await viewModel.saveSettings()
+        }
+        
+        // If the current tab is being hidden, switch to the first visible tab
+        if viewModel.selectedMainTab == tab {
+            if let firstVisible = viewModel.visibleMainTabs.first {
+                withAnimation {
+                    viewModel.selectedMainTab = firstVisible
+                    viewModel.selectedSubTab = firstVisible.defaultSubTab
+                }
+            }
+        }
+    }
+    
+    private func moveTab(from source: MainTab, to destination: MainTab) {
+        let allTabs = MainTab.allCases.map { $0.rawValue }
+        
+        // Initialize tabOrder if it's empty
+        if viewModel.settings.tabOrder.isEmpty {
+            viewModel.settings.tabOrder = allTabs
+        }
+        
+        guard let sourceIndex = viewModel.settings.tabOrder.firstIndex(of: source.rawValue),
+              let destIndex = viewModel.settings.tabOrder.firstIndex(of: destination.rawValue) else {
+            return
+        }
+        
+        withAnimation {
+            viewModel.settings.tabOrder.move(fromOffsets: IndexSet(integer: sourceIndex), toOffset: destIndex > sourceIndex ? destIndex + 1 : destIndex)
+        }
+        
+        Task {
+            await viewModel.saveSettings()
+        }
     }
 
     // MARK: - Sub-Menu View
@@ -1042,6 +1096,35 @@ struct PlayerAvatarView: View {
 }
 
 // MARK: - Conditional ultraThinMaterial background
+
+// MARK: - Tab Drop Delegate
+
+struct TabDropDelegate: DropDelegate {
+    let tab: MainTab
+    let tabs: [MainTab]
+    let onMove: (MainTab, MainTab) -> Void
+    
+    func performDrop(info: DropInfo) -> Bool {
+        return true
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard let sourceTab = info.itemProviders(for: [.text]).first else { return }
+        
+        sourceTab.loadItem(forTypeIdentifier: "public.text", options: nil) { data, error in
+            guard let data = data as? Data,
+                  let tabName = String(data: data, encoding: .utf8),
+                  let sourceMainTab = MainTab.allCases.first(where: { $0.rawValue == tabName }),
+                  sourceMainTab != tab else {
+                return
+            }
+            
+            DispatchQueue.main.async {
+                onMove(sourceMainTab, tab)
+            }
+        }
+    }
+}
 
 extension View {
     /// Conditionally applies `.ultraThinMaterial` backdrop blur.

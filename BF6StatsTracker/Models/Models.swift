@@ -1404,6 +1404,12 @@ struct AppSettings: Codable {
 
     // Liquid Glass (macOS 26+)
     var liquidGlassEnabled: Bool  // Use Liquid Glass material on navigation chrome
+    
+    // Hidden tabs
+    var hiddenTabs: Set<String>   // Set of hidden tab raw values
+    
+    // Tab order
+    var tabOrder: [String]        // Ordered list of tab raw values
 
     init() {
         self.playerName = ""
@@ -1425,6 +1431,8 @@ struct AppSettings: Codable {
         self.isEAAuthenticated = false
         self.aiCoachEnabled = false
         self.liquidGlassEnabled = true  // On by default when running on Tahoe
+        self.hiddenTabs = []  // No tabs hidden by default
+        self.tabOrder = []    // Empty means use default order
     }
 
     /// Update settings with EA identity information
@@ -1452,6 +1460,8 @@ struct AppSettings: Codable {
         case nucleusId, personaId, eaId, isEAAuthenticated
         case aiCoachEnabled
         case liquidGlassEnabled
+        case hiddenTabs
+        case tabOrder
     }
 
     init(from decoder: Decoder) throws {
@@ -1490,6 +1500,12 @@ struct AppSettings: Codable {
 
         // Default to true if liquidGlassEnabled doesn't exist in saved settings
         liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? true
+        
+        // Default to empty set if hiddenTabs doesn't exist in saved settings
+        hiddenTabs = try container.decodeIfPresent(Set<String>.self, forKey: .hiddenTabs) ?? []
+        
+        // Default to empty array if tabOrder doesn't exist in saved settings
+        tabOrder = try container.decodeIfPresent([String].self, forKey: .tabOrder) ?? []
     }
 }
 

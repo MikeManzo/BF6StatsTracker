@@ -25,6 +25,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case accounts = "EA Accounts"
     case appearance = "Appearance"
     case display = "Display"
+    case tabs = "Tabs"
     case sound = "Sound"
     case autoRefresh = "Auto Refresh"
     case menuBar = "Menu Bar"
@@ -39,6 +40,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .accounts: return "person.crop.circle.fill"
         case .appearance: return "paintbrush.fill"
         case .display: return "display"
+        case .tabs: return "square.grid.3x3.fill"
         case .sound: return "speaker.wave.3.fill"
         case .autoRefresh: return "arrow.clockwise"
         case .menuBar: return "menubar.rectangle"
@@ -53,6 +55,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .accounts: return .blue
         case .appearance: return .purple
         case .display: return .indigo
+        case .tabs: return .cyan
         case .sound: return .pink
         case .autoRefresh: return .green
         case .menuBar: return .gray
@@ -213,6 +216,8 @@ struct SettingsView: View {
             appearancePane
         case .display:
             displayPane
+        case .tabs:
+            tabsPane
         case .sound:
             soundPane
         case .autoRefresh:
@@ -381,6 +386,151 @@ struct SettingsView: View {
                     )
                     .onChange(of: showNotifications) { _, _ in saveSettings() }
                 }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    // MARK: - Tabs Pane
+    
+    private var orderedTabsForSettings: [MainTab] {
+        // If custom order is defined, use it
+        if !viewModel.settings.tabOrder.isEmpty {
+            var orderedTabs: [MainTab] = []
+            
+            // Add tabs in custom order
+            for tabName in viewModel.settings.tabOrder {
+                if let tab = MainTab.allCases.first(where: { $0.rawValue == tabName }) {
+                    orderedTabs.append(tab)
+                }
+            }
+            
+            // Add any remaining tabs that aren't in the custom order (newly added tabs)
+            for tab in MainTab.allCases {
+                if !orderedTabs.contains(tab) {
+                    orderedTabs.append(tab)
+                }
+            }
+            
+            return orderedTabs
+        }
+        
+        // Use default order
+        return Array(MainTab.allCases)
+    }
+    
+    private func moveTabInSettings(from source: MainTab, to destination: MainTab) {
+        let allTabs = MainTab.allCases.map { $0.rawValue }
+        
+        // Initialize tabOrder if it's empty
+        if viewModel.settings.tabOrder.isEmpty {
+            viewModel.settings.tabOrder = allTabs
+        }
+        
+        guard let sourceIndex = viewModel.settings.tabOrder.firstIndex(of: source.rawValue),
+              let destIndex = viewModel.settings.tabOrder.firstIndex(of: destination.rawValue) else {
+            return
+        }
+        
+        withAnimation {
+            viewModel.settings.tabOrder.move(fromOffsets: IndexSet(integer: sourceIndex), toOffset: destIndex > sourceIndex ? destIndex + 1 : destIndex)
+        }
+        
+        saveSettings()
+    }
+    
+    private var tabsPane: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Show or hide navigation tabs. Drag tabs to reorder them.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            SettingsGroupBox {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(orderedTabsForSettings.enumerated()), id: \.element) { index, tab in
+                        let isHidden = viewModel.settings.hiddenTabs.contains(tab.rawValue)
+                        
+                        HStack(spacing: 12) {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .frame(width: 16)
+                            
+                            Image(systemName: tab.icon)
+                                .font(.title3)
+                                .foregroundColor(isHidden ? .secondary : accentColor)
+                                .frame(width: 24)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(tab.rawValue)
+                                    .font(.body)
+                                    .foregroundColor(isHidden ? .secondary : Theme.textPrimary)
+                                
+                                if tab.isExperimental {
+                                    Text("Experimental")
+                                        .font(.caption2)
+                                        .foregroundColor(Theme.bf6Purple)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            Toggle("", isOn: Binding(
+                                get: { !isHidden },
+                                set: { isVisible in
+                                    if isVisible {
+                                        viewModel.settings.hiddenTabs.remove(tab.rawValue)
+                                    } else {
+                                        viewModel.settings.hiddenTabs.insert(tab.rawValue)
+                                        // If hiding the currently selected tab, switch to first visible
+                                        if viewModel.selectedMainTab == tab {
+                                            if let firstVisible = viewModel.visibleMainTabs.first {
+                                                viewModel.selectedMainTab = firstVisible
+                                                viewModel.selectedSubTab = firstVisible.defaultSubTab
+                                            }
+                                        }
+                                    }
+                                    saveSettings()
+                                }
+                            ))
+                            .labelsHidden()
+                        }
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
+                        .onDrag {
+                            NSItemProvider(object: tab.rawValue as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: SettingsTabDropDelegate(
+                            tab: tab,
+                            tabs: orderedTabsForSettings,
+                            onMove: { from, to in
+                                moveTabInSettings(from: from, to: to)
+                            }
+                        ))
+                        
+                        if index < orderedTabsForSettings.count - 1 {
+                            Divider()
+                                .padding(.leading, 68)
+                        }
+                    }
+                }
+            }
+            
+            VStack(spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    
+                    Text("Drag the handle to reorder tabs. Right-click any tab in the main window to quickly hide it.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(12)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(8)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1284,6 +1434,35 @@ struct EAIdentityRow: View {
             .help("Copy to clipboard")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Settings Tab Drop Delegate
+
+struct SettingsTabDropDelegate: DropDelegate {
+    let tab: MainTab
+    let tabs: [MainTab]
+    let onMove: (MainTab, MainTab) -> Void
+    
+    func performDrop(info: DropInfo) -> Bool {
+        return true
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard let sourceTab = info.itemProviders(for: [.text]).first else { return }
+        
+        sourceTab.loadItem(forTypeIdentifier: "public.text", options: nil) { data, error in
+            guard let data = data as? Data,
+                  let tabName = String(data: data, encoding: .utf8),
+                  let sourceMainTab = MainTab.allCases.first(where: { $0.rawValue == tabName }),
+                  sourceMainTab != tab else {
+                return
+            }
+            
+            DispatchQueue.main.async {
+                onMove(sourceMainTab, tab)
+            }
+        }
     }
 }
 

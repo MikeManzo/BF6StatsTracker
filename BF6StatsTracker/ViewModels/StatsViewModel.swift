@@ -67,7 +67,12 @@ class StatsViewModel: ObservableObject {
 
     /// Returns the list of visible main tabs based on settings
     var visibleMainTabs: [MainTab] {
-        MainTab.allCases.filter { tab in
+        let filteredTabs = MainTab.allCases.filter { tab in
+            // Filter out hidden tabs
+            if settings.hiddenTabs.contains(tab.rawValue) {
+                return false
+            }
+            
             // Filter out experimental tabs if not enabled
             if tab.isExperimental {
                 switch tab {
@@ -77,6 +82,31 @@ class StatsViewModel: ObservableObject {
             }
             return true
         }
+        
+        // If custom order is defined, use it
+        if !settings.tabOrder.isEmpty {
+            var orderedTabs: [MainTab] = []
+            
+            // Add tabs in custom order
+            for tabName in settings.tabOrder {
+                if let tab = MainTab.allCases.first(where: { $0.rawValue == tabName }),
+                   filteredTabs.contains(tab) {
+                    orderedTabs.append(tab)
+                }
+            }
+            
+            // Add any remaining tabs that aren't in the custom order (newly added tabs)
+            for tab in filteredTabs {
+                if !orderedTabs.contains(tab) {
+                    orderedTabs.append(tab)
+                }
+            }
+            
+            return orderedTabs
+        }
+        
+        // Use default order
+        return filteredTabs
     }
 
     // EA Authentication state
