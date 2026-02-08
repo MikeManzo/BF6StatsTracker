@@ -53,7 +53,7 @@ struct SquadComparisonView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             // Header
             header
             
@@ -64,24 +64,28 @@ struct SquadComparisonView: View {
             if !allMembers.isEmpty && allMembers.first?.isLoaded == true {
                 // 2x2 Grid layout for categories
                 let categories = MetricCategory.allCases
-                VStack(spacing: 20) {
-                    // Top row
-                    HStack(alignment: .top, spacing: 20) {
+                HStack(alignment: .top, spacing: 20) {
+                    // Left column
+                    VStack(spacing: 20) {
                         if categories.count > 0 {
                             metricCategorySection(category: categories[0])
+                                .frame(width: 600)
                         }
-                        if categories.count > 1 {
-                            metricCategorySection(category: categories[1])
+                        if categories.count > 2 {
+                            metricCategorySection(category: categories[2])
+                                .frame(width: 600)
                         }
                     }
                     
-                    // Bottom row
-                    HStack(alignment: .top, spacing: 20) {
-                        if categories.count > 2 {
-                            metricCategorySection(category: categories[2])
+                    // Right column
+                    VStack(spacing: 20) {
+                        if categories.count > 1 {
+                            metricCategorySection(category: categories[1])
+                                .frame(width: 600)
                         }
                         if categories.count > 3 {
                             metricCategorySection(category: categories[3])
+                                .frame(width: 600)
                         }
                     }
                 }
@@ -384,9 +388,10 @@ struct SquadComparisonView: View {
                 }
             }
         }
-        .padding()
+        .padding(12)
+        .frame(maxWidth: 600)
         .background(Theme.overlayColor)
-        .cornerRadius(12)
+        .cornerRadius(10)
     }
     
     // MARK: - Helper Functions
