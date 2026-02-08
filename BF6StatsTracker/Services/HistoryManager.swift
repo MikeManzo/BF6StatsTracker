@@ -24,6 +24,7 @@ class HistoryManager: ObservableObject {
     static let shared = HistoryManager()
 
     var modelContext: ModelContext?  // Made public for access from SettingsView
+    var modelContainer: ModelContainer?  // Store container for creating background contexts
     private var currentSession: PlaySession?
 
     @Published var snapshots: [StatsSnapshot] = []
@@ -42,6 +43,7 @@ class HistoryManager: ObservableObject {
     /// Initialize with SwiftData model context
     func setup(modelContext: ModelContext) {
         self.modelContext = modelContext
+        self.modelContainer = modelContext.container
 
         // Clear any corrupt data on startup
         // This prevents crashes from stale object references
@@ -103,9 +105,64 @@ class HistoryManager: ObservableObject {
     /// A match is considered completed when BOTH conditions are met:
     /// 1. matchesPlayed has increased by at least 1
     /// 2. timePlayed has increased (any amount)
+    /// Async version that uses background context to avoid blocking main thread
+    nonisolated func saveSnapshotAsync(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil, playSoundNotification: Bool = true, settings: AppSettings? = nil) async {
+        guard let container = await MainActor.run(body: { modelContainer }) else { return }
+        
+        // Create background context - this is thread-safe
+        let backgroundContext = ModelContext(container)
+        
+        // All operations happen on background thread - NO main thread blocking
+        let newSnapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId, progressionMode: progressionMode)
+        
+        // Fetch only the most recent snapshot (limit 1 for performance)
+        var descriptor = FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        descriptor.fetchLimit = 1
+        guard let recentSnapshots = try? backgroundContext.fetch(descriptor),
+              let mostRecent = recentSnapshots.first else {
+            // First snapshot - insert and save
+            backgroundContext.insert(newSnapshot)
+            try? backgroundContext.save()
+            
+            await MainActor.run {
+                self.snapshotVersion += 1
+            }
+            return
+        }
+        
+        // Calculate deltas to detect match completion
+        let matchDelta = newSnapshot.matchesPlayed - mostRecent.matchesPlayed
+        let timeDelta = newSnapshot.timePlayed - mostRecent.timePlayed
+        let matchCompleted = matchDelta >= 1 && timeDelta > 0
+        
+        guard matchCompleted else { return }
+        
+        // Insert and save on background thread
+        backgroundContext.insert(newSnapshot)
+        try? backgroundContext.save()
+        
+        // Update UI on main thread
+        await MainActor.run {
+            // Play sound notification
+            if playSoundNotification, let settings = settings {
+                SoundNotificationService.shared.playMatchCompletionSound(settings: settings)
+            }
+            
+            self.snapshotVersion += 1
+        }
+        
+        // DON'T reload data - let @Query in views handle it automatically
+        // Just increment version to notify views that data may have changed
+        await MainActor.run {
+            self.snapshotVersion += 1
+            logInfo("Background snapshot save completed", category: .general)
+        }
+    }
+    
     func saveSnapshot(from stats: PlayerStats, sessionId: UUID? = nil, eaId: String? = nil, progressionMode: String? = nil, playSoundNotification: Bool = true, settings: AppSettings? = nil) {
         guard let context = modelContext else { return }
 
+        // OPTIMIZATION: Perform early return check without fetching if possible
         let newSnapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId, progressionMode: progressionMode)
 
         // Get the most recent snapshot for comparison
@@ -124,26 +181,48 @@ class HistoryManager: ObservableObject {
                 return
             }
 
-            // Play sound notification if enabled
-            if playSoundNotification, let settings = settings {
-                SoundNotificationService.shared.playMatchCompletionSound(settings: settings)
+        }
+
+        // ULTRA-CRITICAL FIX: Defer EVERYTHING to avoid ANY main thread blocking
+        // Including the insert, save, and notification - all deferred to background
+        let playerName = stats.userName
+        let platform = stats.platform
+        let shouldPlaySound = playSoundNotification
+        let soundSettings = settings
+        
+        Task.detached(priority: .utility) {
+            await MainActor.run {
+                // First: Quick insert (minimal blocking)
+                context.insert(newSnapshot)
+                
+                if let session = self.currentSession {
+                    session.snapshots.append(newSnapshot)
+                }
+                
+                // Save immediately after insert (disk I/O but necessary)
+                try? context.save()
+                
+                // Play notification sound right after save
+                if shouldPlaySound, let soundSettings = soundSettings {
+                    SoundNotificationService.shared.playMatchCompletionSound(settings: soundSettings)
+                }
+            }
+            
+            // Now defer the truly expensive operations with a delay
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            
+            await MainActor.run {
+                // Expensive daily performance update
+                self.updateDailyPerformance(with: newSnapshot, playerName: playerName, platform: platform)
+                
+                // Reload data
+                self.loadRecentData()
+                self.loadDailyPerformances(playerName: playerName)
+                self.snapshotVersion += 1
+                
+                logInfo("Deferred snapshot processing completed", category: .general)
             }
         }
-
-        // Match completed or first snapshot, save it
-        context.insert(newSnapshot)
-
-        if let session = currentSession {
-            session.snapshots.append(newSnapshot)
-        }
-
-        // Update or create daily performance
-        updateDailyPerformance(with: newSnapshot, playerName: stats.userName, platform: stats.platform)
-
-        try? context.save()
-        loadRecentData()
-        loadDailyPerformances(playerName: stats.userName)
-        snapshotVersion += 1
     }
 
     /// Create a synthetic snapshot for debugging (randomly increments stats)

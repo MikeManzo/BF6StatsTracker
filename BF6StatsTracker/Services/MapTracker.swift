@@ -114,7 +114,14 @@ class MapTracker: ObservableObject {
         }
 
         try? context.save()
-        loadMapStats()
+        
+        // Defer reload to avoid blocking
+        Task.detached(priority: .utility) {
+            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+            await MainActor.run {
+                self.loadMapStats()
+            }
+        }
     }
 
     /// Update existing maps when new stats come in

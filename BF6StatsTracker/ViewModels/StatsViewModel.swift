@@ -402,10 +402,22 @@ class StatsViewModel: ObservableObject {
 
                 logInfo("Cache loaded - Classes: \(self.classStats.count), Weapons: \(self.weaponStats.count), Vehicles: \(self.vehicleStats.count), Gadgets: \(self.gadgetStats.count)", category: .cache)
 
-                // CRITICAL FIX: Always fetch additional stats even from cache to ensure completeness
-                await fetchAdditionalStats(identifier: identifier)
-
+                // Set isLoading to false immediately after cache data is loaded
                 self.isLoading = false
+                
+                // Fetch additional stats in background without blocking UI
+                Task {
+                    await fetchAdditionalStats(identifier: identifier)
+                }
+                
+                // Refresh trends in background with delay
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+                    await MainActor.run {
+                        refreshTrends()
+                    }
+                }
+                
                 return
             }
         }
@@ -433,38 +445,75 @@ class StatsViewModel: ObservableObject {
 
             logInfo("Fresh stats loaded - Classes: \(self.classStats.count), Weapons: \(self.weaponStats.count), Vehicles: \(self.vehicleStats.count), Gadgets: \(self.gadgetStats.count)", category: .network)
 
-            // Save snapshot to SwiftData for historical tracking - run in background to avoid blocking UI
+            // OPTIMIZATION: Set isLoading to false IMMEDIATELY after UI data is ready
+            // This prevents the beachball by unblocking the UI before heavy operations
+            self.isLoading = false
+            logSuccess("Stats UI data loaded - UI unblocked", category: .success)
+            
+            // Prepare data for background operations
             let eaId = settings.eaId ?? EAAccountStore.shared.mostRecentAccount?.eaId
             let progressionModeId = self.currentProgressionMode?.progressionMode
             let shouldNotify = settings.showNotifications
             let settingsCopy = settings
             
+            // Run ALL heavy operations with aggressive delays to prevent ANY blocking
             Task.detached(priority: .utility) {
+                // CRITICAL: Wait long enough for UI to fully render
+                try? await Task.sleep(nanoseconds: 500_000_000) // 500ms delay
+                
+                // Use new async version that runs on background context
+                await HistoryManager.shared.saveSnapshotAsync(
+                    from: stats,
+                    eaId: eaId,
+                    progressionMode: progressionModeId,
+                    playSoundNotification: shouldNotify,
+                    settings: settingsCopy
+                )
+                
+                // Additional delay before map stats
+                try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+                
+                // Update map stats
                 await MainActor.run {
-                    HistoryManager.shared.saveSnapshot(from: stats, eaId: eaId, progressionMode: progressionModeId, playSoundNotification: shouldNotify, settings: settingsCopy)
                     MapTracker.shared.updateMapStats(from: stats)
-                    
+                }
+                
+                // Additional delay before rebuild
+                try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+                
+                // Rebuild daily performances if needed
+                await MainActor.run {
                     if HistoryManager.shared.recentDailyPerformances.isEmpty {
                         logInfo("No DailyPerformance records found, rebuilding...", category: .general)
                         HistoryManager.shared.rebuildDailyPerformances(playerName: stats.userName)
                     }
+                    
+                    logSuccess("Background snapshot processing completed", category: .success)
                 }
             }
 
-            // Fetch additional detailed stats if main stats are incomplete
-            await fetchAdditionalStats(identifier: identifier)
+            // Fetch additional stats in background without blocking UI
+            Task {
+                await fetchAdditionalStats(identifier: identifier)
+            }
+            
+            // Refresh trends in background with significant delay
+            Task {
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+                await MainActor.run {
+                    refreshTrends()
+                }
+            }
 
         } catch let error as BF6TrackerError {
             logError("Error fetching stats: \(error.errorDescription ?? "unknown")", category: .error)
             self.error = error
+            self.isLoading = false
         } catch {
             logError("Network error: \(error.localizedDescription)", category: .error)
             self.error = .networkError(error)
+            self.isLoading = false
         }
-
-        refreshTrends()
-        isLoading = false
-        logSuccess("fetchStats completed", category: .success)
     }
     
     private func fetchAdditionalStats(identifier: PlayerIdentifier) async {
