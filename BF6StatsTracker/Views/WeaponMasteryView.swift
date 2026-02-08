@@ -275,6 +275,7 @@ struct WeaponMasteryView: View {
             .frame(width: 100, height: 70)
             .background(Theme.overlayColor)
             .cornerRadius(12)
+            .id(weapon.weaponId)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(weapon.weaponName)
