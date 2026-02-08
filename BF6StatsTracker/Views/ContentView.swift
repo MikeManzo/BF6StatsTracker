@@ -458,6 +458,7 @@ struct ContentView: View {
 
                             Text(tab.rawValue)
                                 .font(.caption)
+                                .lineLimit(1)
                         }
                         .foregroundColor(viewModel.selectedMainTab == tab ? Theme.textPrimary : .secondary)
                         .frame(maxWidth: .infinity)
