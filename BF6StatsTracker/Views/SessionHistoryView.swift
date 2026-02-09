@@ -440,11 +440,15 @@ struct SessionHistoryView: View {
         guard let context = historyManager.modelContext else { return }
 
         withAnimation {
-            // Delete related DailyPerformance objects that reference this snapshot
-            cleanupDailyPerformance(for: [snapshot])
-
+            // Delete snapshot immediately (fast, no blocking)
             context.delete(snapshot)
             try? context.save()
+        }
+        
+        // Cleanup affected DailyPerformance in background (no UI blocking)
+        let affectedDate = Calendar.current.startOfDay(for: snapshot.timestamp)
+        Task.detached(priority: .utility) {
+            await self.cleanupDailyPerformanceForDate(affectedDate)
         }
     }
 
@@ -508,23 +512,45 @@ struct SessionHistoryView: View {
     }
 
     private func cleanupDailyPerformance(for snapshots: [StatsSnapshot]) {
-        guard let context = historyManager.modelContext else { return }
-
-        // Delete ALL DailyPerformance objects to avoid accessing potentially deleted snapshot references
-        // They will be recalculated from snapshots when needed
-        let descriptor = FetchDescriptor<DailyPerformance>()
-
-        do {
-            let allPerformances = try context.fetch(descriptor)
-            for performance in allPerformances {
-                context.delete(performance)
+        // Get unique dates affected by deleted snapshots
+        let affectedDates = Set(snapshots.map { 
+            Calendar.current.startOfDay(for: $0.timestamp) 
+        })
+        
+        // Cleanup in background for each affected date
+        Task.detached(priority: .utility) {
+            for date in affectedDates {
+                await self.cleanupDailyPerformanceForDate(date)
             }
-            try context.save()
+        }
+    }
+    
+    private func cleanupDailyPerformanceForDate(_ date: Date) async {
+        guard let container = await MainActor.run(body: { historyManager.modelContainer }) else { return }
+        
+        // Use background ModelContext to avoid blocking main thread
+        let backgroundContext = ModelContext(container)
+        
+        // Only fetch and delete DailyPerformance for the affected date
+        let predicate = #Predicate<DailyPerformance> { performance in
+            performance.date == date
+        }
+        let descriptor = FetchDescriptor<DailyPerformance>(predicate: predicate)
+        
+        do {
+            let performances = try backgroundContext.fetch(descriptor)
+            for performance in performances {
+                backgroundContext.delete(performance)
+            }
+            try backgroundContext.save()
+            
+            await MainActor.run {
+                logInfo("Cleaned up DailyPerformance for date: \(date)", category: .general)
+            }
         } catch {
-            // If we can't fetch (likely due to corrupt data), reset the cleanup flag
-            // so it runs again on next app launch
-            logWarning("Error fetching DailyPerformance objects: \(error)", category: .general)
-            UserDefaults.standard.set(false, forKey: "HasCleanedCorruptDailyPerformance_v1")
+            await MainActor.run {
+                logWarning("Error cleaning up DailyPerformance for date \(date): \(error)", category: .general)
+            }
         }
     }
 }
