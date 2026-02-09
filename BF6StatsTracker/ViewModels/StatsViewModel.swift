@@ -457,7 +457,8 @@ class StatsViewModel: ObservableObject {
             let settingsCopy = settings
             
             // Run ALL heavy operations with aggressive delays to prevent ANY blocking
-            Task.detached(priority: .utility) {
+            // Use .userInitiated priority to avoid priority inversion when calling MainActor methods
+            Task.detached(priority: .userInitiated) {
                 // CRITICAL: Wait long enough for UI to fully render
                 try? await Task.sleep(nanoseconds: 500_000_000) // 500ms delay
                 

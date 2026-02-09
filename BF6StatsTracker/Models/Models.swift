@@ -1118,7 +1118,7 @@ enum VehicleCategory: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .airCombat: return "airplane"
-        case .airTransport: return "helicopter.fill"
+        case .airTransport: return "fan.oscillation.fill"
         case .groundCombat: return "shield.fill"
         case .groundTransport: return "car.fill"
         }
