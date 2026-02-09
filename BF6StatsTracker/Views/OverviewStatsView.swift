@@ -231,7 +231,7 @@ struct OverviewStatsView: View {
                 )
                 .frame(maxWidth: .infinity)
 
-                RankCard(stats: stats)
+                KDACard(stats: stats)
                     .frame(maxWidth: .infinity)
             }
 
@@ -515,46 +515,40 @@ struct StatRow: View {
 }
 
 
-// MARK: - Rank Card with Decorative Icon
+// MARK: - KDA Card with Decorative Icon
 
-struct RankCard: View {
+struct KDACard: View {
     @Environment(\.accentColor) private var accentColor
 
     let stats: PlayerStats
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            // Decorative rank icon in background
-            Image(systemName: stats.isSRank ? "crown.fill" : "shield.fill")
-                .font(.system(size: 70))
-                .foregroundStyle(stats.isSRank ? accentColor.opacity(0.12) : accentColor.opacity(0.1))
+            // Decorative chart icon in background
+            Image(systemName: "chart.bar.fill")
+                .font(.system(size: 52.5))
+                .foregroundStyle(accentColor.opacity(0.1))
                 .offset(x: -10, y: 0)
 
             // Card content - matching StatCard structure
             VStack(alignment: .leading, spacing: 12) {
                 // Header (matches StatCard headerView)
                 HStack(spacing: 6) {
-                    Image(systemName: stats.isSRank ? "crown.fill" : "chevron.up.circle.fill")
+                    Image(systemName: "chart.bar.fill")
                         .font(.caption)
                         .foregroundStyle(accentColor)
 
-                    Text("RANK (Estimated)")
+                    Text("K/D/A RATIO")
                         .font(.caption2)
                         .fontWeight(.semibold)
                         .foregroundStyle(Theme.textSecondary)
-
-                    // Info icon with tooltip
-                    Image(systemName: "info.circle")
-                        .font(.caption2)
-                        .foregroundStyle(Theme.textSecondary.opacity(0.6))
-                        .help("Rank is estimated from XP. Accurate for S001-S050 range. High S-ranks (S150+) may be less accurate due to season XP resets.")
 
                     Spacer()
                 }
 
                 // Value (matches StatCard valueView)
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(stats.rankString)
+                    Text(String(format: "%.2f", stats.kdaRatio))
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .fontDesign(.rounded)
                         .foregroundStyle(Theme.textPrimary)
@@ -563,7 +557,7 @@ struct RankCard: View {
                 }
 
                 // Subtitle (matches StatCard subtitleView)
-                Text("XP: \((stats.xpData?.first?.total ?? 0).formatted())")
+                Text("K: \(stats.kills.formatted()) / D: \(stats.deaths.formatted()) / A: \(stats.assists.formatted())")
                     .font(.caption)
                     .foregroundStyle(Theme.textSecondary)
 

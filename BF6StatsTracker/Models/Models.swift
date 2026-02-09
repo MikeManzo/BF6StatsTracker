@@ -362,6 +362,12 @@ struct PlayerStats: Codable, Identifiable {
         // This field doesn't exist in the API - would need separate endpoint
         0.0
     }
+    
+    /// Calculate KDA ratio: (Kills + Assists) / Deaths
+    var kdaRatio: Double {
+        let killsAndAssists = kills + assists
+        return deaths > 0 ? Double(killsAndAssists) / Double(deaths) : Double(killsAndAssists)
+    }
 
     enum CodingKeys: String, CodingKey {
         // Basic Info
@@ -1612,7 +1618,6 @@ enum ComparisonMetric: String, CaseIterable, Identifiable {
     case resupplies = "Resupplies"
     
     // Progression
-    case rank = "Rank"
     case totalXP = "Total XP"
     case playtime = "Hours Played"
     case matchesPlayed = "Matches"
@@ -1630,7 +1635,7 @@ enum ComparisonMetric: String, CaseIterable, Identifiable {
             return .combat
         case .revives, .assists, .spotAssists, .resupplies:
             return .teamSupport
-        case .rank, .totalXP, .playtime, .matchesPlayed:
+        case .totalXP, .playtime, .matchesPlayed:
             return .progression
         case .winPercent, .wins, .matchesWon:
             return .winRate
@@ -1650,7 +1655,6 @@ enum ComparisonMetric: String, CaseIterable, Identifiable {
         case .assists: return "hand.thumbsup.fill"
         case .spotAssists: return "eye.fill"
         case .resupplies: return "shippingbox.fill"
-        case .rank: return "number"
         case .totalXP: return "star.circle.fill"
         case .playtime: return "clock.fill"
         case .matchesPlayed: return "gamecontroller.fill"
@@ -1681,7 +1685,6 @@ enum ComparisonMetric: String, CaseIterable, Identifiable {
         case .assists: return Double(stats.assists)
         case .spotAssists: return Double(stats.enemiesSpotted)
         case .resupplies: return Double(stats.resupplies)
-        case .rank: return Double(stats.rank)
         case .totalXP: return Double(stats.totalScore)
         case .playtime: return Double(stats.secondsPlayed) / 3600.0
         case .matchesPlayed: return Double(stats.matchesPlayed)

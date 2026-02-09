@@ -615,9 +615,9 @@ struct SquadMemberCard: View {
                             )
                             
                             statBoxCompact(
-                                label: "Rank",
-                                value: "\(stats.rank)",
-                                icon: "star.fill",
+                                label: "K/D/A",
+                                value: String(format: "%.2f", stats.kdaRatio),
+                                icon: "chart.bar.fill",
                                 color: .purple
                             )
                         }
