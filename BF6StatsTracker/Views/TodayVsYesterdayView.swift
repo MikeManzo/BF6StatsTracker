@@ -1286,7 +1286,8 @@ struct TodayVsYesterdayView: View {
                 GeometryReader { geometry in
                     if showTooltips,
                        let position = selectedChartPosition,
-                       let snapshot = snapshotsForChart.first(where: { abs($0.xPosition - position) < 0.15 }),
+                       let snapshot = snapshotsForChart.min(by: { abs($0.xPosition - position) < abs($1.xPosition - position) }),
+                       abs(snapshot.xPosition - position) < 0.5,
                        let barX = proxy.position(forX: snapshot.xPosition) {
                         
                         let tooltipX = barX + geometry[proxy.plotFrame!].origin.x
