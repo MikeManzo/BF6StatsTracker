@@ -656,40 +656,4 @@ enum GadgetCategory: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Async Image Loader (if not already defined elsewhere)
 
-struct AsyncGameImage: View {
-    let url: URL?
-    let placeholder: Image
-    
-    var body: some View {
-        if let url = url {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                case .failure:
-                    placeholder
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .foregroundColor(.secondary)
-                @unknown default:
-                    placeholder
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .foregroundColor(.secondary)
-                }
-            }
-        } else {
-            placeholder
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .foregroundColor(.secondary)
-        }
-    }
-}

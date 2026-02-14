@@ -210,27 +210,33 @@ struct GadgetTypeFilterButton: View {
 
 struct GadgetCard: View {
     let gadget: GadgetStats
-    @State private var isExpanded = false
     @Environment(\.accentColor) private var accentColor
     
     var body: some View {
         VStack(spacing: 0) {
+            // Header with gadget info and primary metric
             headerSection
+                .padding(16)
             
+            // Separator
             Divider()
+                .background(Theme.borderColor.opacity(0.3))
+            
+            // Key performance metrics - 2 column layout
+            keyMetricsSection
+                .padding(16)
+            
+            // Additional details footer
+            Divider()
+                .background(Theme.borderColor.opacity(0.3))
+            
+            detailsFooter
+                .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-            
-            statsGrid
-            
-            expandButton
-            
-            if isExpanded {
-                expandedDetails
-            }
         }
-        .padding()
         .background(cardBackground)
         .overlay(cardBorder)
+        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
     
     // MARK: - Subviews
@@ -238,9 +244,21 @@ struct GadgetCard: View {
     private var headerSection: some View {
         HStack(spacing: 12) {
             gadgetImage
-            gadgetInfo
+            
+            VStack(alignment: .leading, spacing: 3) {
+                Text(gadget.gadgetName)
+                    .font(.system(.body, design: .default, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
+                    .lineLimit(1)
+
+                Text(gadget.type.isEmpty ? "Equipment" : gadget.type)
+                    .font(.system(.caption, design: .default))
+                    .foregroundColor(Theme.textSecondary)
+            }
+
             Spacer()
-            primaryStat
+            
+            killsBadge
         }
     }
     
@@ -249,9 +267,9 @@ struct GadgetCard: View {
             url: URL(string: gadget.image),
             placeholder: Image(systemName: placeholderIcon)
         )
-        .frame(width: 60, height: 60)
-        .background(Theme.overlayColor)
-        .cornerRadius(12)
+        .frame(width: 80, height: 56)
+        .background(Theme.overlayColor.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     /// Returns an appropriate SF Symbol based on gadget ID for gadgets without images
@@ -269,7 +287,7 @@ struct GadgetCard: View {
         case "decoy": return "person.fill.questionmark"
 
         // Deployables
-        case "ladder": return "ladder.fill"
+        case "ladder": return "stairs"
         case "deplocover", "deployable": return "shield.fill"
         case "deploymortar": return "burst.fill"
         case "deploybeacon": return "antenna.radiowaves.left.and.right"
@@ -295,121 +313,94 @@ struct GadgetCard: View {
         }
     }
     
-    private var gadgetInfo: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(gadget.gadgetName)
-                .font(.headline)
-                .fontWeight(.bold)
-            
-            Text(gadget.type)
-                .font(.caption)
+    private var killsBadge: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text("\(gadget.kills)")
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundColor(Theme.bf6Red)
+
+            Text("KILLS")
+                .font(.system(.caption2, design: .default, weight: .medium))
                 .foregroundColor(Theme.textSecondary)
+                .tracking(0.5)
         }
     }
     
-    private var primaryStat: some View {
-        VStack(alignment: .trailing, spacing: 2) {
-            if gadget.kills > 0 {
-                Text("\(gadget.kills)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundColor(Theme.error)
-                Text("kills")
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
-            } else {
-                Text("\(gadget.uses)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundColor(Theme.info)
-                Text("uses")
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
+    private var keyMetricsSection: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                GadgetMetricCard(
+                    icon: "hand.tap.fill",
+                    label: "Uses",
+                    value: "\(gadget.uses)",
+                    color: Theme.bf6Blue
+                )
+                
+                GadgetMetricCard(
+                    icon: "flame.fill",
+                    label: "Damage",
+                    value: damageValue,
+                    color: accentColor
+                )
+            }
+            
+            HStack(spacing: 12) {
+                GadgetMetricCard(
+                    icon: "car.fill",
+                    label: "Vehicles",
+                    value: "\(gadget.vehiclesDestroyed)",
+                    color: Theme.bf6Green
+                )
+                
+                GadgetMetricCard(
+                    icon: "clock",
+                    label: "Time",
+                    value: formatTime(gadget.timePlayed),
+                    color: .purple
+                )
             }
         }
     }
     
-    private var statsGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            GadgetStatItem(
-                icon: "target",
-                label: "Kills",
-                value: "\(gadget.kills)",
-                color: Theme.bf6Red
-            )
+    private var detailsFooter: some View {
+        HStack(spacing: 0) {
+            FooterStat(label: "Spawns", value: "\(gadget.spawns)")
             
-            GadgetStatItem(
-                icon: "hand.tap.fill",
-                label: "Uses",
-                value: "\(gadget.uses)",
-                color: Theme.bf6Blue
-            )
+            Divider()
+                .frame(height: 20)
+                .background(Theme.borderColor.opacity(0.3))
             
-            GadgetStatItem(
-                icon: "flame.fill",
-                label: "Damage",
-                value: damageValue,
-                color: accentColor
-            )
+            FooterStat(label: "Multi-kills", value: "\(gadget.multiKills)")
             
-            GadgetStatItem(
-                icon: "car.fill",
-                label: "Vehicles",
-                value: "\(gadget.vehiclesDestroyed)",
-                color: Theme.bf6Green
-            )
+            Divider()
+                .frame(height: 20)
+                .background(Theme.borderColor.opacity(0.3))
+            
+            FooterStat(label: "Efficiency", value: efficiencyValue)
         }
     }
+    
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Theme.cardBackground)
+    }
+    
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(Theme.borderColor.opacity(0.5), lineWidth: 1)
+    }
+
+    // MARK: - Helpers
     
     private var damageValue: String {
         gadget.damageDealt.formatted(.number.notation(.compactName))
     }
     
-    private var expandButton: some View {
-        Button {
-            withAnimation(.spring(response: 0.3)) {
-                isExpanded.toggle()
-            }
-        } label: {
-            HStack {
-                Spacer()
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption)
-                    .foregroundColor(Theme.textSecondary)
-                Spacer()
-            }
-            .padding(.top, 8)
-        }
-        .buttonStyle(.plain)
+    private var efficiencyValue: String {
+        guard gadget.uses > 0 else { return "N/A" }
+        let killsPerUse = Double(gadget.kills) / Double(gadget.uses)
+        return String(format: "%.2f K/Use", killsPerUse)
     }
-    
-    private var expandedDetails: some View {
-        Group {
-            Divider()
-                .padding(.vertical, 8)
-            
-            VStack(spacing: 8) {
-                DetailRow(label: "Spawns from Gadget", value: "\(gadget.spawns)")
-                DetailRow(label: "Time Used", value: formatTime(gadget.timePlayed))
-                DetailRow(label: "Efficiency", value: calculateEfficiency())
-            }
-        }
-    }
-    
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .fill(Theme.cardBackground)
-    }
-    
-    private var cardBorder: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .stroke(Theme.overlayColor, lineWidth: 1)
-    }
-    
-    // MARK: - Helper Methods
     
     private func formatTime(_ seconds: Int) -> String {
         let hours = seconds / 3600
@@ -419,57 +410,40 @@ struct GadgetCard: View {
         }
         return "\(minutes)m"
     }
-    
-    private func calculateEfficiency() -> String {
-        guard gadget.uses > 0 else { return "N/A" }
-        let killsPerUse = Double(gadget.kills) / Double(gadget.uses)
-        return String(format: "%.2f kills/use", killsPerUse)
-    }
 }
 
-// MARK: - Gadget Stat Item
+// MARK: - Gadget Metric Card Component
 
-struct GadgetStatItem: View {
+struct GadgetMetricCard: View {
     let icon: String
     let label: String
     let value: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 4) {
+        HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(color)
+                .font(.system(size: 16))
+                .foregroundColor(color.opacity(0.8))
+                .frame(width: 24, height: 24)
             
-            Text(value)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(Theme.textPrimary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(.caption, design: .default))
+                    .foregroundColor(Theme.textSecondary)
+                
+                Text(value)
+                    .font(.system(.callout, design: .rounded, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
+                    .lineLimit(1)
+            }
             
-            Text(label)
-                .font(.caption2)
-                .foregroundColor(Theme.textSecondary)
+            Spacer(minLength: 0)
         }
-    }
-}
-
-// MARK: - Detail Row
-
-struct DetailRow: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(Theme.textSecondary)
-            
-            Spacer()
-            
-            Text(value)
-                .font(.caption)
-                .fontWeight(.semibold)
-        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Theme.overlayColor.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 
