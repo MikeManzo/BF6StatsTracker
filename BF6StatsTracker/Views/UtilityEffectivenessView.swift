@@ -20,351 +20,309 @@ import SwiftUI
 
 struct UtilityEffectivenessView: View {
     @Environment(\.accentColor) private var accentColor
+    @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedGadget: GadgetStats?
-    @State private var sortBy: GadgetSortOption = .kills
+    @State private var searchText = ""
+    @AppStorage("utilityEffectiveness_collapsedCategories") private var collapsedCategoriesData: Data = Data()
+    
+    @State private var collapsedCategories: Set<String> = []
 
-    enum GadgetSortOption: String, CaseIterable {
-        case kills = "Kills"
-        case efficiency = "Efficiency"
-        case uses = "Uses"
-        case damage = "Damage"
+    private var usesGlass: Bool {
+        if #available(macOS 26, *) { return liquidGlassEnabled }
+        return false
     }
 
     var body: some View {
-        VStack(spacing: 20) {
+        HStack(spacing: 0) {
+            // Sidebar
+            sidebar
+                .frame(width: 250)
+            
+            Divider()
+            
+            // Detail Panel
+            detailPanel
+                .frame(maxWidth: .infinity)
+        }
+        .onAppear {
+            loadCollapsedCategories()
+            // Auto-select first gadget if none selected
+            if selectedGadget == nil, let first = viewModel.gadgetStats.first {
+                selectedGadget = first
+            }
+        }
+    }
+
+    // MARK: - Sidebar
+    
+    private var sidebar: some View {
+        VStack(spacing: 0) {
             // Header
-            HStack {
-                Image(systemName: "wrench.and.screwdriver.fill")
-                    .font(.title)
-                    .foregroundColor(Theme.bf6Blue)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Utility & Gadget Effectiveness")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.textPrimary)
-
-                    Text("Tactical equipment performance analysis")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-
-                Spacer()
-            }
-
-            if let stats = viewModel.playerStats {
-                // Overall Utility Stats
-                overallUtilityStats(stats: stats)
-
-                // Gadgets Section
-                if let gadgets = stats.gadgets, !gadgets.isEmpty {
-                    gadgetsSection(gadgets: gadgets)
-
-                    if let selected = selectedGadget {
-                        gadgetDetailView(gadget: selected)
-                    }
-                }
-            } else {
-                Text("No utility stats available")
-                    .foregroundColor(Theme.textSecondary)
-            }
-        }
-        .padding()
-    }
-
-    // MARK: - Overall Utility Stats
-
-    private func overallUtilityStats(stats: PlayerStats) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Tactical Utility Performance")
-                .font(.headline)
-                .foregroundColor(Theme.textPrimary)
-
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                utilityStatCard(
-                    title: "Throwables Used",
-                    value: "\(stats.thrownThrowables)",
-                    icon: "circlebadge.fill",
-                    color: .red,
-                    description: "Grenades & equipment thrown"
-                )
-
-                utilityStatCard(
-                    title: "Gadgets Destroyed",
-                    value: "\(stats.gadgetsDestoyed)",
-                    icon: "xmark.circle.fill",
-                    color: .orange,
-                    description: "Enemy gadgets destroyed"
-                )
-
-                utilityStatCard(
-                    title: "Takedowns",
-                    value: "\(stats.playerTakeDowns)",
-                    icon: "figure.martial.arts",
-                    color: .purple,
-                    description: "Player takedowns"
-                )
-
-                utilityStatCard(
-                    title: "Throwables/Match",
-                    value: String(format: "%.1f", Double(stats.thrownThrowables) / Double(max(stats.matchesPlayed, 1))),
-                    icon: "chart.bar.fill",
-                    color: .blue,
-                    description: "Average per match"
-                )
-            }
-
-            // Utility Effectiveness Rating
-            utilityEffectivenessRating(stats: stats)
-        }
-        .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(12)
-    }
-
-    private func utilityStatCard(title: String, value: String, icon: String, color: Color, description: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
-
-            Text(value)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(Theme.textPrimary)
-
-            Text(title)
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(Theme.textPrimary)
-                .multilineTextAlignment(.center)
-
-            Text(description)
-                .font(.caption2)
-                .foregroundColor(Theme.textSecondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-        }
-        .frame(height: 140)
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Theme.backgroundSecondary)
-        .cornerRadius(8)
-    }
-
-    private func utilityEffectivenessRating(stats: PlayerStats) -> some View {
-        let rating = calculateUtilityRating(stats: stats)
-
-        return VStack(spacing: 8) {
-            HStack {
-                Text("Utility Effectiveness")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Theme.textPrimary)
-
-                Spacer()
-
-                Text(rating.label)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(rating.color)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(rating.color.opacity(0.2))
-                    .cornerRadius(6)
-            }
-
-            ProgressView(value: rating.score, total: 100)
-                .tint(rating.color)
-        }
-        .padding()
-        .background(Theme.backgroundSecondary)
-        .cornerRadius(8)
-    }
-
-    // MARK: - Gadgets Section
-
-    private func gadgetsSection(gadgets: [GadgetStats]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Gadget Performance")
-                    .font(.headline)
-                    .foregroundColor(Theme.textPrimary)
-
-                Spacer()
-
-                // Sort picker
-                Menu {
-                    ForEach(GadgetSortOption.allCases, id: \.self) { option in
-                        Button {
-                            sortBy = option
-                        } label: {
-                            HStack {
-                                Text("Sort by \(option.rawValue)")
-                                if sortBy == option {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(sortBy.rawValue)
-                            .font(.caption)
-                        Image(systemName: "arrow.up.arrow.down")
-                            .font(.caption2)
-                    }
-                    .foregroundColor(Theme.textPrimary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Theme.overlayColor)
-                    .cornerRadius(6)
-                }
-                .buttonStyle(.plain)
-            }
-
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                ForEach(sortedGadgets(gadgets)) { gadget in
-                    gadgetCard(gadget: gadget)
-                }
-            }
-        }
-        .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(12)
-    }
-
-    private func sortedGadgets(_ gadgets: [GadgetStats]) -> [GadgetStats] {
-        switch sortBy {
-        case .kills:
-            return gadgets.sorted { $0.kills > $1.kills }
-        case .efficiency:
-            return gadgets.sorted { getEfficiency($0) > getEfficiency($1) }
-        case .uses:
-            return gadgets.sorted { $0.uses > $1.uses }
-        case .damage:
-            return gadgets.sorted { $0.damage > $1.damage }
-        }
-    }
-
-    private func getEfficiency(_ gadget: GadgetStats) -> Double {
-        guard gadget.uses > 0 else { return 0 }
-        return Double(gadget.kills) / Double(gadget.uses)
-    }
-
-    private func gadgetCard(gadget: GadgetStats) -> some View {
-        Button {
-            withAnimation {
-                selectedGadget = gadget
-            }
-        } label: {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text(gadget.gadgetName)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textPrimary)
-                        .lineLimit(2)
-
-                    Spacer()
-
-                    if selectedGadget?.gadgetId == gadget.gadgetId {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(Theme.success)
+                    Image(systemName: "wrench.and.screwdriver.fill")
+                        .font(.title3)
+                        .foregroundColor(accentColor)
+                    
+                    Text("Gadgets")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                }
+                
+                // Search
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    TextField("Search...", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.caption)
+                    
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-
-                Text(gadget.type)
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
-
-                Divider()
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(gadget.kills)")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(accentColor)
-
-                        Text("kills")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(String(format: "%.2f", getEfficiency(gadget)))
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(getEfficiencyColor(getEfficiency(gadget)))
-
-                        Text("K/Use")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
+                .padding(6)
+                .background(Theme.overlayColor)
+                .cornerRadius(6)
+            }
+            .padding()
+            
+            Divider()
+            
+            // Gadget List
+            ScrollView {
+                LazyVStack(spacing: 2) {
+                    ForEach(GadgetCategory.allCases) { category in
+                        categorySection(category: category)
                     }
                 }
             }
-            .padding()
-            .background(selectedGadget?.gadgetId == gadget.gadgetId ? Theme.bf6Blue.opacity(0.2) : Theme.backgroundSecondary)
-            .cornerRadius(8)
+        }
+        .background(Theme.backgroundSecondary)
+    }
+    
+    private func categorySection(category: GadgetCategory) -> some View {
+        let gadgets = gadgetsInCategory(category)
+        let isCollapsed = collapsedCategories.contains(category.rawValue)
+        
+        return VStack(spacing: 0) {
+            // Category Header
+            Button(action: {
+                toggleCategory(category)
+            }) {
+                HStack {
+                    Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .frame(width: 12)
+                    
+                    Text(category.displayName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.textPrimary)
+                    
+                    Spacer()
+                    
+                    Text("\(gadgets.count)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Theme.overlayColor.opacity(0.5))
+                        .cornerRadius(4)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Theme.overlayColor.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+            
+            // Gadget Items
+            if !isCollapsed {
+                ForEach(gadgets) { gadget in
+                    gadgetListItem(gadget: gadget)
+                }
+            }
+        }
+    }
+    
+    private func gadgetListItem(gadget: GadgetStats) -> some View {
+        let isSelected = selectedGadget?.gadgetId == gadget.gadgetId
+        
+        return Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedGadget = gadget
+            }
+        }) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(gadget.gadgetName)
+                        .font(.caption)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                        .foregroundColor(isSelected ? accentColor : Theme.textPrimary)
+                        .lineLimit(1)
+                    
+                    Text("\(gadget.kills) kills")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(accentColor)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 6)
+            .background(isSelected ? accentColor.opacity(0.15) : Color.clear)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
-
-    // MARK: - Gadget Detail View
-
-    private func gadgetDetailView(gadget: GadgetStats) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(gadget.gadgetName)
-                        .font(.title2)
-                        .fontWeight(.bold)
+    
+    private func gadgetsInCategory(_ category: GadgetCategory) -> [GadgetStats] {
+        let categoryGadgets = viewModel.gadgetStats.filter { matchesCategory($0, category: category) }
+        
+        if searchText.isEmpty {
+            return categoryGadgets.sorted { $0.kills > $1.kills }
+        } else {
+            return categoryGadgets
+                .filter { $0.gadgetName.localizedCaseInsensitiveContains(searchText) }
+                .sorted { $0.kills > $1.kills }
+        }
+    }
+    
+    private func toggleCategory(_ category: GadgetCategory) {
+        if collapsedCategories.contains(category.rawValue) {
+            collapsedCategories.remove(category.rawValue)
+        } else {
+            collapsedCategories.insert(category.rawValue)
+        }
+        saveCollapsedCategories()
+    }
+    
+    private func loadCollapsedCategories() {
+        if let decoded = try? JSONDecoder().decode(Set<String>.self, from: collapsedCategoriesData) {
+            collapsedCategories = decoded
+        }
+    }
+    
+    private func saveCollapsedCategories() {
+        if let encoded = try? JSONEncoder().encode(collapsedCategories) {
+            collapsedCategoriesData = encoded
+        }
+    }
+    
+    // MARK: - Detail Panel
+    
+    private var detailPanel: some View {
+        ScrollView {
+            if let gadget = selectedGadget {
+                VStack(spacing: 20) {
+                    // Gadget Header
+                    gadgetHeader(gadget: gadget)
+                    
+                    // Usage & Efficiency
+                    usageAndEfficiency(gadget: gadget)
+                    
+                    // Combat Performance
+                    gadgetCombatStats(gadget: gadget)
+                    
+                    // Damage Analysis
+                    gadgetDamageAnalysis(gadget: gadget)
+                    
+                    // Complete Stats Table
+                    completeStatsTable(gadget: gadget)
+                }
+                .padding()
+            } else {
+                VStack(spacing: 16) {
+                    Image(systemName: "wrench.and.screwdriver.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    
+                    Text("Select a gadget")
+                        .font(.title3)
                         .foregroundColor(Theme.textPrimary)
-
-                    Text(gadget.type)
-                        .font(.subheadline)
-                        .foregroundColor(Theme.textSecondary)
+                    
+                    Text("Choose a gadget from the sidebar to view detailed statistics")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                 }
-
-                Spacer()
-
-                Button {
-                    withAnimation {
-                        selectedGadget = nil
-                    }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-
-            // Usage & Efficiency
-            usageAndEfficiency(gadget: gadget)
-
-            // Combat Stats
-            gadgetCombatStats(gadget: gadget)
-
-            // Damage Analysis
-            gadgetDamageAnalysis(gadget: gadget)
+        }
+    }
+    
+    private func gadgetHeader(gadget: GadgetStats) -> some View {
+        HStack(spacing: 16) {
+            AsyncGameImage(
+                url: URL(string: gadget.image),
+                placeholder: Image(systemName: "wrench.and.screwdriver.fill")
+            )
+            .frame(width: 100, height: 70)
+            .background(Theme.overlayColor)
+            .cornerRadius(12)
+            .id(gadget.gadgetId)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(gadget.gadgetName)
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Text(gadget.type)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                HStack(spacing: 16) {
+                    Label("\(gadget.kills)", systemImage: "target")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                    
+                    Label(String(format: "%.2f K/Use", getEfficiency(gadget)), systemImage: "chart.line.uptrend.xyaxis")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    
+                    Label(String(format: "%.2f KPM", gadget.kpm), systemImage: "timer")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+            }
+            
+            Spacer()
         }
         .padding()
-        .background(Theme.overlayColor)
+        .background(Theme.backgroundSecondary)
         .cornerRadius(12)
+    }
+    
+    /// Flexible category matching that handles various API response formats
+    private func matchesCategory(_ gadget: GadgetStats, category: GadgetCategory) -> Bool {
+        let type = gadget.type.lowercased()
+
+        switch category {
+        case .lethal:
+            return type.contains("grenade") || type.contains("explosive") || type.contains("c5") || type.contains("mine")
+        case .tactical:
+            return type.contains("smoke") || type.contains("flash") || type.contains("emp") || type.contains("stun")
+        case .equipment:
+            return type.contains("sensor") || type.contains("spawn") || type.contains("ammo") || type.contains("medic") || type.contains("repair")
+        case .launcher:
+            return type.contains("launcher") || type.contains("rocket") || type.contains("missile")
+        }
     }
 
     // MARK: - Usage & Efficiency
@@ -581,78 +539,100 @@ struct UtilityEffectivenessView: View {
             .cornerRadius(8)
         }
     }
+    
+    // MARK: - Complete Stats Table
+    
+    private func completeStatsTable(gadget: GadgetStats) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Complete Statistics")
+                .font(.headline)
+                .foregroundColor(Theme.textPrimary)
+            
+            VStack(spacing: 0) {
+                statRow(label: "Kills", value: "\(gadget.kills)")
+                statRow(label: "Multi-Kills", value: "\(gadget.multiKills)")
+                statRow(label: "Assists", value: "\(gadget.assists)")
+                statRow(label: "Uses", value: "\(gadget.uses)")
+                statRow(label: "Spawns", value: "\(gadget.spawns)")
+                statRow(label: "Damage", value: formatNumber(gadget.damage))
+                statRow(label: "Assist Damage", value: formatNumber(gadget.assistsDamage))
+                statRow(label: "Vehicles Destroyed", value: "\(gadget.vehiclesDestroyedWith)")
+                statRow(label: "Kills per Minute", value: String(format: "%.3f", gadget.kpm))
+                statRow(label: "Damage per Minute", value: String(format: "%.1f", gadget.dpm))
+                statRow(label: "Efficiency (K/Use)", value: String(format: "%.3f", getEfficiency(gadget)))
+                statRow(label: "Time Equipped", value: formatPlaytime(gadget.secondsPlayed))
+            }
+            .background(Theme.backgroundSecondary)
+            .cornerRadius(8)
+        }
+    }
+    
+    private func statRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+            
+            Spacer()
+            
+            Text(value)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(Theme.textPrimary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Theme.backgroundSecondary)
+    }
 
     // MARK: - Helper Functions
 
-    private func calculateUtilityRating(stats: PlayerStats) -> (score: Double, label: String, color: Color) {
-        let throwablesScore = Double(stats.thrownThrowables) * 2
-        let gadgetsDestroyedScore = Double(stats.gadgetsDestoyed) * 5
-        let takedownsScore = Double(stats.playerTakeDowns) * 10
-
-        let totalScore = throwablesScore + gadgetsDestroyedScore + takedownsScore
-        let matchCount = Double(max(stats.matchesPlayed, 1))
-        let scorePerMatch = totalScore / matchCount
-
-        let normalizedScore = min(scorePerMatch / 5.0, 100.0) // Normalize to 0-100
-
-        switch normalizedScore {
-        case 75...:
-            return (normalizedScore, "Elite Tactician", .purple)
-        case 50..<75:
-            return (normalizedScore, "Expert", .blue)
-        case 30..<50:
-            return (normalizedScore, "Proficient", .green)
-        case 15..<30:
-            return (normalizedScore, "Competent", .yellow)
-        default:
-            return (normalizedScore, "Developing", .orange)
-        }
-    }
-
-    private func getEfficiencyColor(_ efficiency: Double) -> Color {
-        switch efficiency {
-        case 0.5...:
-            return .purple
-        case 0.3..<0.5:
-            return .blue
-        case 0.15..<0.3:
-            return .green
-        case 0.05..<0.15:
-            return .yellow
-        default:
-            return .orange
-        }
+    private func getEfficiency(_ gadget: GadgetStats) -> Double {
+        guard gadget.uses > 0 else { return 0 }
+        return Double(gadget.kills) / Double(gadget.uses)
     }
 
     private func getEfficiencyRating(_ efficiency: Double) -> String {
         switch efficiency {
-        case 0.5...:
+        case 1...:
             return "Exceptional"
-        case 0.3..<0.5:
-            return "Excellent"
-        case 0.15..<0.3:
+        case 0.5..<1:
+            return "Very Good"
+        case 0.25..<0.5:
             return "Good"
-        case 0.05..<0.15:
+        case 0.1..<0.25:
             return "Average"
         default:
             return "Low"
         }
     }
 
-    private func formatNumber(_ num: Int) -> String {
-        if num >= 1_000_000 {
-            return String(format: "%.1fM", Double(num) / 1_000_000)
-        } else if num >= 1_000 {
-            return String(format: "%.1fK", Double(num) / 1_000)
-        } else {
-            return "\(num)"
+    private func getEfficiencyColor(_ efficiency: Double) -> Color {
+        switch efficiency {
+        case 1...:
+            return .purple
+        case 0.5..<1:
+            return .green
+        case 0.25..<0.5:
+            return .blue
+        case 0.1..<0.25:
+            return .orange
+        default:
+            return .red
         }
+    }
+
+    private func formatNumber(_ number: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
     }
 
     private func formatPlaytime(_ seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
-
+        
         if hours > 0 {
             return "\(hours)h \(minutes)m"
         } else {
@@ -661,8 +641,55 @@ struct UtilityEffectivenessView: View {
     }
 }
 
-#Preview {
-    UtilityEffectivenessView()
-        .environmentObject(StatsViewModel())
-        .frame(width: 1200, height: 900)
+// MARK: - Gadget Categories
+
+enum GadgetCategory: String, CaseIterable, Identifiable {
+    case lethal = "Lethal"
+    case tactical = "Tactical"
+    case equipment = "Equipment"
+    case launcher = "Launcher"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        rawValue
+    }
+}
+
+// MARK: - Async Image Loader (if not already defined elsewhere)
+
+struct AsyncGameImage: View {
+    let url: URL?
+    let placeholder: Image
+    
+    var body: some View {
+        if let url = url {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                case .failure:
+                    placeholder
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .foregroundColor(.secondary)
+                @unknown default:
+                    placeholder
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .foregroundColor(.secondary)
+                }
+            }
+        } else {
+            placeholder
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .foregroundColor(.secondary)
+        }
+    }
 }
