@@ -309,6 +309,21 @@ struct SessionHistoryView: View {
             if !allSnapshots.isEmpty {
                 isInitialLoad = false
             }
+            
+            // Auto-collapse all sections except Today and Yesterday
+            if collapsedSections.isEmpty {
+                let calendar = Calendar.current
+                let today = calendar.startOfDay(for: Date())
+                let yesterday = calendar.date(byAdding: .day, value: -1, to: today)
+                
+                for date in groupedSnapshots.keys {
+                    // Only keep Today and Yesterday expanded
+                    if !calendar.isDate(date, inSameDayAs: today),
+                       let yesterday = yesterday, !calendar.isDate(date, inSameDayAs: yesterday) {
+                        collapsedSections.insert(date)
+                    }
+                }
+            }
         }
         .onChange(of: allSnapshots.count) { _, newCount in
             // As soon as snapshots load, dismiss skeleton
@@ -686,37 +701,37 @@ struct SnapshotRow: View {
 
             Divider()
 
-            // Core stats - show delta values
+            // Core stats - show delta values in 5x2 grid
             if let deltaStats = getDeltaStats() {
-                HStack(spacing: 8) {
-                    StatChip(label: "K/D", value: String(format: "%.2f", deltaStats.kdRatio), color: deltaStats.kdRatio >= 1.0 ? Theme.success : Theme.warning)
-                    StatChip(label: "Kills", value: formatDelta(deltaStats.kills), color: Theme.error)
-                    StatChip(label: "Deaths", value: formatDelta(deltaStats.deaths), color: Theme.textSecondary)
-                    StatChip(label: "Assists", value: formatDelta(deltaStats.assists), color: .cyan)
-                    StatChip(label: "Wins", value: formatDelta(deltaStats.wins), color: .blue)
-                    StatChip(label: "Matches", value: formatDelta(deltaStats.matches), color: .cyan)
-                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", deltaStats.accuracy), color: .purple)
-                    StatChip(label: "HS%", value: String(format: "%.1f%%", deltaStats.headshotPercentage), color: .yellow)
-                    StatChip(label: "KPM", value: String(format: "%.2f", deltaStats.killsPerMinute), color: .pink)
-                    StatChip(label: "Score", value: formatScore(deltaStats.totalScore), color: .indigo)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
+                    StatChip(label: "K/D", value: String(format: "%.2f", deltaStats.kdRatio), color: deltaStats.kdRatio >= 1.0 ? Theme.success : Theme.warning, icon: "chart.line.uptrend.xyaxis")
+                    StatChip(label: "Kills", value: formatDelta(deltaStats.kills), color: Theme.error, icon: "scope")
+                    StatChip(label: "Deaths", value: formatDelta(deltaStats.deaths), color: Theme.textSecondary, icon: "heart.slash")
+                    StatChip(label: "Assists", value: formatDelta(deltaStats.assists), color: .cyan, icon: "person.2")
+                    StatChip(label: "Wins", value: formatDelta(deltaStats.wins), color: .blue, icon: "trophy.fill")
+                    StatChip(label: "Matches", value: formatDelta(deltaStats.matches), color: .cyan, icon: "flag.checkered")
+                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", deltaStats.accuracy), color: .purple, icon: "target")
+                    StatChip(label: "HS%", value: String(format: "%.1f%%", deltaStats.headshotPercentage), color: .yellow, icon: "viewfinder.circle")
+                    StatChip(label: "KPM", value: String(format: "%.2f", deltaStats.killsPerMinute), color: .pink, icon: "timer")
+                    StatChip(label: "Score", value: formatScore(deltaStats.totalScore), color: .indigo, icon: "star.fill")
                 }
+                .frame(maxWidth: .infinity)
             } else {
-                // First snapshot - show cumulative values
-                HStack(spacing: 8) {
-                    StatChip(label: "K/D", value: String(format: "%.2f", snapshot.kdRatio), color: snapshot.kdRatio >= 1.0 ? .green : .orange)
-                    StatChip(label: "Kills", value: "\(snapshot.kills)", color: .red)
-                    StatChip(label: "Deaths", value: "\(snapshot.deaths)", color: Theme.textSecondary)
-                    StatChip(label: "Assists", value: "\(snapshot.assists)", color: .cyan)
-                    StatChip(label: "Wins", value: "\(snapshot.wins)", color: .blue)
-                    StatChip(label: "Matches", value: "\(snapshot.matchesPlayed)", color: .cyan)
-                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", snapshot.accuracy), color: .purple)
-                    StatChip(label: "HS%", value: String(format: "%.1f%%", snapshot.headshotPercentage), color: .yellow)
-                    StatChip(label: "KPM", value: String(format: "%.2f", snapshot.killsPerMinute), color: .pink)
-                    StatChip(label: "Score", value: formatScore(snapshot.totalScore), color: .indigo)
+                // First snapshot - show cumulative values in 5x2 grid
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
+                    StatChip(label: "K/D", value: String(format: "%.2f", snapshot.kdRatio), color: snapshot.kdRatio >= 1.0 ? .green : .orange, icon: "chart.line.uptrend.xyaxis")
+                    StatChip(label: "Kills", value: "\(snapshot.kills)", color: .red, icon: "scope")
+                    StatChip(label: "Deaths", value: "\(snapshot.deaths)", color: Theme.textSecondary, icon: "heart.slash")
+                    StatChip(label: "Assists", value: "\(snapshot.assists)", color: .cyan, icon: "person.2")
+                    StatChip(label: "Wins", value: "\(snapshot.wins)", color: .blue, icon: "trophy.fill")
+                    StatChip(label: "Matches", value: "\(snapshot.matchesPlayed)", color: .cyan, icon: "flag.checkered")
+                    StatChip(label: "Accuracy", value: String(format: "%.1f%%", snapshot.accuracy), color: .purple, icon: "target")
+                    StatChip(label: "HS%", value: String(format: "%.1f%%", snapshot.headshotPercentage), color: .yellow, icon: "viewfinder.circle")
+                    StatChip(label: "KPM", value: String(format: "%.2f", snapshot.killsPerMinute), color: .pink, icon: "timer")
+                    StatChip(label: "Score", value: formatScore(snapshot.totalScore), color: .indigo, icon: "star.fill")
                 }
+                .frame(maxWidth: .infinity)
             }
-
-            Spacer()
 
             // Delete button
             Button(role: .destructive) {
@@ -862,22 +877,30 @@ struct StatChip: View {
     let label: String
     let value: String
     let color: Color
+    let icon: String
 
     var body: some View {
-        HStack(spacing: 4) {
+        VStack(spacing: 2) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .foregroundColor(color.opacity(0.7))
+            
             Text(value)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundColor(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             Text(label)
-                .font(.system(size: 10))
+                .font(.system(size: 9))
                 .foregroundColor(Theme.textSecondary)
+                .lineLimit(1)
         }
-        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 6)
         .padding(.vertical, 6)
         .background(color.opacity(0.1))
         .cornerRadius(6)
-        .fixedSize()
     }
 }
 
