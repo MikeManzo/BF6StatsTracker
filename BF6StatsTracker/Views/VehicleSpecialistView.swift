@@ -23,7 +23,10 @@ struct VehicleSpecialistView: View {
     @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
     @EnvironmentObject var viewModel: StatsViewModel
     @State private var selectedVehicle: VehicleStats?
-    @State private var selectedCategory: VehicleCategory?
+    @State private var searchText = ""
+    @AppStorage("vehicleSpecialist_collapsedCategories") private var collapsedCategoriesData: Data = Data()
+    
+    @State private var collapsedCategories: Set<String> = []
 
     private var usesGlass: Bool {
         if #available(macOS 26, *) { return liquidGlassEnabled }
@@ -31,66 +34,251 @@ struct VehicleSpecialistView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header
-                HStack {
-                    Image(systemName: "car.fill")
-                        .font(.title)
-                        .foregroundColor(accentColor)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Vehicle Specialist Dashboard")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Theme.textPrimary)
-
-                        Text("Master of mechanized warfare")
-                            .font(.caption)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-
-                    Spacer()
-
-                    if !viewModel.vehicleStats.isEmpty {
-                        vehicleSpecScore(vehicles: viewModel.vehicleStats)
-                    }
-                }
-
-                if !viewModel.vehicleStats.isEmpty {
-                    // Overall Vehicle Stats
-                    overallVehicleStats(vehicles: viewModel.vehicleStats)
-
-                    // Category Filter
-                    categoryFilterView
-
-                    // Vehicles Grid
-                    vehiclesGridView(vehicles: filteredVehicles)
-
-                    // Detailed Stats for Selected Vehicle
-                    if let vehicle = selectedVehicle {
-                        vehicleDetailView(vehicle: vehicle)
-                    }
-                } else {
-                    Text("No vehicle stats available")
-                        .foregroundColor(Theme.textSecondary)
-                }
+        HStack(spacing: 0) {
+            // Sidebar
+            sidebar
+                .frame(width: 250)
+            
+            Divider()
+            
+            // Detail Panel
+            detailPanel
+                .frame(maxWidth: .infinity)
+        }
+        .onAppear {
+            loadCollapsedCategories()
+            // Auto-select first vehicle if none selected
+            if selectedVehicle == nil, let first = viewModel.vehicleStats.first {
+                selectedVehicle = first
             }
-            .padding()
         }
     }
-
-    // MARK: - Vehicle Specialist Score
-
-    private func vehicleSpecScore(vehicles: [VehicleStats]) -> some View {
-        let score = calculateVehicleScore(vehicles: vehicles)
+    
+    // MARK: - Sidebar
+    
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "car.fill")
+                        .font(.title3)
+                        .foregroundColor(accentColor)
+                    
+                    Text("Vehicles")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                }
+                
+                // Search
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    TextField("Search...", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.caption)
+                    
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(6)
+                .background(Theme.overlayColor)
+                .cornerRadius(6)
+            }
+            .padding()
+            
+            Divider()
+            
+            // Vehicle List
+            ScrollView {
+                LazyVStack(spacing: 2) {
+                    ForEach(VehicleCategory.allCases) { category in
+                        categorySection(category: category)
+                    }
+                }
+            }
+        }
+        .background(Theme.backgroundSecondary)
+    }
+    
+    private func categorySection(category: VehicleCategory) -> some View {
+        let vehicles = vehiclesInCategory(category)
+        let isCollapsed = collapsedCategories.contains(category.rawValue)
+        
+        return VStack(spacing: 0) {
+            // Category Header
+            Button(action: {
+                toggleCategory(category)
+            }) {
+                HStack {
+                    Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .frame(width: 12)
+                    
+                    Text(category.displayName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Theme.textPrimary)
+                    
+                    Spacer()
+                    
+                    Text("\(vehicles.count)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Theme.overlayColor.opacity(0.5))
+                        .cornerRadius(4)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Theme.overlayColor.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+            
+            // Vehicle Items
+            if !isCollapsed {
+                ForEach(vehicles) { vehicle in
+                    vehicleSidebarItem(vehicle: vehicle)
+                }
+            }
+        }
+    }
+    
+    private func vehicleSidebarItem(vehicle: VehicleStats) -> some View {
+        let isSelected = selectedVehicle?.vehicleId == vehicle.vehicleId
+        
+        return Button(action: {
+            withAnimation {
+                selectedVehicle = vehicle
+            }
+        }) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(vehicle.vehicleName)
+                        .font(.caption)
+                        .foregroundColor(isSelected ? Theme.selectedText : Theme.textPrimary)
+                        .lineLimit(1)
+                    
+                    Text("\(vehicle.kills) kills")
+                        .font(.caption2)
+                        .foregroundColor(isSelected ? Theme.selectedText.opacity(0.8) : Theme.textSecondary)
+                }
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.caption2)
+                        .foregroundColor(Theme.selectedText)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(isSelected ? accentColor : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func vehiclesInCategory(_ category: VehicleCategory) -> [VehicleStats] {
+        let vehicles = viewModel.vehicleStats.filter { $0.type == category.rawValue }
+        
+        if searchText.isEmpty {
+            return vehicles.sorted { $0.kills > $1.kills }
+        }
+        
+        return vehicles.filter {
+            $0.vehicleName.localizedCaseInsensitiveContains(searchText)
+        }.sorted { $0.kills > $1.kills }
+    }
+    
+    private func toggleCategory(_ category: VehicleCategory) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if collapsedCategories.contains(category.rawValue) {
+                collapsedCategories.remove(category.rawValue)
+            } else {
+                collapsedCategories.insert(category.rawValue)
+            }
+            saveCollapsedCategories()
+        }
+    }
+    
+    private func loadCollapsedCategories() {
+        if let decoded = try? JSONDecoder().decode(Set<String>.self, from: collapsedCategoriesData) {
+            collapsedCategories = decoded
+        }
+    }
+    
+    private func saveCollapsedCategories() {
+        if let encoded = try? JSONEncoder().encode(collapsedCategories) {
+            collapsedCategoriesData = encoded
+        }
+    }
+    
+    // MARK: - Detail Panel
+    
+    private var detailPanel: some View {
+        ScrollView {
+            if let vehicle = selectedVehicle {
+                VStack(spacing: 20) {
+                    // Vehicle Header with Spec Score
+                    vehicleHeader(vehicle: vehicle)
+                    
+                    // Combat Performance
+                    combatPerformance(vehicle: vehicle)
+                    
+                    // Driver vs Passenger Analysis
+                    driverVsPassengerAnalysis(vehicle: vehicle)
+                    
+                    // Efficiency & Distance
+                    efficiencyAndDistance(vehicle: vehicle)
+                }
+                .padding()
+            } else {
+                emptyDetailView
+            }
+        }
+        .background(Theme.backgroundPrimary)
+    }
+    
+    private func vehicleHeader(vehicle: VehicleStats) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(vehicle.vehicleName)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Text(vehicle.type)
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            
+            Spacer()
+            
+            vehicleSpecScore(vehicle: vehicle)
+        }
+    }
+    
+    private func vehicleSpecScore(vehicle: VehicleStats) -> some View {
+        let score = calculateVehicleScoreSingle(vehicle: vehicle)
         let rating = getVehicleRating(score: score)
-
+        
         return VStack(spacing: 8) {
             Text("\(Int(score))")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
                 .foregroundColor(rating.color)
-
+            
             Text(rating.label)
                 .font(.caption)
                 .fontWeight(.semibold)
@@ -104,291 +292,33 @@ struct VehicleSpecialistView: View {
         .background(Theme.overlayColor)
         .cornerRadius(12)
     }
-
-    // MARK: - Overall Vehicle Stats
-
-    private func overallVehicleStats(vehicles: [VehicleStats]) -> some View {
-        let totalKills = vehicles.reduce(0) { $0 + $1.kills }
-        let totalRoadKills = vehicles.reduce(0) { $0 + $1.roadKills }
-        let totalDamage = vehicles.reduce(0) { $0 + $1.damage }
-        let totalDamageTaken = vehicles.reduce(0) { $0 + $1.damageTo }
-        let totalDistance = vehicles.reduce(0) { $0 + $1.distanceTraveled }
-        let totalDriverAssists = vehicles.reduce(0) { $0 + $1.driverAssists }
-        let totalPassengerAssists = vehicles.reduce(0) { $0 + $1.passengerAssists }
-
-        return LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            quickStatCard(
-                title: "Total Kills",
-                value: "\(totalKills)",
-                icon: "target",
-                color: .red
-            )
-
-            quickStatCard(
-                title: "Road Kills",
-                value: "\(totalRoadKills)",
-                icon: "figure.run",
-                color: .orange
-            )
-
-            quickStatCard(
-                title: "Distance",
-                value: formatDistance(totalDistance),
-                icon: "speedometer",
-                color: .blue
-            )
-
-            quickStatCard(
-                title: "Survivability",
-                value: String(format: "%.1f%%", calculateSurvivability(damage: totalDamage, damageTaken: totalDamageTaken)),
-                icon: "shield.fill",
-                color: .green
-            )
-
-            quickStatCard(
-                title: "Driver Assists",
-                value: "\(totalDriverAssists)",
-                icon: "steeringwheel",
-                color: .purple
-            )
-
-            quickStatCard(
-                title: "Passenger Assists",
-                value: "\(totalPassengerAssists)",
-                icon: "person.2.fill",
-                color: .yellow
-            )
-
-            quickStatCard(
-                title: "Vehicles Destroyed",
-                value: "\(vehicles.reduce(0) { $0 + $1.vehiclesDestroyedWith })",
-                icon: "flame.fill",
-                color: .red
-            )
-
-            quickStatCard(
-                title: "Total Damage",
-                value: formatNumber(totalDamage),
-                icon: "burst.fill",
-                color: .orange
-            )
-        }
-    }
-
-    private func quickStatCard(title: String, value: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
+    
+    private var emptyDetailView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "car.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+            
+            Text("Select a Vehicle")
                 .font(.title2)
-                .foregroundColor(color)
-
-            Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
+                .fontWeight(.semibold)
                 .foregroundColor(Theme.textPrimary)
-
-            Text(title)
-                .font(.caption)
+            
+            Text("Choose a vehicle from the sidebar to view detailed statistics")
+                .font(.subheadline)
                 .foregroundColor(Theme.textSecondary)
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
         }
-        .frame(height: 100)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(8)
     }
 
-    // MARK: - Category Filter
 
-    private var categoryFilterView: some View {
-        GlassContainerWrapper(usesGlass: usesGlass) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    categoryButton(category: nil, label: "All Vehicles")
 
-                    ForEach(VehicleCategory.allCases) { category in
-                        categoryButton(category: category, label: category.rawValue)
-                    }
-                }
-            }
-        }
-    }
 
-    private func categoryButton(category: VehicleCategory?, label: String) -> some View {
-        let isSelected = selectedCategory == category
-        return Button {
-            withAnimation {
-                selectedCategory = category
-            }
-        } label: {
-            Text(label)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(isSelected ? Theme.selectedText : Theme.textPrimary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected && !usesGlass ? accentColor : (!isSelected && !usesGlass ? Theme.overlayColor : Color.clear))
-                .cornerRadius(8)
-                .modifier(SubTabGlassModifier(
-                    isSelected: isSelected,
-                    accentColor: accentColor,
-                    usesGlass: usesGlass
-                ))
-        }
-        .buttonStyle(.plain)
-    }
 
-    // MARK: - Filtered Vehicles
 
-    private var filteredVehicles: [VehicleStats] {
-        let vehicles = viewModel.vehicleStats
-
-        // Debug: Print all vehicle types
-        if selectedCategory != nil {
-            logInfo("All vehicle types available:", category: .general)
-            for vehicle in vehicles {
-                logInfo("  - \(vehicle.vehicleName): '\(vehicle.type)'", category: .general)
-            }
-        }
-
-        let filtered = selectedCategory == nil
-            ? vehicles
-            : vehicles.filter { matchesCategory($0, category: selectedCategory!) }
-
-        logSuccess("Filtered \(filtered.count) vehicles for category: \(selectedCategory?.rawValue ?? "All")", category: .success)
-
-        return filtered.sorted { $0.kills > $1.kills }
-    }
-
-    /// Match vehicle to category using exact API type
-    private func matchesCategory(_ vehicle: VehicleStats, category: VehicleCategory) -> Bool {
-        return vehicle.type == category.rawValue
-    }
-
-    // MARK: - Vehicles Grid
-
-    private func vehiclesGridView(vehicles: [VehicleStats]) -> some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            ForEach(vehicles) { vehicle in
-                vehicleCard(vehicle: vehicle)
-            }
-        }
-    }
-
-    private func vehicleCard(vehicle: VehicleStats) -> some View {
-        Button {
-            withAnimation {
-                selectedVehicle = vehicle
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(vehicle.vehicleName)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Theme.textPrimary)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    if selectedVehicle?.vehicleId == vehicle.vehicleId {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(Theme.success)
-                    }
-                }
-
-                Text(vehicle.type)
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
-
-                Divider()
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(vehicle.kills)")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(accentColor)
-
-                        Text("kills")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(formatDistance(vehicle.distanceTraveled))
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Theme.info)
-
-                        Text("distance")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-                }
-            }
-            .padding()
-            .background(selectedVehicle?.vehicleId == vehicle.vehicleId ? accentColor.opacity(0.2) : Theme.overlayColor)
-            .cornerRadius(8)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Vehicle Detail View
-
-    private func vehicleDetailView(vehicle: VehicleStats) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(vehicle.vehicleName)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.textPrimary)
-
-                    Text(vehicle.type)
-                        .font(.subheadline)
-                        .foregroundColor(Theme.textSecondary)
-                }
-
-                Spacer()
-
-                Button {
-                    withAnimation {
-                        selectedVehicle = nil
-                    }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Combat Performance
-            combatPerformance(vehicle: vehicle)
-
-            // Driver vs Passenger Analysis
-            driverVsPassengerAnalysis(vehicle: vehicle)
-
-            // Efficiency & Distance
-            efficiencyAndDistance(vehicle: vehicle)
-        }
-        .padding()
-        .background(Theme.overlayColor)
-        .cornerRadius(12)
-    }
 
     // MARK: - Combat Performance
 
@@ -681,6 +611,15 @@ struct VehicleSpecialistView: View {
         let totalDistance = Double(vehicles.reduce(0) { $0 + $1.distanceTraveled }) / 1000.0 // Convert to km
 
         return (totalKills * 10) + (totalRoadKills * 5) + (totalDamage / 1000) + (totalDistance / 10)
+    }
+    
+    private func calculateVehicleScoreSingle(vehicle: VehicleStats) -> Double {
+        let kills = Double(vehicle.kills)
+        let roadKills = Double(vehicle.roadKills)
+        let damage = Double(vehicle.damage)
+        let distance = Double(vehicle.distanceTraveled) / 1000.0 // Convert to km
+
+        return (kills * 10) + (roadKills * 5) + (damage / 1000) + (distance / 10)
     }
 
     private func getVehicleRating(score: Double) -> (label: String, color: Color) {
