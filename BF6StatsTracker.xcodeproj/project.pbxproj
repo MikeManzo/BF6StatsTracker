@@ -51,7 +51,6 @@
 		274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85552F141AF0000B1B90 /* LogViewerView.swift */; };
 		274F85592F141B32000B1B90 /* LogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85572F141B32000B1B90 /* LogViewModel.swift */; };
 		276C746B2F0D94F4002674A4 /* ProgressionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */; };
-		276C746E2F0D9502002674A4 /* XPCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746D2F0D9502002674A4 /* XPCalculatorView.swift */; };
 		276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */; };
 		276C74712F0EDC88002674A4 /* MapsPlayedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */; };
 		27AIC0012F4EABC100000001 /* AICoachAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */; };
@@ -139,7 +138,6 @@
 		274F85572F141B32000B1B90 /* LogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewModel.swift; sourceTree = "<group>"; };
 		276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionBadge.swift; sourceTree = "<group>"; };
 		276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeEfficiencyView.swift; sourceTree = "<group>"; };
-		276C746D2F0D9502002674A4 /* XPCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCalculatorView.swift; sourceTree = "<group>"; };
 		276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapsPlayedCard.swift; sourceTree = "<group>"; };
 		27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachAnalysis.swift; sourceTree = "<group>"; };
 		27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundNotificationService.swift; sourceTree = "<group>"; };
@@ -327,7 +325,6 @@
 				1000000000000010 /* VehicleStatsView.swift */,
 				27C4B8962F0ADCA400B07E9D /* WeaponMasteryView.swift */,
 				1000000000000008 /* WeaponStatsView.swift */,
-				276C746D2F0D9502002674A4 /* XPCalculatorView.swift */,
 				27D09C372F37E095004572A8 /* SquadComparisonView.swift */,
 			);
 			path = Views;
@@ -488,7 +485,6 @@
 				27E5437D2EE98E0800B01618 /* HistoryManager.swift in Sources */,
 				27E543852EE98F2D00B01618 /* PerformanceChartsView.swift in Sources */,
 				2719F33C2EF8819400C42191 /* DailyPerformanceView.swift in Sources */,
-				276C746E2F0D9502002674A4 /* XPCalculatorView.swift in Sources */,
 				276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */,
 				27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */,
 				274F85592F141B32000B1B90 /* LogViewModel.swift in Sources */,

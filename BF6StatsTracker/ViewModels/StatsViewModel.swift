@@ -925,7 +925,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .teamplay:
             return [.loadout, .support, .intel, .classes]
         case .tools:
-            return [.logViewer, .servers, .xpCalculator]
+            return [.logViewer, .servers]
         }
     }
 
@@ -975,7 +975,6 @@ enum StatTab: String, CaseIterable, Identifiable {
     // Tools sub-tabs
     case logViewer = "Logs"
     case servers = "Servers"
-    case xpCalculator = "XP Calc"
 
     var id: String { rawValue }
 
@@ -998,7 +997,6 @@ enum StatTab: String, CaseIterable, Identifiable {
         case .support: return "heart.text.square.fill"
         case .intel: return "eye.fill"
         case .loadout: return "chart.bar.doc.horizontal"
-        case .xpCalculator: return "function"
         case .servers: return "server.rack"
         case .logViewer: return "doc.text.magnifyingglass"
         }
