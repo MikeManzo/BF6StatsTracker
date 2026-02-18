@@ -27,8 +27,8 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild clean build \
-          -project "BF6StatsTracker.xcodeproj" \
-          -scheme "BF6StatsTracker" \
-          -destination "platform=macOS" \
-          CODE_SIGNING_ALLOWED=NO \
-          2>&1 | xcpretty
+            -project "BF6StatsTracker.xcodeproj" \
+            -scheme "BF6StatsTracker" \
+            -destination "platform=macOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | xcpretty
