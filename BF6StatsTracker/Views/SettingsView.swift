@@ -44,7 +44,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .sound: return "speaker.wave.3.fill"
         case .autoRefresh: return "arrow.clockwise"
         case .menuBar: return "menubar.rectangle"
-        case .dataManagement: return "externaldrive.fill"
+        case .dataManagement: return "externaldrive.fill.badge.icloud"
         case .experimental: return "flask.fill"
         case .debug: return "ladybug.fill"
         }

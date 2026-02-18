@@ -124,6 +124,12 @@ struct AboutView: View {
                             copyright: "© Microsoft Corporation",
                             license: "Xbox and the Xbox logos are trademarks of the Microsoft group of companies."
                         )
+                        
+                        CopyrightRow(
+                            title: "iCloud®",
+                            copyright: "© Apple Inc.",
+                            license: "iCloud is a registered trademark of Apple Inc."
+                        )
                     }
                 }
                 .padding(.vertical, 12)
@@ -166,6 +172,15 @@ struct AboutView: View {
                             icon: "face.smiling",
                             color: .yellow
                         )
+                        
+                        Divider()
+                        
+                        APIAcknowledgement(
+                            name: "iCloud",
+                            description: "Apple's iCloud Key-Value Storage provides secure, automatic backup and synchronization of snapshot data across devices.",
+                            icon: "icloud.fill",
+                            color: .cyan
+                        )
                     }
                 }
                 .padding(.vertical, 12)
@@ -189,6 +204,7 @@ struct AboutView: View {
                     ], spacing: 10) {
                         TechBadge(name: "SwiftUI", icon: "swift")
                         TechBadge(name: "SwiftData", icon: "internaldrive")
+                        TechBadge(name: "iCloud", icon: "icloud.fill")
                         TechBadge(name: "macOS", icon: "apple.logo")
                         TechBadge(name: "Combine", icon: "arrow.triangle.merge")
                     }
