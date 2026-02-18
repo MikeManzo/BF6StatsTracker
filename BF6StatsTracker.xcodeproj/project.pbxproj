@@ -3,8 +3,9 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 56;
 	objects = {
+/* MRM: objectVersion was 70*/
 
 /* Begin PBXBuildFile section */
 		0000000000000001 /* BF6StatsTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000001 /* BF6StatsTrackerApp.swift */; };
