@@ -27,5 +27,7 @@ jobs:
             -scheme "BF6StatsTracker" \
             -destination "platform=macOS" \
             CODE_SIGNING_ALLOWED=NO \
+            MTL_ENABLE_DEBUG_INFO=NO \
+            METAL_LIBRARY_OUTPUT_DIR=/tmp \
             SWIFT_VERSION=5.0 \
             SWIFT_LANGUAGE_VERSION=5.0
