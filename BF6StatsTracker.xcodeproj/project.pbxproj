@@ -30,6 +30,7 @@
 		2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2719F33D2EF881AA00C42191 /* DailyPerformance.swift */; };
 		271CA0FE2F26DCD00037D232 /* AICoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271CA0FD2F26DCD00037D232 /* AICoachView.swift */; };
 		271CA1002F26DCF30037D232 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271CA0FF2F26DCF30037D232 /* LocalAIService.swift */; };
+		27368F412F45E384005DCF95 /* iCloudBackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27368F402F45E384005DCF95 /* iCloudBackupService.swift */; };
 		274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */; };
 		2747A79C2F037B7C001CF709 /* StoredEAAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */; };
 		2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2747A79D2F037BA5001CF709 /* EAAccountStore.swift */; };
@@ -115,6 +116,7 @@
 		2719F33D2EF881AA00C42191 /* DailyPerformance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPerformance.swift; sourceTree = "<group>"; };
 		271CA0FD2F26DCD00037D232 /* AICoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachView.swift; sourceTree = "<group>"; };
 		271CA0FF2F26DCF30037D232 /* LocalAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIService.swift; sourceTree = "<group>"; };
+		27368F402F45E384005DCF95 /* iCloudBackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCloudBackupService.swift; sourceTree = "<group>"; };
 		274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatsViewModel+Logout.swift"; sourceTree = "<group>"; };
 		2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredEAAccount.swift; sourceTree = "<group>"; };
 		2747A79D2F037BA5001CF709 /* EAAccountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAAccountStore.swift; sourceTree = "<group>"; };
@@ -286,6 +288,7 @@
 				27C267BB2EEF35AF006168AA /* MapTracker.swift */,
 				27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */,
 				27D09C352F37E04C004572A8 /* SquadService.swift */,
+				27368F402F45E384005DCF95 /* iCloudBackupService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -448,6 +451,7 @@
 				274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */,
 				2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */,
 				2749FA132F045D97004D2E1D /* PerformanceBadgeView.swift in Sources */,
+				27368F412F45E384005DCF95 /* iCloudBackupService.swift in Sources */,
 				2749FA142F045D97004D2E1D /* ProgressBarView.swift in Sources */,
 				2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */,
 				274F85522F141A9B000B1B90 /* LoggerService.swift in Sources */,

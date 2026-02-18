@@ -1416,6 +1416,10 @@ struct AppSettings: Codable {
     
     // Tab order
     var tabOrder: [String]        // Ordered list of tab raw values
+    
+    // iCloud Backup
+    var iCloudBackupEnabled: Bool      // Enable automatic iCloud backup
+    var backupFrequency: String        // Backup frequency (stored as raw value)
 
     init() {
         self.playerName = ""
@@ -1439,6 +1443,8 @@ struct AppSettings: Codable {
         self.liquidGlassEnabled = true  // On by default when running on Tahoe
         self.hiddenTabs = []  // No tabs hidden by default
         self.tabOrder = []    // Empty means use default order
+        self.iCloudBackupEnabled = false  // Off by default, user must enable
+        self.backupFrequency = "After Each Match"  // Default to most frequent
     }
 
     /// Update settings with EA identity information
@@ -1468,6 +1474,8 @@ struct AppSettings: Codable {
         case liquidGlassEnabled
         case hiddenTabs
         case tabOrder
+        case iCloudBackupEnabled
+        case backupFrequency
     }
 
     init(from decoder: Decoder) throws {
@@ -1512,6 +1520,12 @@ struct AppSettings: Codable {
         
         // Default to empty array if tabOrder doesn't exist in saved settings
         tabOrder = try container.decodeIfPresent([String].self, forKey: .tabOrder) ?? []
+        
+        // Default to false if iCloudBackupEnabled doesn't exist in saved settings
+        iCloudBackupEnabled = try container.decodeIfPresent(Bool.self, forKey: .iCloudBackupEnabled) ?? false
+        
+        // Default to "After Each Match" if backupFrequency doesn't exist in saved settings
+        backupFrequency = try container.decodeIfPresent(String.self, forKey: .backupFrequency) ?? "After Each Match"
     }
 }
 

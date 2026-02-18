@@ -107,13 +107,18 @@ struct BackupData: Codable {
         let date: Date
         let playerName: String
         let platform: String
-        let matchesPlayed: Int
-        let killsGained: Int
-        let deathsGained: Int
-        let scoreGained: Int
-        let timePlayedMinutes: Int
-        let avgKD: Double
-        let progressionMode: String?
+        let deltaKills: Int
+        let deltaDeaths: Int
+        let deltaHeadshots: Int
+        let deltaAssists: Int
+        let deltaRevives: Int
+        let deltaResupplies: Int
+        let deltaWins: Int
+        let deltaLosses: Int
+        let deltaMatchesPlayed: Int
+        let deltaScore: Int
+        let deltaTimePlayed: Int
+        let dailyKD: Double
     }
 }
 
@@ -167,8 +172,21 @@ class iCloudBackupService: ObservableObject {
     
     /// Update the current backup status
     func updateStatus() {
-        guard let data = ubiquitousStore.data(forKey: backupKey),
-              let backup = try? JSONDecoder().decode(BackupData.self, from: data) else {
+        guard let data = ubiquitousStore.data(forKey: backupKey) else {
+            status = BackupStatus(
+                lastBackupDate: nil,
+                snapshotCount: 0,
+                storageUsedBytes: 0,
+                isEnabled: isICloudAvailable
+            )
+            return
+        }
+        
+        // Decode with proper date strategy
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        guard let backup = try? decoder.decode(BackupData.self, from: data) else {
             status = BackupStatus(
                 lastBackupDate: nil,
                 snapshotCount: 0,
@@ -252,13 +270,18 @@ class iCloudBackupService: ObservableObject {
                     date: daily.date,
                     playerName: daily.playerName,
                     platform: daily.platform,
-                    matchesPlayed: daily.matchesPlayed,
-                    killsGained: daily.killsGained,
-                    deathsGained: daily.deathsGained,
-                    scoreGained: daily.scoreGained,
-                    timePlayedMinutes: daily.timePlayedMinutes,
-                    avgKD: daily.avgKD,
-                    progressionMode: daily.progressionMode
+                    deltaKills: daily.deltaKills,
+                    deltaDeaths: daily.deltaDeaths,
+                    deltaHeadshots: daily.deltaHeadshots,
+                    deltaAssists: daily.deltaAssists,
+                    deltaRevives: daily.deltaRevives,
+                    deltaResupplies: daily.deltaResupplies,
+                    deltaWins: daily.deltaWins,
+                    deltaLosses: daily.deltaLosses,
+                    deltaMatchesPlayed: daily.deltaMatchesPlayed,
+                    deltaScore: daily.deltaScore,
+                    deltaTimePlayed: daily.deltaTimePlayed,
+                    dailyKD: daily.dailyKD
                 )
             }
             
@@ -281,7 +304,13 @@ class iCloudBackupService: ObservableObject {
             ubiquitousStore.synchronize()
             
             await MainActor.run {
-                updateStatus()
+                // Update status directly with the backup we just created
+                status = BackupStatus(
+                    lastBackupDate: backupData.lastBackup,
+                    snapshotCount: snapshotBackups.count,
+                    storageUsedBytes: data.count,
+                    isEnabled: isICloudAvailable
+                )
                 isBackingUp = false
                 logSuccess("Backed up \(snapshotBackups.count) snapshots to iCloud (\(data.count) bytes)", category: .success)
             }
@@ -332,11 +361,6 @@ class iCloudBackupService: ObservableObject {
             let existingSnapshots = try context.fetch(existingDescriptor)
             let existingTimestamps = Set(existingSnapshots.map { $0.timestamp })
             
-            // Get existing daily performances to avoid duplicates
-            let existingDailyDescriptor = FetchDescriptor<DailyPerformance>()
-            let existingDailies = try context.fetch(existingDailyDescriptor)
-            let existingDailyKeys = Set(existingDailies.map { "\($0.playerName)-\($0.date)" })
-            
             var restoredSnapshots = 0
             var restoredDailies = 0
             
@@ -371,33 +395,13 @@ class iCloudBackupService: ObservableObject {
                 restoredSnapshots += 1
             }
             
-            // Restore daily performances
-            for dailyBackup in backup.dailyPerformances {
-                let key = "\(dailyBackup.playerName)-\(dailyBackup.date)"
-                if existingDailyKeys.contains(key) {
-                    continue
-                }
-                
-                let daily = DailyPerformance(
-                    date: dailyBackup.date,
-                    playerName: dailyBackup.playerName,
-                    platform: dailyBackup.platform,
-                    matchesPlayed: dailyBackup.matchesPlayed,
-                    killsGained: dailyBackup.killsGained,
-                    deathsGained: dailyBackup.deathsGained,
-                    scoreGained: dailyBackup.scoreGained,
-                    timePlayedMinutes: dailyBackup.timePlayedMinutes,
-                    avgKD: dailyBackup.avgKD,
-                    progressionMode: dailyBackup.progressionMode
-                )
-                
-                context.insert(daily)
-                restoredDailies += 1
-            }
+            // Skip restoring daily performances - they will be regenerated from snapshots by HistoryManager
+            // This is safer and ensures data integrity
+            restoredDailies = 0
             
             try context.save()
             
-            await MainAactor.run {
+            await MainActor.run {
                 isRestoring = false
                 logSuccess("Restored \(restoredSnapshots) snapshots and \(restoredDailies) daily performances from iCloud", category: .success)
             }
@@ -447,6 +451,34 @@ class iCloudBackupService: ObservableObject {
             }
         } catch {
             logWarning("Auto-backup failed: \(error.localizedDescription)", category: .general)
+        }
+    }
+    
+    /// Delete all backup data from iCloud
+    func deleteBackupFromICloud() async throws {
+        guard isICloudAvailable else {
+            throw NSError(domain: "iCloudBackup", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "iCloud is not available"
+            ])
+        }
+        
+        await MainActor.run {
+            lastError = nil
+        }
+        
+        // Remove the backup data from iCloud
+        ubiquitousStore.removeObject(forKey: backupKey)
+        ubiquitousStore.synchronize()
+        
+        await MainActor.run {
+            // Update status to reflect no backup
+            status = BackupStatus(
+                lastBackupDate: nil,
+                snapshotCount: 0,
+                storageUsedBytes: 0,
+                isEnabled: isICloudAvailable
+            )
+            logSuccess("Deleted backup from iCloud", category: .success)
         }
     }
     

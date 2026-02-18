@@ -97,6 +97,10 @@ struct SettingsView: View {
     @State private var showDeleteAccountAlert = false
     @State private var aiCoachEnabled: Bool = false
     @State private var liquidGlassEnabled: Bool = true
+    @State private var iCloudBackupEnabled: Bool = false
+    @State private var backupFrequency: BackupFrequency = .afterEachMatch
+    @StateObject private var backupService = iCloudBackupService.shared
+    @State private var showDeleteBackupConfirmation = false
 
     private var filteredCategories: [SettingsCategory] {
         if searchText.isEmpty {
@@ -202,6 +206,20 @@ struct SettingsView: View {
             }
         } message: { account in
             Text("Are you sure you want to delete the EA account for \(account.nickname ?? account.eaId)?")
+        }
+        .alert("Delete iCloud Backup?", isPresented: $showDeleteBackupConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete Backup", role: .destructive) {
+                Task {
+                    do {
+                        try await backupService.deleteBackupFromICloud()
+                    } catch {
+                        // Error handling is done in the service
+                    }
+                }
+            }
+        } message: {
+            Text("This will permanently delete all backed up data from iCloud. Your local data will not be affected. This action cannot be undone.")
         }
     }
 
@@ -737,6 +755,166 @@ struct SettingsView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            
+            // iCloud Backup
+            SettingsGroupBox {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        SettingsToggleRow(
+                            title: "iCloud Backup",
+                            subtitle: "Automatically backup snapshot data to iCloud",
+                            isOn: $iCloudBackupEnabled
+                        )
+                        .onChange(of: iCloudBackupEnabled) { _, _ in saveSettings() }
+                        
+                        if !backupService.isICloudAvailable {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                                .help("iCloud is not available. Sign in to iCloud in System Settings.")
+                        }
+                    }
+                    
+                    if iCloudBackupEnabled {
+                        Divider()
+                        
+                        // Backup Frequency
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Backup Frequency")
+                                .font(.body)
+                            
+                            Picker("", selection: $backupFrequency) {
+                                ForEach(BackupFrequency.allCases) { freq in
+                                    Text(freq.rawValue).tag(freq)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: backupFrequency) { _, _ in saveSettings() }
+                            
+                            Text(backupFrequency.description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Divider()
+                        
+                        // Backup Status
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                Text("Last backup: \(backupService.status.formattedLastBackup)")
+                                    .font(.subheadline)
+                            }
+                            
+                            HStack(spacing: 8) {
+                                Image(systemName: "chart.bar.fill")
+                                    .foregroundColor(.blue)
+                                Text("Storage used: \(backupService.status.formattedStorageSize) / 1 MB")
+                                    .font(.subheadline)
+                            }
+                            
+                            HStack(spacing: 8) {
+                                Image(systemName: "photo.stack.fill")
+                                    .foregroundColor(.purple)
+                                Text("Snapshots backed up: \(backupService.status.snapshotCount)")
+                                    .font(.subheadline)
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(themeManager.accent.opacity(0.1))
+                        .cornerRadius(8)
+                        
+                        // Action Buttons
+                        HStack(spacing: 12) {
+                            Button {
+                                Task {
+                                    do {
+                                        try await backupService.backupToICloud(settings: viewModel.settings)
+                                    } catch {
+                                        // Error handling is done in the service
+                                    }
+                                }
+                            } label: {
+                                if backupService.isBackingUp {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                        .frame(width: 14, height: 14)
+                                } else {
+                                    Text("Backup Now")
+                                }
+                            }
+                            .disabled(backupService.isBackingUp || backupService.isRestoring)
+                            
+                            Button {
+                                Task {
+                                    do {
+                                        let result = try await backupService.restoreFromICloud()
+                                        logSuccess("Restored \(result.snapshotsRestored) snapshots and \(result.dailyPerformancesRestored) daily performances", category: .success)
+                                        // Refresh history manager
+                                        if let playerName = viewModel.playerStats?.userName {
+                                            HistoryManager.shared.loadDailyPerformances(playerName: playerName)
+                                            HistoryManager.shared.loadRecentData()
+                                        }
+                                    } catch {
+                                        // Error handling is done in the service
+                                    }
+                                }
+                            } label: {
+                                if backupService.isRestoring {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                        .frame(width: 14, height: 14)
+                                } else {
+                                    Text("Restore from iCloud")
+                                }
+                            }
+                            .disabled(backupService.isBackingUp || backupService.isRestoring)
+                            
+                            Spacer()
+                        }
+                        
+                        Divider()
+                        
+                        // Delete Backup Section
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Delete Backup")
+                                .font(.headline)
+                            
+                            Text("Permanently delete all backed up data from iCloud. This will not affect your local data.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Button(role: .destructive) {
+                                showDeleteBackupConfirmation = true
+                            } label: {
+                                Text("Delete iCloud Backup")
+                            }
+                            .disabled(backupService.status.snapshotCount == 0)
+                        }
+                        
+                        // Error Message
+                        if let error = backupService.lastError {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.red)
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(6)
+                        }
+                    }
+                }
+            }
+            
+            Text("Your data is encrypted and stored in your personal iCloud account. Requires iCloud to be enabled in System Settings.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -823,6 +1001,8 @@ struct SettingsView: View {
         appearanceMode = viewModel.settings.appearanceMode
         aiCoachEnabled = viewModel.settings.aiCoachEnabled
         liquidGlassEnabled = viewModel.settings.liquidGlassEnabled
+        iCloudBackupEnabled = viewModel.settings.iCloudBackupEnabled
+        backupFrequency = BackupFrequency(rawValue: viewModel.settings.backupFrequency) ?? .afterEachMatch
         themeManager.setColorScheme(selectedColorScheme)
     }
 
@@ -841,6 +1021,8 @@ struct SettingsView: View {
         viewModel.settings.appearanceMode = appearanceMode
         viewModel.settings.aiCoachEnabled = aiCoachEnabled
         viewModel.settings.liquidGlassEnabled = liquidGlassEnabled
+        viewModel.settings.iCloudBackupEnabled = iCloudBackupEnabled
+        viewModel.settings.backupFrequency = backupFrequency.rawValue
         themeManager.setColorScheme(selectedColorScheme)
 
         Task {

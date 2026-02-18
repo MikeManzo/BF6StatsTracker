@@ -222,6 +222,17 @@ class HistoryManager: ObservableObject {
                 
                 logInfo("Deferred snapshot processing completed", category: .general)
             }
+            
+            // Trigger iCloud backup if enabled
+            if let soundSettings = soundSettings {
+                Task {
+                    let backupService = iCloudBackupService.shared
+                    if soundSettings.iCloudBackupEnabled {
+                        let frequency = BackupFrequency(rawValue: soundSettings.backupFrequency) ?? .afterEachMatch
+                        await backupService.autoBackupIfNeeded(frequency: frequency, settings: soundSettings)
+                    }
+                }
+            }
         }
     }
 

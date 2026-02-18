@@ -71,6 +71,7 @@ struct BF6StatsTrackerApp: App {
                     let context = modelContainer.mainContext
                     HistoryManager.shared.setup(modelContext: context)
                     MapTracker.shared.setup(modelContext: context)
+                    iCloudBackupService.shared.setup(modelContext: context)
                     logSuccess("SwiftData managers initialized", category: .success)
                     // Sync theme manager with settings
                     themeManager.setColorScheme(viewModel.settings.selectedColorScheme)
