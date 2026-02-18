@@ -25,12 +25,12 @@ jobs:
       
       - name: Build
         run: |
-        set -o pipefail
-        xcodebuild clean build \
-          -project "BF6StatsTracker.xcodeproj" \
-          -scheme "BF6StatsTracker" \
-          -destination "platform=macOS" \
-          CODE_SIGNING_ALLOWED=NO \
-          SWIFT_VERSION=5.0 \
-          SWIFT_LANGUAGE_VERSION=5.0 \
-          2>&1 | xcpretty
+          set -o pipefail
+          xcodebuild clean build \
+            -project "BF6StatsTracker.xcodeproj" \
+            -scheme "BF6StatsTracker" \
+            -destination "platform=macOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_VERSION=5.0 \
+            SWIFT_LANGUAGE_VERSION=5.0 \
+            2>&1 | xcpretty
