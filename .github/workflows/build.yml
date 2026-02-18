@@ -18,12 +18,13 @@ jobs:
       - name: Select Xcode version
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.3'
-          
+          xcode-version: '16.2.0'
+      
       - name: Build
         run: |
           xcodebuild clean build \
             -project "BF6StatsTracker.xcodeproj" \
             -scheme "BF6StatsTracker" \
             -destination "platform=macOS" \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_VERSION=5.0
