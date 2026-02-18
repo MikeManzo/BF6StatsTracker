@@ -12,11 +12,12 @@
 //  iCloudBackupService.swift
 //  BF6StatsTracker
 //
-//  Service for backing up and restoring snapshot data to/from iCloud
+//  Service for backing up and restoring snapshot data to/from iCloud using CloudKit
 //
 
 import Foundation
 import SwiftData
+import CloudKit
 
 /// Backup frequency options
 enum BackupFrequency: String, Codable, CaseIterable, Identifiable {
@@ -54,8 +55,10 @@ struct BackupStatus {
             return String(format: "%.0f B", bytes)
         } else if bytes < 1024 * 1024 {
             return String(format: "%.1f KB", bytes / 1024)
-        } else {
+        } else if bytes < 1024 * 1024 * 1024 {
             return String(format: "%.2f MB", bytes / (1024 * 1024))
+        } else {
+            return String(format: "%.2f GB", bytes / (1024 * 1024 * 1024))
         }
     }
     
@@ -126,9 +129,10 @@ struct BackupData: Codable {
 class iCloudBackupService: ObservableObject {
     static let shared = iCloudBackupService()
     
-    private let ubiquitousStore = NSUbiquitousKeyValueStore.default
-    private let backupKey = "BF6StatsTracker_SnapshotBackup"
-    private let maxSnapshotsToBackup = 500
+    private let container: CKContainer
+    private let privateDatabase: CKDatabase
+    private let recordType = "SnapshotBackup"
+    private let recordName = "BF6StatsTracker_Backup"
     private let maxDailyPerformancesToBackup = 90 // 3 months
     
     @Published var status: BackupStatus = BackupStatus(
@@ -146,23 +150,21 @@ class iCloudBackupService: ObservableObject {
     private var modelContext: ModelContext?
     
     private init() {
-        // Listen for iCloud changes
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(iCloudStoreDidChange),
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: ubiquitousStore
-        )
+        // Use default container which uses the app's iCloud container
+        self.container = CKContainer.default()
+        self.privateDatabase = container.privateCloudDatabase
         
-        // Sync with iCloud
-        ubiquitousStore.synchronize()
-        
-        // Load current status
-        updateStatus()
+        // Check iCloud status on init
+        Task {
+            await checkICloudStatus()
+        }
     }
     
     func setup(modelContext: ModelContext) {
         self.modelContext = modelContext
+        Task {
+            await updateStatus()
+        }
     }
     
     /// Check if iCloud is available
@@ -170,41 +172,101 @@ class iCloudBackupService: ObservableObject {
         FileManager.default.ubiquityIdentityToken != nil
     }
     
-    /// Update the current backup status
-    func updateStatus() {
-        guard let data = ubiquitousStore.data(forKey: backupKey) else {
-            status = BackupStatus(
-                lastBackupDate: nil,
-                snapshotCount: 0,
-                storageUsedBytes: 0,
-                isEnabled: isICloudAvailable
-            )
-            return
+    /// Check iCloud account status
+    private func checkICloudStatus() async {
+        do {
+            let accountStatus = try await container.accountStatus()
+            let available = accountStatus == .available
+            
+            await MainActor.run {
+                status.isEnabled = available
+                if !available {
+                    lastError = "iCloud is not available. Please sign in to iCloud in System Settings."
+                }
+            }
+        } catch {
+            await MainActor.run {
+                status.isEnabled = false
+                lastError = "Failed to check iCloud status: \(error.localizedDescription)"
+                logError("Failed to check iCloud status: \(error)", category: .error)
+            }
         }
-        
-        // Decode with proper date strategy
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        
-        guard let backup = try? decoder.decode(BackupData.self, from: data) else {
-            status = BackupStatus(
-                lastBackupDate: nil,
-                snapshotCount: 0,
-                storageUsedBytes: 0,
-                isEnabled: isICloudAvailable
-            )
-            return
-        }
-        
-        status = BackupStatus(
-            lastBackupDate: backup.lastBackup,
-            snapshotCount: backup.snapshots.count,
-            storageUsedBytes: data.count,
-            isEnabled: isICloudAvailable
-        )
     }
     
-    /// Backup snapshots to iCloud
+    /// Update the current backup status
+    func updateStatus() async {
+        guard isICloudAvailable else {
+            await MainActor.run {
+                status = BackupStatus(
+                    lastBackupDate: nil,
+                    snapshotCount: 0,
+                    storageUsedBytes: 0,
+                    isEnabled: false
+                )
+            }
+            return
+        }
+        
+        do {
+            let recordID = CKRecord.ID(recordName: recordName)
+            let record = try await privateDatabase.record(for: recordID)
+            
+            guard let dataAsset = record["backupData"] as? CKAsset,
+                  let fileURL = dataAsset.fileURL,
+                  let data = try? Data(contentsOf: fileURL) else {
+                await MainActor.run {
+                    status = BackupStatus(
+                        lastBackupDate: nil,
+                        snapshotCount: 0,
+                        storageUsedBytes: 0,
+                        isEnabled: true
+                    )
+                }
+                return
+            }
+            
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            
+            guard let backup = try? decoder.decode(BackupData.self, from: data) else {
+                await MainActor.run {
+                    status = BackupStatus(
+                        lastBackupDate: nil,
+                        snapshotCount: 0,
+                        storageUsedBytes: 0,
+                        isEnabled: true
+                    )
+                }
+                return
+            }
+            
+            await MainActor.run {
+                status = BackupStatus(
+                    lastBackupDate: backup.lastBackup,
+                    snapshotCount: backup.snapshots.count,
+                    storageUsedBytes: data.count,
+                    isEnabled: true
+                )
+            }
+            
+        } catch let error as CKError where error.code == .unknownItem {
+            // No backup exists yet
+            await MainActor.run {
+                status = BackupStatus(
+                    lastBackupDate: nil,
+                    snapshotCount: 0,
+                    storageUsedBytes: 0,
+                    isEnabled: true
+                )
+            }
+        } catch {
+            await MainActor.run {
+                logWarning("Failed to fetch backup status: \(error.localizedDescription)", category: .general)
+            }
+        }
+    }
+    
+    /// Backup snapshots to iCloud using CloudKit
     func backupToICloud(settings: AppSettings) async throws {
         guard isICloudAvailable else {
             throw NSError(domain: "iCloudBackup", code: 1, userInfo: [
@@ -224,11 +286,10 @@ class iCloudBackupService: ObservableObject {
         }
         
         do {
-            // Fetch recent snapshots
-            var descriptor = FetchDescriptor<StatsSnapshot>(
+            // Fetch ALL snapshots - no limit
+            let descriptor = FetchDescriptor<StatsSnapshot>(
                 sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
             )
-            descriptor.fetchLimit = maxSnapshotsToBackup
             let snapshots = try context.fetch(descriptor)
             
             // Fetch recent daily performances
@@ -295,13 +356,32 @@ class iCloudBackupService: ObservableObject {
                 platform: settings.platform.rawValue
             )
             
-            // Encode and save to iCloud
+            // Encode to JSON
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             let data = try encoder.encode(backupData)
             
-            ubiquitousStore.set(data, forKey: backupKey)
-            ubiquitousStore.synchronize()
+            // Write to temporary file for CKAsset
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("backup_\(UUID().uuidString).json")
+            try data.write(to: tempURL)
+            
+            // Create CKAsset from file
+            let asset = CKAsset(fileURL: tempURL)
+            
+            // Create or update record
+            let recordID = CKRecord.ID(recordName: recordName)
+            let record = CKRecord(recordType: recordType, recordID: recordID)
+            record["backupData"] = asset
+            record["lastBackup"] = backupData.lastBackup
+            record["snapshotCount"] = snapshotBackups.count
+            record["eaId"] = settings.eaId
+            record["platform"] = settings.platform.rawValue
+            
+            // Save to CloudKit
+            _ = try await privateDatabase.save(record)
+            
+            // Clean up temp file
+            try? FileManager.default.removeItem(at: tempURL)
             
             await MainActor.run {
                 // Update status directly with the backup we just created
@@ -309,7 +389,7 @@ class iCloudBackupService: ObservableObject {
                     lastBackupDate: backupData.lastBackup,
                     snapshotCount: snapshotBackups.count,
                     storageUsedBytes: data.count,
-                    isEnabled: isICloudAvailable
+                    isEnabled: true
                 )
                 isBackingUp = false
                 logSuccess("Backed up \(snapshotBackups.count) snapshots to iCloud (\(data.count) bytes)", category: .success)
@@ -339,18 +419,24 @@ class iCloudBackupService: ObservableObject {
             ])
         }
         
-        guard let data = ubiquitousStore.data(forKey: backupKey) else {
-            throw NSError(domain: "iCloudBackup", code: 3, userInfo: [
-                NSLocalizedDescriptionKey: "No backup data found in iCloud"
-            ])
-        }
-        
         await MainActor.run {
             isRestoring = true
             lastError = nil
         }
         
         do {
+            // Fetch record from CloudKit
+            let recordID = CKRecord.ID(recordName: recordName)
+            let record = try await privateDatabase.record(for: recordID)
+            
+            guard let dataAsset = record["backupData"] as? CKAsset,
+                  let fileURL = dataAsset.fileURL,
+                  let data = try? Data(contentsOf: fileURL) else {
+                throw NSError(domain: "iCloudBackup", code: 3, userInfo: [
+                    NSLocalizedDescriptionKey: "No backup data found in iCloud"
+                ])
+            }
+            
             // Decode backup data
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
@@ -408,6 +494,15 @@ class iCloudBackupService: ObservableObject {
             
             return (restoredSnapshots, restoredDailies)
             
+        } catch let error as CKError where error.code == .unknownItem {
+            await MainActor.run {
+                isRestoring = false
+                lastError = "No backup data found in iCloud"
+                logError("No backup data found in iCloud", category: .error)
+            }
+            throw NSError(domain: "iCloudBackup", code: 3, userInfo: [
+                NSLocalizedDescriptionKey: "No backup data found in iCloud"
+            ])
         } catch {
             await MainActor.run {
                 isRestoring = false
@@ -466,30 +561,38 @@ class iCloudBackupService: ObservableObject {
             lastError = nil
         }
         
-        // Remove the backup data from iCloud
-        ubiquitousStore.removeObject(forKey: backupKey)
-        ubiquitousStore.synchronize()
-        
-        await MainActor.run {
-            // Update status to reflect no backup
-            status = BackupStatus(
-                lastBackupDate: nil,
-                snapshotCount: 0,
-                storageUsedBytes: 0,
-                isEnabled: isICloudAvailable
-            )
-            logSuccess("Deleted backup from iCloud", category: .success)
+        do {
+            // Delete the record from CloudKit
+            let recordID = CKRecord.ID(recordName: recordName)
+            _ = try await privateDatabase.deleteRecord(withID: recordID)
+            
+            await MainActor.run {
+                // Update status to reflect no backup
+                status = BackupStatus(
+                    lastBackupDate: nil,
+                    snapshotCount: 0,
+                    storageUsedBytes: 0,
+                    isEnabled: true
+                )
+                logSuccess("Deleted backup from iCloud", category: .success)
+            }
+        } catch let error as CKError where error.code == .unknownItem {
+            // Record doesn't exist, that's fine
+            await MainActor.run {
+                status = BackupStatus(
+                    lastBackupDate: nil,
+                    snapshotCount: 0,
+                    storageUsedBytes: 0,
+                    isEnabled: true
+                )
+                logSuccess("No backup found to delete", category: .success)
+            }
+        } catch {
+            await MainActor.run {
+                lastError = error.localizedDescription
+                logError("Failed to delete backup: \(error)", category: .error)
+            }
+            throw error
         }
-    }
-    
-    @objc private func iCloudStoreDidChange(_ notification: Notification) {
-        DispatchQueue.main.async {
-            self.updateStatus()
-            logInfo("iCloud store updated externally", category: .general)
-        }
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 }
