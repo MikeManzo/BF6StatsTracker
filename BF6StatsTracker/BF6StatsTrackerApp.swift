@@ -44,7 +44,12 @@ struct BF6StatsTrackerApp: App {
                 AICoachAnalysis.self
             ])
 
-            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            // Explicitly disable CloudKit sync - we use CloudKit only for manual backups
+            let modelConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .none
+            )
             modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
 
             logSuccess("SwiftData initialized successfully", category: .success)

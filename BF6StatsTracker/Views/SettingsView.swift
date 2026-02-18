@@ -762,7 +762,7 @@ struct SettingsView: View {
                     HStack {
                         SettingsToggleRow(
                             title: "iCloud Backup",
-                            subtitle: "Automatically backup snapshot data to iCloud",
+                            subtitle: "Automatically backup all snapshot data to iCloud (1GB free storage)",
                             isOn: $iCloudBackupEnabled
                         )
                         .onChange(of: iCloudBackupEnabled) { _, _ in saveSettings() }
@@ -809,7 +809,7 @@ struct SettingsView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "chart.bar.fill")
                                     .foregroundColor(.blue)
-                                Text("Storage used: \(backupService.status.formattedStorageSize) / 1 MB")
+                                Text("Storage used: \(backupService.status.formattedStorageSize) / 1 GB")
                                     .font(.subheadline)
                             }
                             
