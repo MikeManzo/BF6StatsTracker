@@ -22,6 +22,7 @@ import UniformTypeIdentifiers
 
 struct SessionHistoryView: View {
     @StateObject private var historyManager = HistoryManager.shared
+    @StateObject private var backupService = iCloudBackupService.shared
     @EnvironmentObject var viewModel: StatsViewModel
 
     // Use @Query to automatically handle object lifecycle
@@ -52,6 +53,11 @@ struct SessionHistoryView: View {
 
             // Search bar
             searchBar
+            
+            // iCloud Backup Card - only show if enabled AND iCloud is available
+            if viewModel.settings.iCloudBackupEnabled && backupService.isICloudAvailable {
+                iCloudBackupCard
+            }
 
             // Snapshots list - show immediately as data loads
             if filteredSnapshots.isEmpty {
@@ -261,6 +267,125 @@ struct SessionHistoryView: View {
         .cornerRadius(10)
         .padding(.horizontal)
         .padding(.vertical, 8)
+    }
+    
+    private var iCloudBackupCard: some View {
+        HStack(spacing: 16) {
+            // iCloud Icon
+            Image(systemName: "icloud.fill")
+                .font(.title2)
+                .foregroundColor(.blue)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("iCloud Backup")
+                    .font(.headline)
+                
+                HStack(spacing: 12) {
+                    // Last Backup
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.caption2)
+                        Text(backupService.status.formattedLastBackup)
+                            .font(.caption)
+                    }
+                    .foregroundColor(Theme.textSecondary)
+                    
+                    Text("•")
+                        .foregroundColor(Theme.textSecondary)
+                        .font(.caption)
+                    
+                    // Snapshot Count
+                    HStack(spacing: 4) {
+                        Image(systemName: "photo.stack")
+                            .font(.caption2)
+                        Text("\(backupService.status.snapshotCount) snapshots")
+                            .font(.caption)
+                    }
+                    .foregroundColor(Theme.textSecondary)
+                    
+                    Text("•")
+                        .foregroundColor(Theme.textSecondary)
+                        .font(.caption)
+                    
+                    // Storage
+                    HStack(spacing: 4) {
+                        Image(systemName: "externaldrive.fill.badge.icloud")
+                            .font(.caption2)
+                        Text(backupService.status.formattedStorageSize)
+                            .font(.caption)
+                    }
+                    .foregroundColor(Theme.textSecondary)
+                }
+            }
+            
+            Spacer()
+            
+            // Action Buttons
+            HStack(spacing: 8) {
+                // Backup Now Button
+                Button {
+                    Task {
+                        do {
+                            try await backupService.backupToICloud(settings: viewModel.settings)
+                        } catch {
+                            // Error handled by service
+                        }
+                    }
+                } label: {
+                    if backupService.isBackingUp {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 16, height: 16)
+                    } else {
+                        Label("Backup", systemImage: "icloud.and.arrow.up")
+                            .font(.caption)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Theme.info)
+                .foregroundColor(Theme.selectedText)
+                .cornerRadius(6)
+                .disabled(backupService.isBackingUp || backupService.isRestoring)
+                .help("Backup snapshots to iCloud now")
+                
+                // Restore Button
+                Button {
+                    Task {
+                        do {
+                            let result = try await backupService.restoreFromICloud()
+                            logSuccess("Restored \(result.snapshotsRestored) snapshots from iCloud", category: .success)
+                            // Refresh will happen automatically via @Query
+                        } catch {
+                            // Error handled by service
+                        }
+                    }
+                } label: {
+                    if backupService.isRestoring {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 16, height: 16)
+                    } else {
+                        Label("Restore", systemImage: "icloud.and.arrow.down")
+                            .font(.caption)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Theme.success)
+                .foregroundColor(Theme.selectedText)
+                .cornerRadius(6)
+                .disabled(backupService.isBackingUp || backupService.isRestoring || backupService.status.snapshotCount == 0)
+                .help("Restore snapshots from iCloud")
+            }
+        }
+        .padding()
+        .background(Theme.overlayColor.opacity(0.7))
+        .cornerRadius(12)
+        .padding(.horizontal)
+        .padding(.bottom, 8)
     }
 
     private var snapshotsList: some View {
