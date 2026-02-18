@@ -519,6 +519,7 @@ struct StatRow: View {
 
 struct KDACard: View {
     @Environment(\.accentColor) private var accentColor
+    @State private var isHovered = false
 
     let stats: PlayerStats
 
@@ -572,10 +573,15 @@ struct KDACard: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(
-                    accentColor.opacity(0.2),
-                    lineWidth: 1
+                    accentColor.opacity(isHovered ? 0.4 : 0.2),
+                    lineWidth: isHovered ? 2 : 1
                 )
         )
+        .scaleEffect(isHovered ? 1.02 : 1.0)
+        .animation(.smoothSpring, value: isHovered)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }
 
