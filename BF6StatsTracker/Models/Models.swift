@@ -1444,7 +1444,7 @@ struct AppSettings: Codable {
         self.hiddenTabs = []  // No tabs hidden by default
         self.tabOrder = []    // Empty means use default order
         self.iCloudBackupEnabled = false  // Off by default, user must enable
-        self.backupFrequency = "After Each Match"  // Default to most frequent
+        self.backupFrequency = "Automatically"  // Default to most frequent
     }
 
     /// Update settings with EA identity information
@@ -1524,8 +1524,8 @@ struct AppSettings: Codable {
         // Default to false if iCloudBackupEnabled doesn't exist in saved settings
         iCloudBackupEnabled = try container.decodeIfPresent(Bool.self, forKey: .iCloudBackupEnabled) ?? false
         
-        // Default to "After Each Match" if backupFrequency doesn't exist in saved settings
-        backupFrequency = try container.decodeIfPresent(String.self, forKey: .backupFrequency) ?? "After Each Match"
+        // Default to "Automatically" if backupFrequency doesn't exist in saved settings
+        backupFrequency = try container.decodeIfPresent(String.self, forKey: .backupFrequency) ?? "Automatically"
     }
 }
 

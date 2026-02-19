@@ -21,7 +21,7 @@ import CloudKit
 
 /// Backup frequency options
 enum BackupFrequency: String, Codable, CaseIterable, Identifiable {
-    case afterEachMatch = "After Each Match"
+    case afterEachMatch = "Automatically"
     case hourly = "Hourly"
     case daily = "Daily"
     case manual = "Manual Only"
@@ -405,6 +405,15 @@ class iCloudBackupService: ObservableObject {
                 logSuccess("Backed up \(snapshotBackups.count) snapshots to iCloud (\(data.count) bytes)", category: .success)
             }
             
+        } catch let error as CKError where error.code == .invalidArguments {
+            await MainActor.run {
+                isBackingUp = false
+                lastError = "CloudKit schema not initialized. Please contact the developer to deploy the CloudKit schema to production."
+                logError("CloudKit schema error: \(error). The SnapshotBackup record type needs to be created in CloudKit Dashboard and deployed to production.", category: .error)
+            }
+            throw NSError(domain: "iCloudBackup", code: 4, userInfo: [
+                NSLocalizedDescriptionKey: "CloudKit schema not initialized. The app developer needs to deploy the CloudKit schema to production."
+            ])
         } catch {
             await MainActor.run {
                 isBackingUp = false
