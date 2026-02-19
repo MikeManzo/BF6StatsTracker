@@ -24,7 +24,7 @@ class HistoryManager: ObservableObject {
     static let shared = HistoryManager()
 
     var modelContext: ModelContext?  // Made public for access from SettingsView
-    var modelContainer: ModelContainer?  // Store container for creating background contexts
+    nonisolated(unsafe) var modelContainer: ModelContainer?  // Store container for creating background contexts
     private var currentSession: PlaySession?
 
     @Published var snapshots: [StatsSnapshot] = []
@@ -333,9 +333,10 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get snapshots for a date range
-    func getSnapshots(from startDate: Date, to endDate: Date) -> [StatsSnapshot] {
-        guard let context = modelContext else { return [] }
-
+    nonisolated func getSnapshots(from startDate: Date, to endDate: Date) -> [StatsSnapshot] {
+        guard let container = modelContainer else { return [] }
+        
+        let context = ModelContext(container)
         let predicate = #Predicate<StatsSnapshot> { snapshot in
             snapshot.timestamp >= startDate && snapshot.timestamp <= endDate
         }
@@ -349,9 +350,10 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get last N snapshots
-    func getRecentSnapshots(limit: Int = 20) -> [StatsSnapshot] {
-        guard let context = modelContext else { return [] }
-
+    nonisolated func getRecentSnapshots(limit: Int = 20) -> [StatsSnapshot] {
+        guard let container = modelContainer else { return [] }
+        
+        let context = ModelContext(container)
         var descriptor = FetchDescriptor<StatsSnapshot>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
@@ -361,9 +363,10 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get all snapshots (no limit)
-    func getAllSnapshots() -> [StatsSnapshot] {
-        guard let context = modelContext else { return [] }
-
+    nonisolated func getAllSnapshots() -> [StatsSnapshot] {
+        guard let container = modelContainer else { return [] }
+        
+        let context = ModelContext(container)
         let descriptor = FetchDescriptor<StatsSnapshot>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
@@ -403,9 +406,10 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get all sessions
-    func getAllSessions() -> [PlaySession] {
-        guard let context = modelContext else { return [] }
-
+    nonisolated func getAllSessions() -> [PlaySession] {
+        guard let container = modelContainer else { return [] }
+        
+        let context = ModelContext(container)
         let descriptor = FetchDescriptor<PlaySession>(
             sortBy: [SortDescriptor(\.startTime, order: .reverse)]
         )
@@ -414,9 +418,10 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get recent sessions
-    func getRecentSessions(limit: Int = 10) -> [PlaySession] {
-        guard let context = modelContext else { return [] }
-
+    nonisolated func getRecentSessions(limit: Int = 10) -> [PlaySession] {
+        guard let container = modelContainer else { return [] }
+        
+        let context = ModelContext(container)
         var descriptor = FetchDescriptor<PlaySession>(
             sortBy: [SortDescriptor(\.startTime, order: .reverse)]
         )
