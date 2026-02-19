@@ -72,10 +72,19 @@ class SquadService: ObservableObject {
             // Step 3: Fetch stats with full identifier
             let stats = try await apiService.fetchPlayerStats(identifier: identifier)
             newMember.stats = stats
+            
+            // Step 4: Try to fetch profile data (non-blocking if it fails)
+            do {
+                let profileData = try await apiService.fetchProfileData(identifier: identifier)
+                newMember.profileData = profileData
+                LoggerService.shared.info("Successfully fetched stats and profile for squad member: \(eaId)", category: .api)
+            } catch {
+                LoggerService.shared.warning("Failed to fetch profile data for \(eaId): \(error.localizedDescription)", category: .api)
+                LoggerService.shared.info("Successfully fetched stats for squad member: \(eaId)", category: .api)
+            }
+            
             newMember.lastFetched = Date()
             newMember.fetchError = nil
-            
-            LoggerService.shared.info("Successfully fetched stats for squad member: \(eaId)", category: .api)
         } catch {
             newMember.fetchError = error.localizedDescription
             LoggerService.shared.error("Failed to fetch stats for squad member \(eaId): \(error)", category: .error)
@@ -106,7 +115,7 @@ class SquadService: ObservableObject {
         
         LoggerService.shared.info("Refreshing stats for \(squadMembers.count) squad members", category: .api)
         
-        await withTaskGroup(of: (UUID, Result<PlayerStats, Error>).self) { group in
+        await withTaskGroup(of: (UUID, Result<(PlayerStats, ProfileData?), Error>).self) { group in
             for member in squadMembers {
                 group.addTask {
                     do {
@@ -126,8 +135,18 @@ class SquadService: ObservableObject {
                             identifier = PlayerIdentifier(name: member.eaId, platform: member.platform)
                         }
                         
+                        // Fetch stats
                         let stats = try await self.apiService.fetchPlayerStats(identifier: identifier)
-                        return (member.id, .success(stats))
+                        
+                        // Try to fetch profile data (non-blocking if it fails)
+                        var profileData: ProfileData? = nil
+                        do {
+                            profileData = try await self.apiService.fetchProfileData(identifier: identifier)
+                        } catch {
+                            // Profile data fetch failed, but continue with nil profile
+                        }
+                        
+                        return (member.id, .success((stats, profileData)))
                     } catch {
                         return (member.id, .failure(error))
                     }
@@ -137,11 +156,12 @@ class SquadService: ObservableObject {
             for await (memberId, result) in group {
                 if let index = squadMembers.firstIndex(where: { $0.id == memberId }) {
                     switch result {
-                    case .success(let stats):
+                    case .success(let (stats, profileData)):
                         squadMembers[index].stats = stats
+                        squadMembers[index].profileData = profileData
                         squadMembers[index].lastFetched = Date()
                         squadMembers[index].fetchError = nil
-                        LoggerService.shared.info("Refreshed stats for member: \(squadMembers[index].eaId)", category: .api)
+                        LoggerService.shared.info("Refreshed stats and profile for member: \(squadMembers[index].eaId)", category: .api)
                     case .failure(let error):
                         squadMembers[index].fetchError = error.localizedDescription
                         LoggerService.shared.error("Failed to refresh member \(squadMembers[index].eaId): \(error)", category: .error)
@@ -178,12 +198,23 @@ class SquadService: ObservableObject {
                 LoggerService.shared.warning("Retry for \(member.eaId) - No EA Identity found", category: .api)
             }
             
+            // Fetch stats
             let stats = try await apiService.fetchPlayerStats(identifier: identifier)
             squadMembers[index].stats = stats
+            
+            // Try to fetch profile data (non-blocking if it fails)
+            do {
+                let profileData = try await apiService.fetchProfileData(identifier: identifier)
+                squadMembers[index].profileData = profileData
+                LoggerService.shared.info("Successfully retried fetching stats and profile for: \(member.eaId)", category: .api)
+            } catch {
+                LoggerService.shared.warning("Failed to fetch profile data for \(member.eaId): \(error.localizedDescription)", category: .api)
+                LoggerService.shared.info("Successfully retried fetching stats for: \(member.eaId)", category: .api)
+            }
+            
             squadMembers[index].lastFetched = Date()
             squadMembers[index].fetchError = nil
             saveSquadToStorage()
-            LoggerService.shared.info("Successfully retried fetching stats for: \(member.eaId)", category: .api)
         } catch {
             squadMembers[index].fetchError = error.localizedDescription
             LoggerService.shared.error("Retry failed for member \(member.eaId): \(error)", category: .error)

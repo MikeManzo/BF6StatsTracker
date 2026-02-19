@@ -1529,6 +1529,7 @@ struct SquadMember: Identifiable, Codable, Hashable {
     var platform: Platform
     var displayName: String?
     var stats: PlayerStats?
+    var profileData: ProfileData?
     var lastFetched: Date?
     var fetchError: String?
     

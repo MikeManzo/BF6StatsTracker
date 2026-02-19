@@ -38,6 +38,7 @@ struct SquadComparisonView: View {
             )
             var userMember = currentUser
             userMember.stats = currentUserStats
+            userMember.profileData = viewModel.profileData
             userMember.lastFetched = Date()
             members.append(userMember)
         }
@@ -547,6 +548,40 @@ struct SquadMemberCard: View {
                                     .padding(.vertical, 2)
                                     .background(accentColor.opacity(0.7))
                                     .cornerRadius(3)
+                            }
+                            
+                            // Rank badge
+                            if let profileData = member.profileData, let rank = profileData.rank, rank > 0 {
+                                HStack(spacing: 3) {
+                                    if let rankImgUrl = profileData.rankImg, let url = URL(string: rankImgUrl) {
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(width: 14, height: 14)
+                                            case .failure(_), .empty:
+                                                Image(systemName: "star.circle.fill")
+                                                    .font(.system(size: 10))
+                                                    .foregroundColor(.yellow)
+                                            @unknown default:
+                                                EmptyView()
+                                            }
+                                        }
+                                    } else {
+                                        Image(systemName: "star.circle.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.yellow)
+                                    }
+                                    Text("\(rank)")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundColor(Theme.textPrimary)
+                                }
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(Color.yellow.opacity(0.15))
+                                .cornerRadius(3)
                             }
                         }
                         
