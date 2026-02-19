@@ -385,13 +385,6 @@ struct PlayerPreviewView: View {
                         GridItem(.flexible())
                     ], spacing: 12) {
                         StatPreviewCard(
-                            title: "Rank",
-                            value: "\(playerStats.rank)",
-                            icon: "star.fill",
-                            color: accentColor
-                        )
-
-                        StatPreviewCard(
                             title: "Mastery",
                             value: "\(playerStats.masteryLevel)",
                             icon: "arrow.up.circle.fill",

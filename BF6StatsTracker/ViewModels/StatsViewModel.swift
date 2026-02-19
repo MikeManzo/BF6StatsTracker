@@ -24,6 +24,7 @@ class StatsViewModel: ObservableObject {
     // MARK: - Published Properties
 
     @Published var playerStats: PlayerStats?
+    @Published var profileData: ProfileData?
     @Published var classStats: [ClassStats] = []
     @Published var weaponStats: [WeaponStats] = []
     @Published var vehicleStats: [VehicleStats] = []
@@ -406,6 +407,18 @@ class StatsViewModel: ObservableObject {
                 // Set isLoading to false immediately after cache data is loaded
                 self.isLoading = false
                 
+                // Fetch profile data in background (non-blocking)
+                Task {
+                    do {
+                        let profile = try await APIService.shared.fetchProfileData(identifier: identifier)
+                        await MainActor.run {
+                            self.profileData = profile
+                        }
+                    } catch {
+                        logWarning("Failed to fetch profile data from cache path: \(error.localizedDescription)", category: .network)
+                    }
+                }
+                
                 // Fetch additional stats in background without blocking UI
                 Task {
                     await fetchAdditionalStats(identifier: identifier)
@@ -425,6 +438,14 @@ class StatsViewModel: ObservableObject {
             // Fetch main player stats using identifier (includes EA identity if authenticated)
             logInfo("Fetching fresh stats from API", category: .network)
             let stats = try await APIService.shared.fetchPlayerStats(identifier: identifier)
+            
+            // Fetch profile data (rank, rank image, badges) - non-blocking if it fails
+            var profile: ProfileData?
+            do {
+                profile = try await APIService.shared.fetchProfileData(identifier: identifier)
+            } catch {
+                logWarning("Failed to fetch profile data: \(error.localizedDescription)", category: .network)
+            }
 
             // Do async/background work first (before setting any @Published properties)
             // so we don't yield to the run loop mid-update and cause partial renders
@@ -435,6 +456,7 @@ class StatsViewModel: ObservableObject {
                 classItem.className != "Unknown" || (classItem.kills > 0 || classItem.timePlayed > 0)
             }
             self.playerStats = stats
+            self.profileData = profile
             self.classStats = filteredClasses
             self.weaponStats = stats.weapons ?? []
             self.vehicleStats = stats.vehicles ?? []

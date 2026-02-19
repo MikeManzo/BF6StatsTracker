@@ -372,6 +372,74 @@ actor APIService {
         return URL(string: "https://eaassets-a.akamaihd.net/battlelog/bf6/ranks/\(rank).png")
     }
 
+    // MARK: - Profile Data
+    
+    /// Fetch player profile data including rank, rank image, and badges
+    /// - Parameter identifier: Player identifier containing name, platform, and optional EA identity
+    /// - Returns: ProfileData object with rank information and badge count
+    func fetchProfileData(identifier: PlayerIdentifier) async throws -> ProfileData {
+        // Build URL with all available identity parameters
+        let encodedName = identifier.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? identifier.name
+        var urlString = "\(baseURL)/bf6/profile/?name=\(encodedName)&platform=\(identifier.platform.rawValue)"
+        
+        // Add playerid (persona ID) if available
+        if let personaId = identifier.personaId, !personaId.isEmpty {
+            urlString += "&playerid=\(personaId)"
+        }
+        
+        // Add nucleus_id if available
+        if let nucleusId = identifier.nucleusId, !nucleusId.isEmpty {
+            urlString += "&nucleus_id=\(nucleusId)"
+        }
+        
+        logInfo("Fetching profile data from: \(urlString)", category: .api)
+        
+        guard let url = URL(string: urlString) else {
+            throw BF6TrackerError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("BF6StatsTracker/1.0", forHTTPHeaderField: "User-Agent")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw BF6TrackerError.unknown
+        }
+        
+        switch httpResponse.statusCode {
+        case 200:
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            
+            do {
+                let profileData = try decoder.decode(ProfileData.self, from: data)
+                logSuccess("Fetched profile data: rank=\(profileData.rank ?? 0), badges=\(profileData.badges ?? 0)", category: .api)
+                return profileData
+            } catch {
+                logError("Profile data decoding error: \(error)", category: .api)
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    logDebug("API Response (first 500 chars): \(jsonString.prefix(500))...", category: .api)
+                }
+                throw BF6TrackerError.decodingError(error)
+            }
+            
+        case 404:
+            throw BF6TrackerError.playerNotFound
+            
+        case 429:
+            throw BF6TrackerError.rateLimited
+            
+        case 500...599:
+            throw BF6TrackerError.serverError(httpResponse.statusCode)
+            
+        default:
+            throw BF6TrackerError.serverError(httpResponse.statusCode)
+        }
+    }
+    
     // MARK: - Progression Types
 
     /// Fetch BF6 progression types (XP multipliers and stat tracking rules)

@@ -231,25 +231,69 @@ struct ContentView: View {
                         PlatformIconView(size: 14)
                     }
 
-                    // Total XP - clickable to show XP breakdown
+                    // Total XP - clickable to show XP breakdown, with rank badge to the right
                     if let xpArray = stats.xpData, let xp = xpArray.first {
-                        Button {
-                            showingXPBreakdown.toggle()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "star.fill")
-                                    .font(.caption2)
-                                    .foregroundColor(Theme.warning)
+                        HStack(spacing: 6) {
+                            Button {
+                                showingXPBreakdown.toggle()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "star.fill")
+                                        .font(.caption2)
+                                        .foregroundColor(Theme.warning)
 
-                                Text("\(formatXP(xp.total)) XP")
-                                    .font(.caption)
-                                    .foregroundColor(Theme.textSecondary)
+                                    Text("\(formatXP(xp.total)) XP")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.textSecondary)
+                                }
                             }
-                        }
-                        .buttonStyle(.plain)
-                        .help("Click to view XP breakdown")
-                        .popover(isPresented: $showingXPBreakdown) {
-                            xpBreakdownPopover
+                            .buttonStyle(.plain)
+                            .help("Click to view XP breakdown")
+                            .popover(isPresented: $showingXPBreakdown) {
+                                xpBreakdownPopover
+                            }
+                            
+                            // Rank badge to the right of XP button
+                            if let profileData = viewModel.profileData, let rank = profileData.rank {
+                                HStack(spacing: 4) {
+                                    // Rank image from profile data if available
+                                    if let rankImgUrl = profileData.rankImg,
+                                       let url = URL(string: rankImgUrl) {
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                            case .failure(_):
+                                                Image(systemName: "star.circle.fill")
+                                                    .foregroundColor(Theme.warning)
+                                            case .empty:
+                                                ProgressView()
+                                                    .scaleEffect(0.5)
+                                            @unknown default:
+                                                Image(systemName: "star.circle.fill")
+                                                    .foregroundColor(Theme.warning)
+                                            }
+                                        }
+                                        .frame(width: 16, height: 16)
+                                    } else {
+                                        // Fallback to icon if no image available
+                                        Image(systemName: "star.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(Theme.warning)
+                                    }
+                                    
+                                    Text("Rank \(rank)")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(Theme.textSecondary)
+                                }
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Theme.cardBackground.opacity(0.5))
+                                .cornerRadius(4)
+                            }
                         }
                     }
                 }
@@ -295,6 +339,19 @@ struct ContentView: View {
                     Text("\(formatXP(xp.accolades)) Accolades")
                         .font(.body)
                         .foregroundColor(Theme.textSecondary)
+                }
+                
+                Divider()
+                
+                // Badges count from profile data
+                if let profileData = viewModel.profileData, let badges = profileData.badges {
+                    HStack(spacing: 8) {
+                        Image(systemName: "medal.fill")
+                            .foregroundColor(Theme.success)
+                        Text("\(badges) Badges")
+                            .font(.body)
+                            .foregroundColor(Theme.textSecondary)
+                    }
                 }
             }
         }

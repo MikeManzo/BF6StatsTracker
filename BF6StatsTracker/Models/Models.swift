@@ -280,45 +280,6 @@ struct PlayerStats: Codable, Identifiable {
         return min(xp / 25_000, 100)
     }
 
-    /// Calculate player rank based on total XP
-    ///
-    /// BF2042 has 1,098 total ranks: 1-99 (standard) + 100-1098 (S001-S999)
-    ///
-    /// **Formula:** Empirically derived from known rank-to-XP ratio
-    /// Testing shows: xpData.total at rank 168 produces ~68,800 XP per rank
-    /// This suggests total includes cumulative game score, not just rank XP
-    ///
-    /// **Calibration:** Rank 168 with xpData.total value
-    /// Using direct ratio: rank ≈ total / 68,800
-    var rank: Int {
-        let xp = xpData?.first?.total ?? 0
-        
-        guard xp > 0 else { return 1 }
-
-        // Empirical formula: approximately 68,800 total XP per rank
-        // Derived from: rank 168 calculation showing 948 → xp/168 ≈ 68,800
-        let calculatedRank = Int(Double(xp) / 68_800.0)
-        
-        let finalRank = max(1, min(1098, calculatedRank))
-
-        return finalRank
-    }
-
-    /// Get formatted rank string (just the rank number)
-    var rankString: String {
-        return "\(rank)"
-    }
-
-    /// Check if player has reached high rank (100+)
-    var isSRank: Bool {
-        return rank >= 100
-    }
-
-    /// Get the display rank number (same as rank for BF2042)
-    var displayRank: Int {
-        return rank
-    }
-
     // Convert percentage strings to doubles for display
     var accuracy: Double {
         parsePercentage(accuracyPercent)
@@ -1784,6 +1745,59 @@ struct SquadComparison {
         guard let stats = member.stats else { return nil }
         return metric.extractValue(from: stats)
     }
+}
+
+// MARK: - Profile Data
+
+/// Rank image URLs from profile endpoint
+struct RankImage: Codable {
+    let small: String?
+    let large: String?
+}
+
+/// Player card information from profile endpoint
+struct PlayerCard: Codable {
+    let badges: Int?
+    let rank: Int?
+    let rankImage: RankImage?
+}
+
+/// Profile information from /bf6/profile endpoint
+struct ProfileData: Codable {
+    let playerProfiles: [PlayerProfile]?
+    
+    /// Convenience accessor for the first player profile's card
+    var playerCard: PlayerCard? {
+        return playerProfiles?.first?.playerCard
+    }
+    
+    /// Convenience accessor for rank
+    var rank: Int? {
+        return playerCard?.rank
+    }
+    
+    /// Convenience accessor for badges
+    var badges: Int? {
+        return playerCard?.badges
+    }
+    
+    /// Convenience accessor for rank image URL (uses small image)
+    var rankImg: String? {
+        return playerCard?.rankImage?.small
+    }
+}
+
+/// Individual player profile entry
+struct PlayerProfile: Codable {
+    let playerCard: PlayerCard?
+    let stats: [ProfileStat]?
+    let intValue: Int?
+}
+
+/// Individual stat entry in profile
+struct ProfileStat: Codable {
+    let name: String?
+    let value: Int?
 }
 
 
