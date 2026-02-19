@@ -368,9 +368,19 @@ class iCloudBackupService: ObservableObject {
             // Create CKAsset from file
             let asset = CKAsset(fileURL: tempURL)
             
-            // Create or update record
+            // Fetch existing record or create new one
             let recordID = CKRecord.ID(recordName: recordName)
-            let record = CKRecord(recordType: recordType, recordID: recordID)
+            let record: CKRecord
+            
+            do {
+                // Try to fetch existing record
+                record = try await privateDatabase.record(for: recordID)
+            } catch let error as CKError where error.code == .unknownItem {
+                // Record doesn't exist, create new one
+                record = CKRecord(recordType: recordType, recordID: recordID)
+            }
+            
+            // Update record fields
             record["backupData"] = asset
             record["lastBackup"] = backupData.lastBackup
             record["snapshotCount"] = snapshotBackups.count

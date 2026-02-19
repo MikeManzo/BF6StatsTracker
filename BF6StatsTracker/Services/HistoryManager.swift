@@ -151,6 +151,19 @@ class HistoryManager: ObservableObject {
             self.snapshotVersion += 1
         }
         
+        // Trigger iCloud backup if enabled
+        if let settings = settings {
+            await MainActor.run {
+                Task { @MainActor in
+                    let backupService = iCloudBackupService.shared
+                    if settings.iCloudBackupEnabled {
+                        let frequency = BackupFrequency(rawValue: settings.backupFrequency) ?? .afterEachMatch
+                        await backupService.autoBackupIfNeeded(frequency: frequency, settings: settings)
+                    }
+                }
+            }
+        }
+        
         // DON'T reload data - let @Query in views handle it automatically
         // Just increment version to notify views that data may have changed
         await MainActor.run {
@@ -225,7 +238,7 @@ class HistoryManager: ObservableObject {
             
             // Trigger iCloud backup if enabled
             if let soundSettings = soundSettings {
-                Task {
+                Task { @MainActor in
                     let backupService = iCloudBackupService.shared
                     if soundSettings.iCloudBackupEnabled {
                         let frequency = BackupFrequency(rawValue: soundSettings.backupFrequency) ?? .afterEachMatch
