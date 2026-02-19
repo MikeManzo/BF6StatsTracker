@@ -134,7 +134,7 @@ class StatsViewModel: ObservableObject {
             await loadSettings()
             await checkEAAuthenticationStatus()
 
-            // Fetch progression types (XP multipliers) - do this early as it's static data
+            // Fetch progression types (XP multipliers) in background - don't block UI
             await fetchProgressionTypes()
 
             // Auto-login: If we have stored accounts but no current player data, use the most recent account
@@ -145,12 +145,13 @@ class StatsViewModel: ObservableObject {
                     await loadWithStoredIdentity(identity)
                 }
             } else if !settings.playerName.isEmpty {
-                // Force fresh data fetch on app startup
-                await forceRefreshStats()
+                // Use cached data first for instant display, then refresh in background
+                await refreshStats()  // Uses cache, doesn't block as long
             }
-
-            // Mark initialization as complete
+            
+            // Mark initialization complete - show appropriate screen based on whether we have data
             self.isInitializing = false
+
             setupAutoRefresh()
         }
     }
@@ -410,12 +411,10 @@ class StatsViewModel: ObservableObject {
                     await fetchAdditionalStats(identifier: identifier)
                 }
                 
-                // Refresh trends in background with delay
+                // Refresh trends in background with minimal delay
                 Task {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
-                    await MainActor.run {
-                        refreshTrends()
-                    }
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay (trends are cached and instant on subsequent loads)
+                    refreshTrends()
                 }
                 
                 return
@@ -482,13 +481,10 @@ class StatsViewModel: ObservableObject {
                 // Additional delay before rebuild
                 try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
                 
-                // Rebuild daily performances if needed
+                // Note: rebuildDailyPerformances removed from hot path
+                // It's a heavy operation that should only run manually via Debug menu
+                // Daily performances are automatically updated by updateDailyPerformance() above
                 await MainActor.run {
-                    if HistoryManager.shared.recentDailyPerformances.isEmpty {
-                        logInfo("No DailyPerformance records found, rebuilding...", category: .general)
-                        HistoryManager.shared.rebuildDailyPerformances(playerName: stats.userName)
-                    }
-                    
                     logSuccess("Background snapshot processing completed", category: .success)
                 }
             }
@@ -498,12 +494,10 @@ class StatsViewModel: ObservableObject {
                 await fetchAdditionalStats(identifier: identifier)
             }
             
-            // Refresh trends in background with significant delay
+            // Refresh trends in background with minimal delay
             Task {
-                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
-                await MainActor.run {
-                    refreshTrends()
-                }
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay (trends are cached and instant on subsequent loads)
+                refreshTrends()
             }
 
         } catch let error as BF6TrackerError {
@@ -736,7 +730,8 @@ class StatsViewModel: ObservableObject {
     // MARK: - Computed Properties
 
     var hasPlayerData: Bool {
-        playerStats != nil
+        // Show main view if we have stats OR if we have cached settings (loading in progress)
+        playerStats != nil || !settings.playerName.isEmpty
     }
 
     // Refresh button color based on progress
@@ -768,10 +763,18 @@ class StatsViewModel: ObservableObject {
     @Published private(set) var wlTrend: TrendDirection = .stable
 
     private func refreshTrends() {
-        killsTrend = HistoryManager.shared.calculateKillsTrend(days: 7)
-        assistsTrend = HistoryManager.shared.calculateAssistsTrend(days: 7)
-        kdTrend = HistoryManager.shared.calculateKDTrend(days: 7)
-        wlTrend = HistoryManager.shared.calculateWLTrend(days: 7)
+        // Use cached trends if available, otherwise calculate
+        Task.detached(priority: .utility) {
+            let trends = await HistoryManager.shared.getCachedTrendsOrCalculate(days: 7)
+            
+            // Update published properties on main thread
+            await MainActor.run {
+                self.killsTrend = trends.kills
+                self.assistsTrend = trends.assists
+                self.kdTrend = trends.kd
+                self.wlTrend = trends.wl
+            }
+        }
     }
 
     var dataCompletenessPercentage: Double {

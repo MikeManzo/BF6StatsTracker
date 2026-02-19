@@ -37,6 +37,10 @@ class HistoryManager: ObservableObject {
     @Published var recentDailyPerformances: [DailyPerformance] = []
 
     private var currentDailyPerformance: DailyPerformance?
+    
+    // Cached trend values to avoid recalculating on every stats refresh
+    private var cachedTrends: (kills: TrendDirection, assists: TrendDirection, kd: TrendDirection, wl: TrendDirection)?
+    private var trendCacheVersion: Int = -1  // Track which snapshot version trends were calculated for
 
     private init() {}
 
@@ -44,60 +48,9 @@ class HistoryManager: ObservableObject {
     func setup(modelContext: ModelContext) {
         self.modelContext = modelContext
         self.modelContainer = modelContext.container
-
-        // Clear any corrupt data on startup
-        // This prevents crashes from stale object references
-        clearCorruptData()
     }
 
-    /// Clear any corrupt DailyPerformance objects that reference deleted snapshots
-    private func clearCorruptData() {
-        guard let context = modelContext else { return }
 
-        // Check if we've already done this cleanup
-        let hasCleanedKey = "HasCleanedCorruptDailyPerformance_v2"
-        if UserDefaults.standard.bool(forKey: hasCleanedKey) {
-            // Already cleaned up, skip
-            return
-        }
-
-        // Delete ALL DailyPerformance objects to prevent stale reference crashes
-        // Wrap in do-catch because even fetching corrupt data can crash
-        do {
-            let descriptor = FetchDescriptor<DailyPerformance>()
-            let allPerformances = try context.fetch(descriptor)
-            logInfo("Clearing \(allPerformances.count) DailyPerformance objects to fix stale references", category: .cleanup)
-            for performance in allPerformances {
-                context.delete(performance)
-            }
-            try context.save()
-            logSuccess("Cleared corrupt DailyPerformance data", category: .success)
-
-            // Mark as cleaned only if successful
-            UserDefaults.standard.set(true, forKey: hasCleanedKey)
-        } catch {
-            // If we can't even fetch DailyPerformance objects, the corruption is severe
-            // Delete the entire DailyPerformance table by deleting all data
-            logWarning("Severe corruption detected, performing emergency cleanup: \(error)", category: .general)
-
-            // Try to delete using executeDelete (bypasses object loading)
-            do {
-                try context.delete(model: DailyPerformance.self)
-                try context.save()
-                logSuccess("Emergency cleanup successful", category: .success)
-                UserDefaults.standard.set(true, forKey: hasCleanedKey)
-            } catch {
-                logWarning("Emergency cleanup failed: \(error)", category: .general)
-                // Mark as cleaned anyway to prevent infinite loops
-                UserDefaults.standard.set(true, forKey: hasCleanedKey)
-            }
-        }
-
-        // Clear the published properties
-        todayPerformance = nil
-        yesterdayPerformance = nil
-        recentDailyPerformances = []
-    }
 
     // MARK: - Snapshots
 
@@ -148,7 +101,9 @@ class HistoryManager: ObservableObject {
                 SoundNotificationService.shared.playMatchCompletionSound(settings: settings)
             }
             
+            // Increment version once
             self.snapshotVersion += 1
+            logInfo("Background snapshot save completed", category: .general)
         }
         
         // Trigger iCloud backup if enabled
@@ -164,11 +119,15 @@ class HistoryManager: ObservableObject {
             }
         }
         
-        // DON'T reload data - let @Query in views handle it automatically
-        // Just increment version to notify views that data may have changed
-        await MainActor.run {
-            self.snapshotVersion += 1
-            logInfo("Background snapshot save completed", category: .general)
+        // Pre-calculate trends in background so they're cached when UI needs them
+        Task.detached(priority: .utility) {
+            let trends = await self.calculateTrendsAsync(days: 7)
+            let currentVersion = await MainActor.run { self.snapshotVersion }
+            await MainActor.run {
+                self.cachedTrends = trends
+                self.trendCacheVersion = currentVersion
+                logInfo("Pre-cached trends after async snapshot save", category: .general)
+            }
         }
     }
     
@@ -234,6 +193,18 @@ class HistoryManager: ObservableObject {
                 self.snapshotVersion += 1
                 
                 logInfo("Deferred snapshot processing completed", category: .general)
+            }
+            
+            // Pre-calculate trends in background so they're cached when UI needs them
+            // This prevents the 14ms database fetch from blocking the UI later
+            Task.detached(priority: .utility) {
+                let trends = await self.calculateTrendsAsync(days: 7)
+                let currentVersion = await MainActor.run { self.snapshotVersion }
+                await MainActor.run {
+                    self.cachedTrends = trends
+                    self.trendCacheVersion = currentVersion
+                    logInfo("Pre-cached trends after snapshot save", category: .general)
+                }
             }
             
             // Trigger iCloud backup if enabled
@@ -688,6 +659,143 @@ class HistoryManager: ObservableObject {
         if difference > 0.1 {
             return .improving
         } else if difference < -0.1 {
+            return .declining
+        } else {
+            return .stable
+        }
+    }
+
+    // MARK: - Async Trend Calculations (Background Thread)
+    
+    /// Get cached trends if available, otherwise calculate and cache them
+    func getCachedTrendsOrCalculate(days: Int = 7) async -> (kills: TrendDirection, assists: TrendDirection, kd: TrendDirection, wl: TrendDirection) {
+        // Check if cache is valid (matches current snapshot version)
+        if let cached = cachedTrends, trendCacheVersion == snapshotVersion {
+            return cached
+        }
+        
+        // Cache is invalid or missing, calculate trends
+        let trends = await calculateTrendsAsync(days: days)
+        
+        // Update cache
+        await MainActor.run {
+            self.cachedTrends = trends
+            self.trendCacheVersion = self.snapshotVersion
+        }
+        
+        return trends
+    }
+    
+    /// Calculate all trends asynchronously on a background thread
+    /// Optimized to use a single database fetch for all trend calculations
+    nonisolated func calculateTrendsAsync(days: Int = 7) async -> (kills: TrendDirection, assists: TrendDirection, kd: TrendDirection, wl: TrendDirection) {
+        guard let container = await modelContainer else {
+            return (.stable, .stable, .stable, .stable)
+        }
+        
+        let context = ModelContext(container)
+        
+        // Fetch recent snapshots (100 max) for all trend calculations in one query
+        let predicate = #Predicate<StatsSnapshot> { _ in true }
+        var descriptor = FetchDescriptor<StatsSnapshot>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 100
+        
+        guard let allSnapshots = try? context.fetch(descriptor), !allSnapshots.isEmpty else {
+            return (.stable, .stable, .stable, .stable)
+        }
+        
+        // Filter to last N days for kills, assists, and K/D trends
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let recentSnapshots = allSnapshots.filter { $0.timestamp >= startDate }
+        
+        // Calculate kills trend
+        let killsTrend: TrendDirection
+        if recentSnapshots.count >= 2 {
+            var deltas: [Double] = []
+            for i in 0..<recentSnapshots.count - 1 {
+                let newer = recentSnapshots[i]
+                let older = recentSnapshots[i + 1]
+                let killDelta = newer.kills - older.kills
+                deltas.append(Double(max(0, killDelta)))
+            }
+            killsTrend = Self.calculateDeltaTrendStatic(values: deltas)
+        } else {
+            killsTrend = .stable
+        }
+        
+        // Calculate assists trend
+        let assistsTrend: TrendDirection
+        if recentSnapshots.count >= 2 {
+            var deltas: [Double] = []
+            for i in 0..<recentSnapshots.count - 1 {
+                let newer = recentSnapshots[i]
+                let older = recentSnapshots[i + 1]
+                let assistDelta = newer.assists - older.assists
+                deltas.append(Double(max(0, assistDelta)))
+            }
+            assistsTrend = Self.calculateDeltaTrendStatic(values: deltas)
+        } else {
+            assistsTrend = .stable
+        }
+        
+        // Calculate K/D trend
+        let kdTrend: TrendDirection
+        if recentSnapshots.count >= 2 {
+            let newestKD = recentSnapshots.first!.kdRatio
+            let oldestKD = recentSnapshots.last!.kdRatio
+            let difference = newestKD - oldestKD
+            
+            if difference > 0.01 {
+                kdTrend = .improving
+            } else if difference < -0.01 {
+                kdTrend = .declining
+            } else {
+                kdTrend = .stable
+            }
+        } else {
+            kdTrend = .stable
+        }
+        
+        // Calculate W/L trend using all snapshots
+        let wlTrend: TrendDirection
+        if allSnapshots.count >= 2 {
+            let sorted = allSnapshots.sorted { $0.timestamp < $1.timestamp }
+            let winRates = sorted.compactMap { snapshot -> Double? in
+                guard snapshot.matchesPlayed > 0 else { return nil }
+                return (Double(snapshot.wins) / Double(snapshot.matchesPlayed)) * 100.0
+            }
+            
+            if winRates.count >= 2 {
+                let difference = winRates.last! - winRates.first!
+                if difference > 0.1 {
+                    wlTrend = .improving
+                } else if difference < -0.1 {
+                    wlTrend = .declining
+                } else {
+                    wlTrend = .stable
+                }
+            } else {
+                wlTrend = .stable
+            }
+        } else {
+            wlTrend = .stable
+        }
+        
+        return (killsTrend, assistsTrend, kdTrend, wlTrend)
+    }
+    
+    /// Static version of calculateDeltaTrend for use in nonisolated contexts
+    private nonisolated static func calculateDeltaTrendStatic(values: [Double]) -> TrendDirection {
+        guard values.count >= 2 else { return .stable }
+        
+        let avgDelta = values.reduce(0, +) / Double(values.count)
+        
+        if avgDelta > 0.5 {
+            return .improving
+        } else if avgDelta < -0.5 {
             return .declining
         } else {
             return .stable
