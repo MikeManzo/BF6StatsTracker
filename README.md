@@ -5,6 +5,7 @@
 ![macOS](https://img.shields.io/badge/macOS-14.0+-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9+-orange)
 ![License](https://img.shields.io/badge/license-GPL--3.0-green)
+[![Build macOS App](https://github.com/MikeManzo/BF6StatsTracker/actions/workflows/build.yml/badge.svg)](https://github.com/MikeManzo/BF6StatsTracker/actions/workflows/build.yml)
 
 **Track your Battlefield 6 stats with historical analytics, squad comparison, and on-device AI coaching**
 
