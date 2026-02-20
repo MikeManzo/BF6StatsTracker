@@ -204,17 +204,4 @@ struct PlayerAvatarView: View {
     }
 }
 
-// MARK: - Platform Icon View
 
-struct PlatformIconView: View {
-    @EnvironmentObject var viewModel: StatsViewModel
-    let size: CGFloat
-
-    var body: some View {
-        if let platform = Platform(apiString: viewModel.settings.platform.rawValue) {
-            Image(systemName: platform.icon)
-                .font(.system(size: size))
-                .foregroundColor(Theme.textSecondary)
-        }
-    }
-}

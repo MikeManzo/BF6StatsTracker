@@ -88,7 +88,7 @@ struct HeaderSection: View {
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
 
-                        PlatformIconView(size: 14)
+                        PlatformIconView(platform: nil, size: 14)
                     }
 
                     // Total XP - clickable to show XP breakdown, with rank badge to the right
