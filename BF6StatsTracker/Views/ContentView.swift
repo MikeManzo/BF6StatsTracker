@@ -33,6 +33,7 @@ struct ContentView: View {
     @State private var showingEALogin = false
     @State private var showingAccountSelection = false
     @State private var showingXPBreakdown = false
+    @State private var showingRankDetail = false
 
     var body: some View {
         ZStack {
@@ -255,44 +256,53 @@ struct ContentView: View {
                             
                             // Rank badge to the right of XP button
                             if let profileData = viewModel.profileData, let rank = profileData.rank {
-                                HStack(spacing: 4) {
-                                    // Rank image from profile data if available
-                                    if let rankImgUrl = profileData.rankImg,
-                                       let url = URL(string: rankImgUrl) {
-                                        AsyncImage(url: url) { phase in
-                                            switch phase {
-                                            case .success(let image):
-                                                image
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                            case .failure(_):
-                                                Image(systemName: "star.circle.fill")
-                                                    .foregroundColor(Theme.warning)
-                                            case .empty:
-                                                ProgressView()
-                                                    .scaleEffect(0.5)
-                                            @unknown default:
-                                                Image(systemName: "star.circle.fill")
-                                                    .foregroundColor(Theme.warning)
+                                Button {
+                                    showingRankDetail.toggle()
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        // Rank image from profile data if available
+                                        if let rankImgUrl = profileData.rankImg,
+                                           let url = URL(string: rankImgUrl) {
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .success(let image):
+                                                    image
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fit)
+                                                case .failure(_):
+                                                    Image(systemName: "star.circle.fill")
+                                                        .foregroundColor(Theme.warning)
+                                                case .empty:
+                                                    ProgressView()
+                                                        .scaleEffect(0.5)
+                                                @unknown default:
+                                                    Image(systemName: "star.circle.fill")
+                                                        .foregroundColor(Theme.warning)
+                                                }
                                             }
+                                            .frame(width: 16, height: 16)
+                                        } else {
+                                            // Fallback to icon if no image available
+                                            Image(systemName: "star.circle.fill")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(Theme.warning)
                                         }
-                                        .frame(width: 16, height: 16)
-                                    } else {
-                                        // Fallback to icon if no image available
-                                        Image(systemName: "star.circle.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(Theme.warning)
+                                        
+                                        Text("Rank \(rank)")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(Theme.textSecondary)
                                     }
-                                    
-                                    Text("Rank \(rank)")
-                                        .font(.caption)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Theme.textSecondary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Theme.cardBackground.opacity(0.5))
+                                    .cornerRadius(4)
                                 }
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Theme.cardBackground.opacity(0.5))
-                                .cornerRadius(4)
+                                .buttonStyle(.plain)
+                                .help("Click to view rank details")
+                                .popover(isPresented: $showingRankDetail) {
+                                    rankDetailPopover
+                                }
                             }
                         }
                     }
@@ -357,6 +367,50 @@ struct ContentView: View {
         }
         .padding(16)
         .frame(width: 220)
+    }
+    
+    // MARK: - Rank Detail Popover
+    
+    private var rankDetailPopover: some View {
+        VStack(spacing: 12) {
+            if let profileData = viewModel.profileData, 
+               let rank = profileData.rank,
+               let largeRankImgUrl = profileData.playerCard?.rankImage?.large,
+               let url = URL(string: largeRankImgUrl) {
+                
+                Text("Rank \(rank)")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Divider()
+                
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 150, height: 150)
+                    case .failure(_):
+                        VStack {
+                            Image(systemName: "star.circle.fill")
+                                .font(.system(size: 80))
+                                .foregroundColor(Theme.warning)
+                            Text("Unable to load rank image")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    case .empty:
+                        ProgressView()
+                            .frame(width: 150, height: 150)
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .frame(width: 220, height: 250)
     }
 
     // MARK: - Quick Stats Section
