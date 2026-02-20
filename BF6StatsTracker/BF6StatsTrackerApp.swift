@@ -68,7 +68,7 @@ struct BF6StatsTrackerApp: App {
                 .environmentObject(themeManager)
                 .environment(\.accentColor, themeManager.accent)
                 .environment(\.liquidGlassEnabled, viewModel.settings.liquidGlassEnabled)
-                .frame(minWidth: 1200, minHeight: 800)
+                .frame(minWidth: 1000, minHeight: 700)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
                 .onAppear {
                     isWindowVisible = true

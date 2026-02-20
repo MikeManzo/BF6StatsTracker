@@ -70,30 +70,34 @@ struct SquadComparisonView: View {
                     VStack(spacing: 20) {
                         if categories.count > 0 {
                             metricCategorySection(category: categories[0])
-                                .frame(width: 600)
+                                .frame(maxWidth: 600)
                         }
                         if categories.count > 2 {
                             metricCategorySection(category: categories[2])
-                                .frame(width: 600)
+                                .frame(maxWidth: 600)
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     
                     // Right column
                     VStack(spacing: 20) {
                         if categories.count > 1 {
                             metricCategorySection(category: categories[1])
-                                .frame(width: 600)
+                                .frame(maxWidth: 600)
                         }
                         if categories.count > 3 {
                             metricCategorySection(category: categories[3])
-                                .frame(width: 600)
+                                .frame(maxWidth: 600)
                         }
                     }
+                    .frame(maxWidth: .infinity)
                 }
+                .frame(maxWidth: .infinity)
             } else {
                 emptyState
             }
         }
+        .padding(.horizontal, 20)
         .sheet(isPresented: $showAddMemberSheet) {
             AddMemberSheet(squadService: squadService)
         }
