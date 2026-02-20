@@ -5,13 +5,11 @@
 	};
 	objectVersion = 70;
 	objects = {
-/* MRM: objectVersion was 70*/
 
 /* Begin PBXBuildFile section */
 		0000000000000001 /* BF6StatsTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000001 /* BF6StatsTrackerApp.swift */; };
 		0000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000002 /* ContentView.swift */; };
 		0000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1000000000000003 /* Assets.xcassets */; };
-		0000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000004 /* Models.swift */; };
 		0000000000000005 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000005 /* APIService.swift */; };
 		0000000000000006 /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000006 /* CacheManager.swift */; };
 		0000000000000007 /* ClassTileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000007 /* ClassTileView.swift */; };
@@ -78,6 +76,15 @@
 		27CPDOT12F460001004D2E1D /* ColorPickerDot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CPDOT02F460001004D2E1D /* ColorPickerDot.swift */; };
 		27D09C362F37E04C004572A8 /* SquadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D09C352F37E04C004572A8 /* SquadService.swift */; };
 		27D09C382F37E095004572A8 /* SquadComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D09C372F37E095004572A8 /* SquadComparisonView.swift */; };
+		27E228D62F48857C005F4F4D /* PlayerStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228D52F48857C005F4F4D /* PlayerStats.swift */; };
+		27E228D82F48859A005F4F4D /* LastMatchStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228D72F48859A005F4F4D /* LastMatchStats.swift */; };
+		27E228DA2F4885CE005F4F4D /* DetailedStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228D92F4885CE005F4F4D /* DetailedStats.swift */; };
+		27E228DC2F488624005F4F4D /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228DB2F488624005F4F4D /* Enums.swift */; };
+		27E228DE2F48863F005F4F4D /* SquadComparison.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228DD2F48863F005F4F4D /* SquadComparison.swift */; };
+		27E228E02F488652005F4F4D /* ProfileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228DF2F488652005F4F4D /* ProfileData.swift */; };
+		27E228E22F48866E005F4F4D /* Progression.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228E12F48866E005F4F4D /* Progression.swift */; };
+		27E228E42F488693005F4F4D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228E32F488693005F4F4D /* AppSettings.swift */; };
+		27E228E62F4886A3005F4F4D /* ErrorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E228E52F4886A3005F4F4D /* ErrorTypes.swift */; };
 		27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543792EE98DF300B01618 /* StatsSnapshot.swift */; };
 		27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E543782EE98DF300B01618 /* ServerModels.swift */; };
 		27E5437D2EE98E0800B01618 /* HistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E5437C2EE98E0800B01618 /* HistoryManager.swift */; };
@@ -95,7 +102,6 @@
 		1000000000000001 /* BF6StatsTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BF6StatsTrackerApp.swift; sourceTree = "<group>"; };
 		1000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1000000000000003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		1000000000000004 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		1000000000000005 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		1000000000000006 /* CacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
 		1000000000000007 /* ClassTileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassTileView.swift; sourceTree = "<group>"; };
@@ -153,6 +159,15 @@
 		27CPDOT02F460001004D2E1D /* ColorPickerDot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerDot.swift; sourceTree = "<group>"; };
 		27D09C352F37E04C004572A8 /* SquadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadService.swift; sourceTree = "<group>"; };
 		27D09C372F37E095004572A8 /* SquadComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadComparisonView.swift; sourceTree = "<group>"; };
+		27E228D52F48857C005F4F4D /* PlayerStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStats.swift; sourceTree = "<group>"; };
+		27E228D72F48859A005F4F4D /* LastMatchStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastMatchStats.swift; sourceTree = "<group>"; };
+		27E228D92F4885CE005F4F4D /* DetailedStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailedStats.swift; sourceTree = "<group>"; };
+		27E228DB2F488624005F4F4D /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
+		27E228DD2F48863F005F4F4D /* SquadComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadComparison.swift; sourceTree = "<group>"; };
+		27E228DF2F488652005F4F4D /* ProfileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileData.swift; sourceTree = "<group>"; };
+		27E228E12F48866E005F4F4D /* Progression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Progression.swift; sourceTree = "<group>"; };
+		27E228E32F488693005F4F4D /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		27E228E52F4886A3005F4F4D /* ErrorTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorTypes.swift; sourceTree = "<group>"; };
 		27E543782EE98DF300B01618 /* ServerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerModels.swift; sourceTree = "<group>"; };
 		27E543792EE98DF300B01618 /* StatsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsSnapshot.swift; sourceTree = "<group>"; };
 		27E5437C2EE98E0800B01618 /* HistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryManager.swift; sourceTree = "<group>"; };
@@ -266,11 +281,19 @@
 				27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */,
 				2719F33D2EF881AA00C42191 /* DailyPerformance.swift */,
 				274F854F2F141A87000B1B90 /* LogEntry.swift */,
-				1000000000000004 /* Models.swift */,
 				27E543782EE98DF300B01618 /* ServerModels.swift */,
 				27E543792EE98DF300B01618 /* StatsSnapshot.swift */,
 				274291A92EDD12C4000D2B69 /* StatsViewModel+Logout.swift */,
 				2747A79B2F037B7C001CF709 /* StoredEAAccount.swift */,
+				27E228D52F48857C005F4F4D /* PlayerStats.swift */,
+				27E228D72F48859A005F4F4D /* LastMatchStats.swift */,
+				27E228D92F4885CE005F4F4D /* DetailedStats.swift */,
+				27E228DB2F488624005F4F4D /* Enums.swift */,
+				27E228DD2F48863F005F4F4D /* SquadComparison.swift */,
+				27E228DF2F488652005F4F4D /* ProfileData.swift */,
+				27E228E12F48866E005F4F4D /* Progression.swift */,
+				27E228E32F488693005F4F4D /* AppSettings.swift */,
+				27E228E52F4886A3005F4F4D /* ErrorTypes.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -448,6 +471,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				27CPDOT12F460001004D2E1D /* ColorPickerDot.swift in Sources */,
+				27E228E02F488652005F4F4D /* ProfileData.swift in Sources */,
 				274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */,
 				274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */,
 				2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */,
@@ -455,20 +479,23 @@
 				27368F412F45E384005DCF95 /* iCloudBackupService.swift in Sources */,
 				2749FA142F045D97004D2E1D /* ProgressBarView.swift in Sources */,
 				2749FA1A2F05DD55004D2E1D /* SearchableListView.swift in Sources */,
+				27E228D82F48859A005F4F4D /* LastMatchStats.swift in Sources */,
 				274F85522F141A9B000B1B90 /* LoggerService.swift in Sources */,
 				2749FA152F045D97004D2E1D /* PerformanceComparisonCard.swift in Sources */,
 				2749FA192F045E00004D2E1D /* PerformanceDualComparisonCard.swift in Sources */,
 				2749FA1B2F045E10004D2E1D /* PerformanceDualComparisonCardDouble.swift in Sources */,
 				2749FA1C2F045E20004D2E1D /* EnhancedClassCard.swift in Sources */,
+				27E228E22F48866E005F4F4D /* Progression.swift in Sources */,
 				2749FA162F045D97004D2E1D /* MiniSparklineView.swift in Sources */,
 				0000000000000001 /* BF6StatsTrackerApp.swift in Sources */,
 				0000000000000002 /* ContentView.swift in Sources */,
 				27C267BC2EEF35AF006168AA /* MapTracker.swift in Sources */,
 				27E5437F2EE98E2C00B01618 /* MapStatsView.swift in Sources */,
-				0000000000000004 /* Models.swift in Sources */,
 				0000000000000005 /* APIService.swift in Sources */,
+				27E228E42F488693005F4F4D /* AppSettings.swift in Sources */,
 				0000000000000006 /* CacheManager.swift in Sources */,
 				27C4B8972F0ADCA400B07E9D /* VehicleSpecialistView.swift in Sources */,
+				27E228DA2F4885CE005F4F4D /* DetailedStats.swift in Sources */,
 				27C4B8982F0ADCA400B07E9D /* IntelligenceView.swift in Sources */,
 				27D09C382F37E095004572A8 /* SquadComparisonView.swift in Sources */,
 				27C4B8992F0ADCA400B07E9D /* TeamSupportView.swift in Sources */,
@@ -491,16 +518,20 @@
 				27E543852EE98F2D00B01618 /* PerformanceChartsView.swift in Sources */,
 				2719F33C2EF8819400C42191 /* DailyPerformanceView.swift in Sources */,
 				276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */,
+				27E228DC2F488624005F4F4D /* Enums.swift in Sources */,
 				27E5437A2EE98DF300B01618 /* StatsSnapshot.swift in Sources */,
 				274F85592F141B32000B1B90 /* LogViewModel.swift in Sources */,
 				27E5437B2EE98DF300B01618 /* ServerModels.swift in Sources */,
 				27E798092EE646350002311A /* EALoginView.swift in Sources */,
+				27E228D62F48857C005F4F4D /* PlayerStats.swift in Sources */,
 				274F85502F141A87000B1B90 /* LogEntry.swift in Sources */,
 				2749FA182F045DB0004D2E1D /* TodayVsYesterdayView.swift in Sources */,
 				27AIC0012F4EABC100000001 /* AICoachAnalysis.swift in Sources */,
 				2719F33E2EF881AA00C42191 /* DailyPerformance.swift in Sources */,
 				0000000000000014 /* Extensions.swift in Sources */,
+				27E228DE2F48863F005F4F4D /* SquadComparison.swift in Sources */,
 				2749FA1C2F05DD5C004D2E1D /* UnifiedStatCard.swift in Sources */,
+				27E228E62F4886A3005F4F4D /* ErrorTypes.swift in Sources */,
 				0000000000000015 /* DraggableTileContainer.swift in Sources */,
 				27D09C362F37E04C004572A8 /* SquadService.swift in Sources */,
 				0000000000000016 /* ImageLoader.swift in Sources */,
