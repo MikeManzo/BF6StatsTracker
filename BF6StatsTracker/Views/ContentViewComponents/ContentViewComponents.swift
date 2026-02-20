@@ -31,6 +31,8 @@ struct CleanStatCard: View {
                 Text(value)
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .foregroundColor(color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 if let trend = trend {
                     Image(systemName: trend.icon)
@@ -43,8 +45,10 @@ struct CleanStatCard: View {
                 .font(.caption2)
                 .foregroundColor(Theme.textSecondary)
                 .textCase(.uppercase)
+                .lineLimit(1)
         }
-        .frame(minWidth: 60)
+        .frame(minWidth: 80)
+        .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
     }

@@ -316,6 +316,7 @@ struct HeaderSection: View {
                 trend: viewModel.wlTrend
             ).help("All-Time Win Rate")
         }
+        .layoutPriority(1)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Quick statistics")
     }
