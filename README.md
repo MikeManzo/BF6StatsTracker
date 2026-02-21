@@ -15,6 +15,50 @@
 
 ---
 
+## Screenshots
+
+### Main Dashboard
+Track your performance at a glance with key stats, recent matches, and performance trends.
+
+<img src="Images/Main.png" width="600" alt="Main Dashboard">
+
+### Squad Comparison
+Compare stats with your squad members side-by-side with detailed breakdowns.
+
+<img src="Images/Squad.png" width="600" alt="Squad Comparison">
+
+### Snapshot History
+View your session-by-session performance with detailed stat deltas and trends over time.
+
+<img src="Images/Snapshot.png" width="600" alt="Snapshot History">
+
+### Weapon Statistics
+Browse all weapons by category with detailed stats including kills, accuracy, and headshot percentages.
+
+<img src="Images/Weapons.png" width="600" alt="Weapon Statistics">
+
+### Vehicle Performance
+Track your effectiveness across all vehicle types with comprehensive stats.
+
+<img src="Images/Vehicles.png" width="600" alt="Vehicle Performance">
+
+### Performance Charts
+Visualize your progression with interactive charts showing K/D trends, kills, and performance metrics.
+
+<img src="Images/Stat Graphs.png" width="600" alt="Performance Charts">
+
+### AI Coach
+Get personalized tips and recommendations based on your playstyle with on-device AI analysis.
+
+<img src="Images/Coach.png" width="600" alt="AI Coach">
+
+### Settings
+Manage your EA account, customize appearance, configure auto-refresh, and control your data.
+
+<img src="Images/Settings.png" width="600" alt="Settings">
+
+---
+
 ## Features
 
 ### Stats Tracking
