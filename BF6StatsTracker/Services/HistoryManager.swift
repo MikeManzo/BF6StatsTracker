@@ -108,19 +108,17 @@ class HistoryManager: ObservableObject {
         
         // Trigger iCloud backup if enabled
         if let settings = settings {
-            await MainActor.run {
-                Task { @MainActor in
-                    let backupService = iCloudBackupService.shared
-                    if settings.iCloudBackupEnabled {
-                        let frequency = BackupFrequency(rawValue: settings.backupFrequency) ?? .afterEachMatch
-                        await backupService.autoBackupIfNeeded(frequency: frequency, settings: settings)
-                    }
+            Task { @MainActor in
+                let backupService = iCloudBackupService.shared
+                if settings.iCloudBackupEnabled {
+                    let frequency = BackupFrequency(rawValue: settings.backupFrequency) ?? .afterEachMatch
+                    await backupService.autoBackupIfNeeded(frequency: frequency, settings: settings)
                 }
             }
         }
         
         // Pre-calculate trends in background so they're cached when UI needs them
-        Task.detached(priority: .utility) {
+        Task.detached(priority: .userInitiated) {
             let trends = await self.calculateTrendsAsync(days: 7)
             let currentVersion = await MainActor.run { self.snapshotVersion }
             await MainActor.run {
@@ -137,8 +135,12 @@ class HistoryManager: ObservableObject {
         // OPTIMIZATION: Perform early return check without fetching if possible
         let newSnapshot = StatsSnapshot(from: stats, sessionId: sessionId, eaId: eaId, progressionMode: progressionMode)
 
-        // Get the most recent snapshot for comparison
-        let recentSnapshots = getRecentSnapshots(limit: 1)
+        // Get the most recent snapshot for comparison using the main actor's context
+        // This avoids priority inversion by not calling nonisolated getRecentSnapshots from MainActor
+        var descriptor = FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        descriptor.fetchLimit = 1
+        let recentSnapshots = (try? context.fetch(descriptor)) ?? []
+        
         if let mostRecent = recentSnapshots.first {
             // Calculate deltas to detect match completion
             let matchDelta = newSnapshot.matchesPlayed - mostRecent.matchesPlayed
@@ -162,7 +164,7 @@ class HistoryManager: ObservableObject {
         let shouldPlaySound = playSoundNotification
         let soundSettings = settings
         
-        Task.detached(priority: .utility) {
+        Task.detached(priority: .userInitiated) {
             await MainActor.run {
                 // First: Quick insert (minimal blocking)
                 context.insert(newSnapshot)
@@ -197,7 +199,7 @@ class HistoryManager: ObservableObject {
             
             // Pre-calculate trends in background so they're cached when UI needs them
             // This prevents the 14ms database fetch from blocking the UI later
-            Task.detached(priority: .utility) {
+            Task.detached(priority: .userInitiated) {
                 let trends = await self.calculateTrendsAsync(days: 7)
                 let currentVersion = await MainActor.run { self.snapshotVersion }
                 await MainActor.run {
@@ -224,8 +226,11 @@ class HistoryManager: ObservableObject {
     func createSyntheticSnapshot() {
         guard let context = modelContext else { return }
 
-        // Get the most recent snapshot as a base
-        let recentSnapshots = getRecentSnapshots(limit: 1)
+        // Get the most recent snapshot as a base using the main actor's context
+        var descriptor = FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        descriptor.fetchLimit = 1
+        let recentSnapshots = (try? context.fetch(descriptor)) ?? []
+        
         guard let baseSnapshot = recentSnapshots.first else {
             return
         }
@@ -350,10 +355,15 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get last N snapshots
+    /// This function performs database I/O and should be called from appropriate QoS contexts
     nonisolated func getRecentSnapshots(limit: Int = 20) -> [StatsSnapshot] {
         guard let container = modelContainer else { return [] }
         
+        // Create context with explicit QoS matching the caller's priority
+        // This avoids priority inversion by ensuring database work happens at the same QoS level
         let context = ModelContext(container)
+        context.autosaveEnabled = false  // Disable autosave for read-only operations
+        
         var descriptor = FetchDescriptor<StatsSnapshot>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
@@ -510,8 +520,12 @@ class HistoryManager: ObservableObject {
 
     /// Calculate win rate trend - returns all-time cumulative win rate from snapshots over time
     func getWLTrend(days: Int = 7) -> [(Date, Double)] {
-        // Get snapshots sorted chronologically (oldest first)
-        let snapshots = getRecentSnapshots(limit: 100)
+        guard let context = modelContext else { return [] }
+        
+        // Get snapshots sorted chronologically (oldest first) using context directly
+        var descriptor = FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        descriptor.fetchLimit = 100
+        let snapshots = ((try? context.fetch(descriptor)) ?? [])
             .sorted { $0.timestamp < $1.timestamp }
 
         guard !snapshots.isEmpty else { return [] }
@@ -694,7 +708,7 @@ class HistoryManager: ObservableObject {
     /// Calculate all trends asynchronously on a background thread
     /// Optimized to use a single database fetch for all trend calculations
     nonisolated func calculateTrendsAsync(days: Int = 7) async -> (kills: TrendDirection, assists: TrendDirection, kd: TrendDirection, wl: TrendDirection) {
-        guard let container = await modelContainer else {
+        guard let container = modelContainer else {
             return (.stable, .stable, .stable, .stable)
         }
         
