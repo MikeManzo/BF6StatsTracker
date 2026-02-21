@@ -702,30 +702,30 @@ class LocalAIService: ObservableObject {
     }
 
     /// Gather trend data from HistoryManager for analysis
-    func gatherTrendData(from historyManager: HistoryManager, days: Int = 30) -> TrendDataContainer {
-        let kdTrend7Days = historyManager.getKDTrend(days: 7)
-        let kdTrend30Days = historyManager.getKDTrend(days: min(days, 30))
-        let kdTrendDirection = historyManager.calculateKDTrend(days: 7)
+    func gatherTrendData(from historyManager: HistoryManager, days: Int = 30) async -> TrendDataContainer {
+        let kdTrend7Days = await historyManager.getKDTrend(days: 7)
+        let kdTrend30Days = await historyManager.getKDTrend(days: min(days, 30))
+        let kdTrendDirection = await historyManager.calculateKDTrend(days: 7)
 
-        let recentPerformances = historyManager.getRecentDailyPerformances(days: days)
-        let averageKD = historyManager.getAverageDailyKD(days: days)
-        let stdDev = historyManager.getDailyKDStandardDeviation(days: days)
-        let bestDay = historyManager.getBestDailyPerformance(days: days)
-        let worstDay = historyManager.getWorstDailyPerformance(days: days)
+        let recentPerformances = await MainActor.run { historyManager.getRecentDailyPerformances(days: days) }
+        let averageKD = await MainActor.run { historyManager.getAverageDailyKD(days: days) }
+        let stdDev = await MainActor.run { historyManager.getDailyKDStandardDeviation(days: days) }
+        let bestDay = await MainActor.run { historyManager.getBestDailyPerformance(days: days) }
+        let worstDay = await MainActor.run { historyManager.getWorstDailyPerformance(days: days) }
 
-        let (weekendAvg, weekdayAvg) = historyManager.getWeekendVsWeekdayStats(days: days)
+        let (weekendAvg, weekdayAvg) = await historyManager.getWeekendVsWeekdayStats(days: days)
 
         // Get hourly performance from recent snapshots
-        let recentSnapshots = historyManager.getRecentSnapshots(limit: 100)
-        let hourlyPerformance = historyManager.getHourlyStats(snapshots: recentSnapshots)
+        let recentSnapshots = await historyManager.getRecentSnapshots(limit: 100)
+        let hourlyPerformance = await MainActor.run { historyManager.getHourlyStats(snapshots: recentSnapshots) }
 
         // Calculate session metrics
-        let sessions = historyManager.detectSessions(days: days)
+        let sessions = await historyManager.detectSessions(days: days)
         let avgSessionLength = calculateAverageSessionLength(sessions: sessions)
 
         // Calculate momentum - compare last 3 days vs previous 7
-        let last3DaysKD = calculateAverageKD(from: historyManager.getRecentDailyPerformances(days: 3))
-        let previous7DaysKD = calculateAverageKD(from: Array(historyManager.getRecentDailyPerformances(days: 10).dropFirst(3)))
+        let last3DaysKD = calculateAverageKD(from: await MainActor.run { historyManager.getRecentDailyPerformances(days: 3) })
+        let previous7DaysKD = calculateAverageKD(from: Array(await MainActor.run { historyManager.getRecentDailyPerformances(days: 10) }.dropFirst(3)))
 
         return TrendDataContainer(
             kdTrend7Days: kdTrend7Days,

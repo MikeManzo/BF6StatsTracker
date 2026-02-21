@@ -1195,7 +1195,7 @@ struct AICoachView: View {
                 days: 30,
                 playerName: stats.userName
             )
-            let trendData = aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
+            let trendData = await aiService.gatherTrendData(from: HistoryManager.shared, days: 30)
 
             let response = await aiService.generateCoachingAdvice(
                 stats: stats,

@@ -24,10 +24,7 @@ struct PerformanceChartsView: View {
     @EnvironmentObject var viewModel: StatsViewModel
     @StateObject private var historyManager = HistoryManager.shared
 
-    // Use @Query to automatically handle object lifecycle
-    @Query(sort: \StatsSnapshot.timestamp, order: .reverse)
-    private var allSnapshots: [StatsSnapshot]
-
+    @State private var allSnapshots: [StatsSnapshot] = []
     @State private var selectedPeriod: ChartPeriod = .week
     @State private var selectedMetric: ChartMetric = .kd
     @State private var selectedSnapshot: StatsSnapshot?
@@ -40,6 +37,8 @@ struct PerformanceChartsView: View {
     @State private var cachedRolling7: [(Date, Double)] = []
     @State private var cachedRolling30: [(Date, Double)] = []
     @State private var cachedHourlyData: [HourlyPerformanceData] = []
+    @State private var cachedWeekendKD: Double = 0.0
+    @State private var cachedWeekdayKD: Double = 0.0
 
     /// Number of days of data available based on oldest snapshot
     private var daysOfDataAvailable: Int {
@@ -94,14 +93,18 @@ struct PerformanceChartsView: View {
             }
         }
         .background(Theme.backgroundPrimary)
-        .onAppear {
-            updateCachedData()
+        .task {
+            await updateCachedData()
         }
         .onChange(of: selectedPeriod) { _, _ in
-            updateCachedData()
+            Task {
+                await updateCachedData()
+            }
         }
-        .onChange(of: allSnapshots.count) { _, _ in
-            updateCachedData()
+        .onChange(of: historyManager.snapshotVersion) { _, _ in
+            Task {
+                await updateCachedData()
+            }
         }
     }
 
@@ -876,9 +879,8 @@ struct PerformanceChartsView: View {
             }
 
             // Weekend vs Weekday
-            let (rawWeekendKD, rawWeekdayKD) = historyManager.getWeekendVsWeekdayStats(days: selectedPeriod.days)
-            let weekendKD = sanitize(rawWeekendKD)
-            let weekdayKD = sanitize(rawWeekdayKD)
+            let weekendKD = sanitize(cachedWeekendKD)
+            let weekdayKD = sanitize(cachedWeekdayKD)
 
             if weekendKD > 0 || weekdayKD > 0 {
                 VStack(spacing: 12) {
@@ -1192,15 +1194,25 @@ struct PerformanceChartsView: View {
 
     // MARK: - Cache Update
 
-    private func updateCachedData() {
-        cachedSnapshots = historyManager.getSnapshotsInRange(days: selectedPeriod.days)
-        cachedDailyKDTrend = historyManager.getDailyKDTrend(days: selectedPeriod.days)
-        cachedDailyKillsTrend = historyManager.getDailyKillsTrend(days: selectedPeriod.days)
-
+    @MainActor
+    private func updateCachedData() async {
+        // Fetch all snapshots for daysOfDataAvailable calculation
+        allSnapshots = await historyManager.getSnapshotsInRange(days: 365) // Get all snapshots
+        
+        // Fetch period-specific data
+        cachedSnapshots = await historyManager.getSnapshotsInRange(days: selectedPeriod.days)
+        cachedDailyKDTrend = await historyManager.getDailyKDTrend(days: selectedPeriod.days)
+        cachedDailyKillsTrend = await historyManager.getDailyKillsTrend(days: selectedPeriod.days)
+        
         let snapshotCount = cachedSnapshots.count
-        cachedRolling7 = historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(7, snapshotCount))
-        cachedRolling30 = selectedPeriod.days >= 30 ? historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(30, snapshotCount)) : []
-        cachedHourlyData = historyManager.getHourlyStats(snapshots: cachedSnapshots)
+        cachedRolling7 = await historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(7, snapshotCount))
+        cachedRolling30 = selectedPeriod.days >= 30 ? await historyManager.getRollingKDAverage(days: selectedPeriod.days, windowSize: min(30, snapshotCount)) : []
+        cachedHourlyData = await MainActor.run { historyManager.getHourlyStats(snapshots: cachedSnapshots) }
+        
+        // Cache weekend vs weekday stats
+        let (weekendKD, weekdayKD) = await historyManager.getWeekendVsWeekdayStats(days: selectedPeriod.days)
+        cachedWeekendKD = weekendKD
+        cachedWeekdayKD = weekdayKD
     }
 
     private func getBestAndWorstFromCache() -> (best: StatsSnapshot?, worst: StatsSnapshot?) {

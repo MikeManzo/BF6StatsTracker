@@ -836,9 +836,13 @@ struct TodayVsYesterdayView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .onAppear { snapshots = historyManager.getAllSnapshots() }
+        .task {
+            snapshots = await historyManager.getAllSnapshots()
+        }
         .onChange(of: historyManager.snapshotVersion) { _, _ in
-            snapshots = historyManager.getAllSnapshots()
+            Task {
+                snapshots = await historyManager.getAllSnapshots()
+            }
         }
         .onDisappear {
             // Reset animation state when view disappears so it animates again on next view
@@ -941,7 +945,6 @@ struct TodayVsYesterdayView: View {
     }
 
     private var mapsPlayedCount: Int? {
-        let snapshots = historyManager.getRecentSnapshots(limit: 2)
         guard let latest = snapshots.first,
               snapshots.count >= 2 else {
             return nil

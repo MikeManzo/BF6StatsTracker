@@ -20,7 +20,7 @@ import SwiftData
 
 /// Persisted AI Coach analysis results
 @Model
-final class AICoachAnalysis {
+final class AICoachAnalysis: @unchecked Sendable {
     @Attribute(.unique) var id: UUID
     var generatedAt: Date
     var playerName: String

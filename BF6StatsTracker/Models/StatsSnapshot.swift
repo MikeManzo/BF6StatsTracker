@@ -21,7 +21,7 @@ import SwiftData
 // MARK: - Stats Snapshot
 
 @Model
-final class StatsSnapshot {
+final class StatsSnapshot: @unchecked Sendable {
     @Attribute(.unique) var id: UUID
     var timestamp: Date
     var playerName: String
@@ -235,7 +235,7 @@ final class StatsSnapshot {
 // MARK: - Play Session
 
 @Model
-final class PlaySession {
+final class PlaySession: @unchecked Sendable {
     @Attribute(.unique) var id: UUID
     var startTime: Date
     var endTime: Date?
@@ -292,7 +292,7 @@ final class PlaySession {
 // MARK: - Map Stats (Parsed from API)
 
 @Model
-final class MapStats {
+final class MapStats: @unchecked Sendable {
     @Attribute(.unique) var id: UUID
     var mapName: String
     var playerName: String

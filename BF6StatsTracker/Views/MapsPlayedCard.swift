@@ -21,6 +21,7 @@ import SwiftData
 struct MapsPlayedCard: View {
     @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var historyManager: HistoryManager
+    @State private var snapshots: [StatsSnapshot] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -45,10 +46,17 @@ struct MapsPlayedCard: View {
             }
         }
         .cardStyle()
+        .task {
+            snapshots = await historyManager.getRecentSnapshots(limit: 2)
+        }
+        .onChange(of: historyManager.snapshotVersion) { _, _ in
+            Task {
+                snapshots = await historyManager.getRecentSnapshots(limit: 2)
+            }
+        }
     }
 
     private func getMapsPlayed() -> [MapActivity]? {
-        let snapshots = historyManager.getRecentSnapshots(limit: 2)
         guard let latest = snapshots.first,
               snapshots.count >= 2 else {
             return nil
@@ -183,6 +191,7 @@ struct MapsPlayedCard: View {
 struct MapsPlayedContent: View {
     @Environment(\.accentColor) private var accentColor
     @EnvironmentObject var historyManager: HistoryManager
+    @State private var snapshots: [StatsSnapshot] = []
 
     var body: some View {
         Group {
@@ -198,10 +207,17 @@ struct MapsPlayedContent: View {
                 emptyState(message: "No snapshot history available")
             }
         }
+        .task {
+            snapshots = await historyManager.getRecentSnapshots(limit: 2)
+        }
+        .onChange(of: historyManager.snapshotVersion) { _, _ in
+            Task {
+                snapshots = await historyManager.getRecentSnapshots(limit: 2)
+            }
+        }
     }
 
     private func getMapsPlayed() -> [MapActivity]? {
-        let snapshots = historyManager.getRecentSnapshots(limit: 2)
         guard let latest = snapshots.first,
               snapshots.count >= 2 else {
             return nil

@@ -21,7 +21,7 @@ import SwiftData
 // MARK: - Daily Performance
 
 @Model
-final class DailyPerformance {
+final class DailyPerformance: @unchecked Sendable {
     @Attribute(.unique) var id: UUID
     var date: Date // Calendar day (normalized to start of day)
     var playerName: String

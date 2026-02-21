@@ -16,7 +16,7 @@
 //
 
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 import SwiftUI
 
 @MainActor
@@ -338,50 +338,59 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get snapshots for a date range
-    nonisolated func getSnapshots(from startDate: Date, to endDate: Date) -> [StatsSnapshot] {
+    nonisolated func getSnapshots(from startDate: Date, to endDate: Date) async -> [StatsSnapshot] {
         guard let container = modelContainer else { return [] }
         
-        let context = ModelContext(container)
-        let predicate = #Predicate<StatsSnapshot> { snapshot in
-            snapshot.timestamp >= startDate && snapshot.timestamp <= endDate
-        }
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false
+            
+            let predicate = #Predicate<StatsSnapshot> { snapshot in
+                snapshot.timestamp >= startDate && snapshot.timestamp <= endDate
+            }
 
-        let descriptor = FetchDescriptor<StatsSnapshot>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
+            let descriptor = FetchDescriptor<StatsSnapshot>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
 
-        return (try? context.fetch(descriptor)) ?? []
+            return (try? context.fetch(descriptor)) ?? []
+        }.value
     }
 
     /// Get last N snapshots
-    /// This function performs database I/O and should be called from appropriate QoS contexts
-    nonisolated func getRecentSnapshots(limit: Int = 20) -> [StatsSnapshot] {
+    /// Async version to avoid priority inversion when called from high-priority threads
+    nonisolated func getRecentSnapshots(limit: Int = 20) async -> [StatsSnapshot] {
         guard let container = modelContainer else { return [] }
         
-        // Create context with explicit QoS matching the caller's priority
-        // This avoids priority inversion by ensuring database work happens at the same QoS level
-        let context = ModelContext(container)
-        context.autosaveEnabled = false  // Disable autosave for read-only operations
-        
-        var descriptor = FetchDescriptor<StatsSnapshot>(
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
-        descriptor.fetchLimit = limit
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false  // Disable autosave for read-only operations
+            
+            var descriptor = FetchDescriptor<StatsSnapshot>(
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+            descriptor.fetchLimit = limit
 
-        return (try? context.fetch(descriptor)) ?? []
+            return (try? context.fetch(descriptor)) ?? []
+        }.value
     }
 
     /// Get all snapshots (no limit)
-    nonisolated func getAllSnapshots() -> [StatsSnapshot] {
+    /// Async version to avoid priority inversion when called from high-priority threads
+    nonisolated func getAllSnapshots() async -> [StatsSnapshot] {
         guard let container = modelContainer else { return [] }
         
-        let context = ModelContext(container)
-        let descriptor = FetchDescriptor<StatsSnapshot>(
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false  // Disable autosave for read-only operations
+            
+            let descriptor = FetchDescriptor<StatsSnapshot>(
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
 
-        return (try? context.fetch(descriptor)) ?? []
+            return (try? context.fetch(descriptor)) ?? []
+        }.value
     }
 
     // MARK: - Sessions
@@ -443,9 +452,9 @@ class HistoryManager: ObservableObject {
     // MARK: - Analytics
 
     /// Calculate K/D trend over time
-    func getKDTrend(days: Int = 7) -> [(Date, Double)] {
+    func getKDTrend(days: Int = 7) async -> [(Date, Double)] {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let snapshots = getSnapshots(from: startDate, to: Date())
+        let snapshots = await getSnapshots(from: startDate, to: Date())
 
         // Convert cumulative K/D to daily K/D ratios based on deltas
         guard snapshots.count >= 2 else {
@@ -467,17 +476,17 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate kills per minute trend
-    func getKPMTrend(days: Int = 7) -> [(Date, Double)] {
+    func getKPMTrend(days: Int = 7) async -> [(Date, Double)] {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let snapshots = getSnapshots(from: startDate, to: Date())
+        let snapshots = await getSnapshots(from: startDate, to: Date())
 
         return snapshots.map { ($0.timestamp, $0.killsPerMinute) }
     }
 
     /// Calculate kills trend - returns daily kill deltas
-    func getKillsTrend(days: Int = 7) -> [(Date, Int)] {
+    func getKillsTrend(days: Int = 7) async -> [(Date, Int)] {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let snapshots = getSnapshots(from: startDate, to: Date())
+        let snapshots = await getSnapshots(from: startDate, to: Date())
 
         // Convert cumulative kills to daily deltas
         guard snapshots.count >= 2 else {
@@ -497,9 +506,9 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate assists trend - returns daily assist deltas
-    func getAssistsTrend(days: Int = 7) -> [(Date, Int)] {
+    func getAssistsTrend(days: Int = 7) async -> [(Date, Int)] {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let snapshots = getSnapshots(from: startDate, to: Date())
+        let snapshots = await getSnapshots(from: startDate, to: Date())
 
         // Convert cumulative assists to daily deltas
         guard snapshots.count >= 2 else {
@@ -542,8 +551,8 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get performance summary for period
-    func getPerformanceSummary(days: Int = 7) -> PerformanceSummary? {
-        let snapshots = getKDTrend(days: days)
+    func getPerformanceSummary(days: Int = 7) async -> PerformanceSummary? {
+        let snapshots = await getKDTrend(days: days)
         guard !snapshots.isEmpty else { return nil }
 
         let kdValues = snapshots.map { $0.1 }
@@ -616,8 +625,8 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate trend for kills (using Int values)
-    func calculateKillsTrend(days: Int = 7) -> TrendDirection {
-        let killsData = getKillsTrend(days: days)
+    func calculateKillsTrend(days: Int = 7) async -> TrendDirection {
+        let killsData = await getKillsTrend(days: days)
         guard !killsData.isEmpty else { return .stable }
 
         let values = killsData.map { Double($0.1) }
@@ -626,8 +635,8 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate trend for assists (using Int values)
-    func calculateAssistsTrend(days: Int = 7) -> TrendDirection {
-        let assistsData = getAssistsTrend(days: days)
+    func calculateAssistsTrend(days: Int = 7) async -> TrendDirection {
+        let assistsData = await getAssistsTrend(days: days)
         guard !assistsData.isEmpty else { return .stable }
 
         let values = assistsData.map { Double($0.1) }
@@ -636,9 +645,9 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate trend for K/D ratio (absolute - is overall K/D increasing over time?)
-    func calculateKDTrend(days: Int = 7) -> TrendDirection {
+    func calculateKDTrend(days: Int = 7) async -> TrendDirection {
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let snapshots = getSnapshots(from: startDate, to: Date())
+        let snapshots = await getSnapshots(from: startDate, to: Date())
 
         guard snapshots.count >= 2 else { return .stable }
 
@@ -712,19 +721,21 @@ class HistoryManager: ObservableObject {
             return (.stable, .stable, .stable, .stable)
         }
         
-        let context = ModelContext(container)
-        
-        // Fetch recent snapshots (100 max) for all trend calculations in one query
-        let predicate = #Predicate<StatsSnapshot> { _ in true }
-        var descriptor = FetchDescriptor<StatsSnapshot>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
-        descriptor.fetchLimit = 100
-        
-        guard let allSnapshots = try? context.fetch(descriptor), !allSnapshots.isEmpty else {
-            return (.stable, .stable, .stable, .stable)
-        }
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false  // Disable autosave for read-only operations
+            
+            // Fetch recent snapshots (100 max) for all trend calculations in one query
+            let predicate = #Predicate<StatsSnapshot> { _ in true }
+            var descriptor = FetchDescriptor<StatsSnapshot>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+            descriptor.fetchLimit = 100
+            
+            guard let allSnapshots = try? context.fetch(descriptor), !allSnapshots.isEmpty else {
+                return (.stable, .stable, .stable, .stable)
+            }
         
         // Filter to last N days for kills, assists, and K/D trends
         let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
@@ -804,6 +815,7 @@ class HistoryManager: ObservableObject {
         }
         
         return (killsTrend, assistsTrend, kdTrend, wlTrend)
+        }.value
     }
     
     /// Static version of calculateDeltaTrend for use in nonisolated contexts
@@ -1046,94 +1058,104 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate daily K/D trend from snapshots
-    func getDailyKDTrend(days: Int = 7) -> [(Date, Double)] {
-        guard let context = modelContext else { return [] }
+    nonisolated func getDailyKDTrend(days: Int = 7) async -> [(Date, Double)] {
+        guard let container = modelContainer else { return [] }
 
-        // For "All" (days >= 365), fetch all snapshots without date filter
-        let descriptor: FetchDescriptor<StatsSnapshot>
-        if days >= 365 {
-            descriptor = FetchDescriptor<StatsSnapshot>(
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-        } else {
-            let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-            let predicate = #Predicate<StatsSnapshot> { snapshot in
-                snapshot.timestamp >= startDate
-            }
-            descriptor = FetchDescriptor<StatsSnapshot>(
-                predicate: predicate,
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-        }
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false
 
-        guard let snapshots = try? context.fetch(descriptor) else { return [] }
-
-        // Group snapshots by day and calculate daily K/D (delta between first and last snapshot of each day)
-        let calendar = Calendar.current
-        var dailyData: [Date: (startSnapshot: StatsSnapshot?, endSnapshot: StatsSnapshot?)] = [:]
-
-        for snapshot in snapshots {
-            let day = calendar.startOfDay(for: snapshot.timestamp)
-            if dailyData[day] == nil {
-                dailyData[day] = (snapshot, snapshot)
+            // For "All" (days >= 365), fetch all snapshots without date filter
+            let descriptor: FetchDescriptor<StatsSnapshot>
+            if days >= 365 {
+                descriptor = FetchDescriptor<StatsSnapshot>(
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
             } else {
-                dailyData[day]?.endSnapshot = snapshot
+                let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+                let predicate = #Predicate<StatsSnapshot> { snapshot in
+                    snapshot.timestamp >= startDate
+                }
+                descriptor = FetchDescriptor<StatsSnapshot>(
+                    predicate: predicate,
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
             }
-        }
 
-        // Calculate daily K/D from deltas
-        return dailyData.compactMap { (date, snapshots) -> (Date, Double)? in
-            guard let start = snapshots.startSnapshot, let end = snapshots.endSnapshot else { return nil }
-            let deltaKills = end.kills - start.kills
-            let deltaDeaths = end.deaths - start.deaths
-            let dailyKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
-            // Ensure the result is finite (not NaN or Infinity)
-            return dailyKD.isFinite ? (date, dailyKD) : (date, 0.0)
-        }.sorted { $0.0 < $1.0 }
+            guard let snapshots = try? context.fetch(descriptor) else { return [] }
+
+            // Group snapshots by day and calculate daily K/D (delta between first and last snapshot of each day)
+            let calendar = Calendar.current
+            var dailyData: [Date: (startSnapshot: StatsSnapshot?, endSnapshot: StatsSnapshot?)] = [:]
+
+            for snapshot in snapshots {
+                let day = calendar.startOfDay(for: snapshot.timestamp)
+                if dailyData[day] == nil {
+                    dailyData[day] = (snapshot, snapshot)
+                } else {
+                    dailyData[day]?.endSnapshot = snapshot
+                }
+            }
+
+            // Calculate daily K/D from deltas
+            return dailyData.compactMap { (date, snapshots) -> (Date, Double)? in
+                guard let start = snapshots.startSnapshot, let end = snapshots.endSnapshot else { return nil }
+                let deltaKills = end.kills - start.kills
+                let deltaDeaths = end.deaths - start.deaths
+                let dailyKD = deltaDeaths > 0 ? Double(deltaKills) / Double(deltaDeaths) : Double(deltaKills)
+                // Ensure the result is finite (not NaN or Infinity)
+                return dailyKD.isFinite ? (date, dailyKD) : (date, 0.0)
+            }.sorted { $0.0 < $1.0 }
+        }.value
     }
 
     /// Calculate daily kills trend from snapshots
-    func getDailyKillsTrend(days: Int = 7) -> [(Date, Int)] {
-        guard let context = modelContext else { return [] }
+    nonisolated func getDailyKillsTrend(days: Int = 7) async -> [(Date, Int)] {
+        guard let container = modelContainer else { return [] }
 
-        // For "All" (days >= 365), fetch all snapshots without date filter
-        let descriptor: FetchDescriptor<StatsSnapshot>
-        if days >= 365 {
-            descriptor = FetchDescriptor<StatsSnapshot>(
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-        } else {
-            let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-            let predicate = #Predicate<StatsSnapshot> { snapshot in
-                snapshot.timestamp >= startDate
-            }
-            descriptor = FetchDescriptor<StatsSnapshot>(
-                predicate: predicate,
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-        }
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false
 
-        guard let snapshots = try? context.fetch(descriptor) else { return [] }
-
-        // Group snapshots by day and calculate daily kills (delta between first and last snapshot of each day)
-        let calendar = Calendar.current
-        var dailyData: [Date: (startSnapshot: StatsSnapshot?, endSnapshot: StatsSnapshot?)] = [:]
-
-        for snapshot in snapshots {
-            let day = calendar.startOfDay(for: snapshot.timestamp)
-            if dailyData[day] == nil {
-                dailyData[day] = (snapshot, snapshot)
+            // For "All" (days >= 365), fetch all snapshots without date filter
+            let descriptor: FetchDescriptor<StatsSnapshot>
+            if days >= 365 {
+                descriptor = FetchDescriptor<StatsSnapshot>(
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
             } else {
-                dailyData[day]?.endSnapshot = snapshot
+                let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+                let predicate = #Predicate<StatsSnapshot> { snapshot in
+                    snapshot.timestamp >= startDate
+                }
+                descriptor = FetchDescriptor<StatsSnapshot>(
+                    predicate: predicate,
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
             }
-        }
 
-        // Calculate daily kills from deltas
-        return dailyData.compactMap { (date, snapshots) -> (Date, Int)? in
-            guard let start = snapshots.startSnapshot, let end = snapshots.endSnapshot else { return nil }
-            let deltaKills = end.kills - start.kills
-            return (date, deltaKills)
-        }.sorted { $0.0 < $1.0 }
+            guard let snapshots = try? context.fetch(descriptor) else { return [] }
+
+            // Group snapshots by day and calculate daily kills (delta between first and last snapshot of each day)
+            let calendar = Calendar.current
+            var dailyData: [Date: (startSnapshot: StatsSnapshot?, endSnapshot: StatsSnapshot?)] = [:]
+
+            for snapshot in snapshots {
+                let day = calendar.startOfDay(for: snapshot.timestamp)
+                if dailyData[day] == nil {
+                    dailyData[day] = (snapshot, snapshot)
+                } else {
+                    dailyData[day]?.endSnapshot = snapshot
+                }
+            }
+
+            // Calculate daily kills from deltas
+            return dailyData.compactMap { (date, snapshots) -> (Date, Int)? in
+                guard let start = snapshots.startSnapshot, let end = snapshots.endSnapshot else { return nil }
+                let deltaKills = end.kills - start.kills
+                return (date, deltaKills)
+            }.sorted { $0.0 < $1.0 }
+        }.value
     }
 
     /// Get best daily performance
@@ -1169,31 +1191,38 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get snapshots within a date range
-    func getSnapshotsInRange(days: Int) -> [StatsSnapshot] {
-        guard let context = modelContext else { return [] }
+    /// Async version to avoid priority inversion when called from high-priority threads
+    nonisolated func getSnapshotsInRange(days: Int) async -> [StatsSnapshot] {
+        guard let container = modelContainer else { return [] }
 
-        let descriptor: FetchDescriptor<StatsSnapshot>
-        if days >= 365 {
-            descriptor = FetchDescriptor<StatsSnapshot>(
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-        } else {
-            let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-            let predicate = #Predicate<StatsSnapshot> { snapshot in
-                snapshot.timestamp >= startDate
+        // Use Task.detached with userInitiated priority to avoid SwiftData's default utility QoS
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false  // Disable autosave for read-only operations
+
+            let descriptor: FetchDescriptor<StatsSnapshot>
+            if days >= 365 {
+                descriptor = FetchDescriptor<StatsSnapshot>(
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
+            } else {
+                let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+                let predicate = #Predicate<StatsSnapshot> { snapshot in
+                    snapshot.timestamp >= startDate
+                }
+                descriptor = FetchDescriptor<StatsSnapshot>(
+                    predicate: predicate,
+                    sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                )
             }
-            descriptor = FetchDescriptor<StatsSnapshot>(
-                predicate: predicate,
-                sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-            )
-        }
 
-        return (try? context.fetch(descriptor)) ?? []
+            return (try? context.fetch(descriptor)) ?? []
+        }.value
     }
 
     /// Calculate rolling average K/D for snapshots
-    func getRollingKDAverage(days: Int, windowSize: Int) -> [(Date, Double)] {
-        let snapshots = getSnapshotsInRange(days: days)
+    nonisolated func getRollingKDAverage(days: Int, windowSize: Int) async -> [(Date, Double)] {
+        let snapshots = await getSnapshotsInRange(days: days)
         guard snapshots.count >= windowSize else { return [] }
 
         var result: [(Date, Double)] = []
@@ -1210,8 +1239,8 @@ class HistoryManager: ObservableObject {
     }
 
     /// Detect gaming sessions (groups of snapshots within sessionGapMinutes of each other)
-    func detectSessions(days: Int, sessionGapMinutes: Int = 120) -> [[StatsSnapshot]] {
-        let snapshots = getSnapshotsInRange(days: days)
+    nonisolated func detectSessions(days: Int, sessionGapMinutes: Int = 120) async -> [[StatsSnapshot]] {
+        let snapshots = await getSnapshotsInRange(days: days)
         guard !snapshots.isEmpty else { return [] }
 
         var sessions: [[StatsSnapshot]] = []
@@ -1235,8 +1264,8 @@ class HistoryManager: ObservableObject {
     }
 
     /// Get best and worst snapshots by K/D
-    func getBestAndWorstSnapshots(days: Int) -> (best: StatsSnapshot?, worst: StatsSnapshot?) {
-        let snapshots = getSnapshotsInRange(days: days)
+    nonisolated func getBestAndWorstSnapshots(days: Int) async -> (best: StatsSnapshot?, worst: StatsSnapshot?) {
+        let snapshots = await getSnapshotsInRange(days: days)
         guard !snapshots.isEmpty else { return (nil, nil) }
 
         let best = snapshots.max(by: { $0.kdRatio < $1.kdRatio })
@@ -1245,8 +1274,8 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate weekend vs weekday statistics
-    func getWeekendVsWeekdayStats(days: Int) -> (weekendAvgKD: Double, weekdayAvgKD: Double) {
-        let snapshots = getSnapshotsInRange(days: days)
+    nonisolated func getWeekendVsWeekdayStats(days: Int) async -> (weekendAvgKD: Double, weekdayAvgKD: Double) {
+        let snapshots = await getSnapshotsInRange(days: days)
         let calendar = Calendar.current
 
         var weekendKDs: [Double] = []

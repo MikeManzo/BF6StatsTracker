@@ -16,7 +16,7 @@
 //
 
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 import CloudKit
 
 /// Backup frequency options

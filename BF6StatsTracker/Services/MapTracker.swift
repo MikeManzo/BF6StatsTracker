@@ -17,13 +17,14 @@
 //
 
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 
 @MainActor
 class MapTracker: ObservableObject {
     static let shared = MapTracker()
 
     private var modelContext: ModelContext?
+    nonisolated(unsafe) private var modelContainer: ModelContainer?
     @Published var mapStats: [String: MapStats] = [:]
 
     private init() {}
@@ -31,25 +32,31 @@ class MapTracker: ObservableObject {
     /// Initialize with SwiftData model context
     func setup(modelContext: ModelContext) {
         self.modelContext = modelContext
+        self.modelContainer = modelContext.container
         loadMapStats()
     }
 
     // MARK: - Map Statistics
 
     /// Get all map statistics for a player
-    func getMapStats(playerName: String, platform: String) -> [MapStats] {
-        guard let context = modelContext else { return [] }
+    nonisolated func getMapStats(playerName: String, platform: String) async -> [MapStats] {
+        guard let container = modelContainer else { return [] }
 
-        let predicate = #Predicate<MapStats> { mapStat in
-            mapStat.playerName == playerName && mapStat.platform == platform
-        }
+        return await Task.detached(priority: .userInitiated) {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false
+            
+            let predicate = #Predicate<MapStats> { mapStat in
+                mapStat.playerName == playerName && mapStat.platform == platform
+            }
 
-        let descriptor = FetchDescriptor<MapStats>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.matchesPlayed, order: .reverse)]
-        )
-
-        return (try? context.fetch(descriptor)) ?? []
+            let descriptor = FetchDescriptor<MapStats>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.matchesPlayed, order: .reverse)]
+            )
+            
+            return (try? context.fetch(descriptor)) ?? []
+        }.value
     }
 
     /// Update map statistics based on current stats and snapshots
@@ -60,15 +67,19 @@ class MapTracker: ObservableObject {
         let playerName = stats.userName
         let platform = stats.platform
 
-        // Get existing map stats
-        let existingMaps = getMapStats(playerName: playerName, platform: platform)
+        // Get existing map stats asynchronously
+        Task {
+            let existingMaps = await getMapStats(playerName: playerName, platform: platform)
 
-        // If no maps exist yet, create initial distribution
-        if existingMaps.isEmpty {
-            createInitialMapDistribution(from: stats)
-        } else {
-            // Update existing maps based on stat changes
-            updateExistingMaps(from: stats, existing: existingMaps)
+            await MainActor.run {
+                // If no maps exist yet, create initial distribution
+                if existingMaps.isEmpty {
+                    self.createInitialMapDistribution(from: stats)
+                } else {
+                    // Update existing maps based on stat changes
+                    self.updateExistingMaps(from: stats, existing: existingMaps)
+                }
+            }
         }
     }
 
@@ -145,26 +156,26 @@ class MapTracker: ObservableObject {
     // MARK: - Map Performance Analysis
 
     /// Get best performing map
-    func getBestMap(playerName: String, platform: String) -> MapStats? {
-        let maps = getMapStats(playerName: playerName, platform: platform)
+    func getBestMap(playerName: String, platform: String) async -> MapStats? {
+        let maps = await getMapStats(playerName: playerName, platform: platform)
         return maps.max(by: { $0.kdRatio < $1.kdRatio })
     }
 
     /// Get worst performing map
-    func getWorstMap(playerName: String, platform: String) -> MapStats? {
-        let maps = getMapStats(playerName: playerName, platform: platform)
+    func getWorstMap(playerName: String, platform: String) async -> MapStats? {
+        let maps = await getMapStats(playerName: playerName, platform: platform)
         return maps.min(by: { $0.kdRatio < $1.kdRatio })
     }
 
     /// Get most played map
-    func getMostPlayedMap(playerName: String, platform: String) -> MapStats? {
-        let maps = getMapStats(playerName: playerName, platform: platform)
+    func getMostPlayedMap(playerName: String, platform: String) async -> MapStats? {
+        let maps = await getMapStats(playerName: playerName, platform: platform)
         return maps.max(by: { $0.matchesPlayed < $1.matchesPlayed })
     }
 
     /// Get highest win rate map
-    func getHighestWinRateMap(playerName: String, platform: String) -> MapStats? {
-        let maps = getMapStats(playerName: playerName, platform: platform)
+    func getHighestWinRateMap(playerName: String, platform: String) async -> MapStats? {
+        let maps = await getMapStats(playerName: playerName, platform: platform)
         return maps.max(by: { $0.winRate < $1.winRate })
     }
 
@@ -178,9 +189,13 @@ class MapTracker: ObservableObject {
     /// Clear all map statistics for a player
     func clearMapStats(playerName: String, platform: String) {
         guard let context = modelContext else { return }
-        let maps = getMapStats(playerName: playerName, platform: platform)
-        maps.forEach { context.delete($0) }
-        try? context.save()
-        loadMapStats()
+        Task {
+            let maps = await getMapStats(playerName: playerName, platform: platform)
+            await MainActor.run {
+                maps.forEach { context.delete($0) }
+                try? context.save()
+                self.loadMapStats()
+            }
+        }
     }
 }
