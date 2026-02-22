@@ -138,13 +138,13 @@ struct PlaystyleInsightsView: View {
             
             let form = await Task.detached {
                 await MainActor.run {
-                    historyManager.getFormIndicator()
+                    historyManager.getFormIndicator(days: selectedPeriod)
                 }
             }.value
             
             let recs = await Task.detached {
                 await MainActor.run {
-                    historyManager.getRecommendations()
+                    historyManager.getRecommendations(days: selectedPeriod)
                 }
             }.value
             

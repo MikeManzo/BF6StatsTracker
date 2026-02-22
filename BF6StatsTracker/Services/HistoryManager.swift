@@ -1539,7 +1539,8 @@ class HistoryManager: ObservableObject {
     }
     
     /// Get form indicator based on recent performance vs overall average
-    func getFormIndicator() -> FormIndicator {
+    /// - Parameter days: Number of days to analyze for recent performance (defaults to 30)
+    func getFormIndicator(days: Int = 30) -> FormIndicator {
         guard let context = modelContext else {
             return FormIndicator(status: .neutral, recentKD: 0, overallKD: 0, recentWinRate: 0, overallWinRate: 0, sessionsAnalyzed: 0)
         }
@@ -1564,9 +1565,15 @@ class HistoryManager: ObservableObject {
         let overallWinsGained = overallLast.wins - overallFirst.wins
         let overallWinRate = overallMatchesGained > 0 ? Double(overallWinsGained) / Double(overallMatchesGained) * 100 : 0
         
-        // Calculate recent performance (last 10 sessions)
-        let recentCount = min(10, allSnapshots.count - 1)
-        let recentSnapshots = Array(allSnapshots.suffix(recentCount + 1))
+        // Calculate recent performance based on the specified number of days
+        let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let recentSnapshots = allSnapshots.filter { $0.timestamp >= cutoffDate }
+        
+        guard recentSnapshots.count >= 2 else {
+            return FormIndicator(status: .neutral, recentKD: overallKD, overallKD: overallKD, recentWinRate: overallWinRate, overallWinRate: overallWinRate, sessionsAnalyzed: 0)
+        }
+        
+        let recentCount = recentSnapshots.count - 1
         
         let recentFirst = recentSnapshots.first!
         let recentLast = recentSnapshots.last!
@@ -1606,10 +1613,11 @@ class HistoryManager: ObservableObject {
     }
     
     /// Generate recommendations based on current form and patterns
-    func getRecommendations() -> [String] {
-        let form = getFormIndicator()
-        let hourMetrics = getPerformanceByHourOfDay(days: 30)
-        let dayMetrics = getPerformanceByDayOfWeek(days: 30)
+    /// - Parameter days: Number of days to analyze (defaults to 30)
+    func getRecommendations(days: Int = 30) -> [String] {
+        let form = getFormIndicator(days: days)
+        let hourMetrics = getPerformanceByHourOfDay(days: days)
+        let dayMetrics = getPerformanceByDayOfWeek(days: days)
         
         var recommendations: [String] = []
         
