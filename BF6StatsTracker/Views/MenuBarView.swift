@@ -98,7 +98,7 @@ struct MenuBarView: View {
 
                 // XP and Rank Info
                 if let xpArray = stats.xpData, let xp = xpArray.first {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Image(systemName: "star.fill")
                             .font(.caption2)
                             .foregroundColor(Theme.warning)
@@ -113,15 +113,14 @@ struct MenuBarView: View {
                                 .font(.caption2)
                                 .foregroundColor(Theme.textSecondary)
                             
-                            HStack(spacing: 2) {
-                                Image(systemName: "shield.fill")
-                                    .font(.caption2)
-                                    .foregroundColor(accentColor)
-                                Text("Rank \(rank)")
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Theme.textPrimary)
-                            }
+                            Image(systemName: "shield.fill")
+                                .font(.caption2)
+                                .foregroundColor(accentColor)
+                            Text("Rank \(rank)")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Theme.textPrimary)
+                                .lineLimit(1)
                         }
                     }
                 } else {
