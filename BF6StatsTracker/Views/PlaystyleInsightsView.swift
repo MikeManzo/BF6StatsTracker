@@ -34,74 +34,8 @@ struct PlaystyleInsightsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Playstyle Insights")
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(Theme.textPrimary)
-                        
-                        Text("Advanced analytics based on your performance history")
-                            .font(.subheadline)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-                    
-                    Spacer()
-                    
-                    // Period selector
-                    HStack(spacing: 8) {
-                        Text("Period:")
-                            .foregroundColor(Theme.textSecondary)
-                        
-                        Picker("Period", selection: $selectedPeriod) {
-                            ForEach(periodOptions, id: \.self) { days in
-                                Text("\(days)d").tag(days)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 250)
-                        .labelsHidden()
-                    }
-                }
-                .padding()
-                .background(Theme.cardBackground)
-                .cornerRadius(12)
-                
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 400)
-                } else {
-                    HStack(alignment: .top, spacing: 20) {
-                        // Form Indicator Section
-                        if let form = formIndicator {
-                            FormIndicatorCard(form: form, recommendations: recommendations)
-                                .frame(maxHeight: .infinity)
-                        }
-                        
-                        // Performance Trends Card
-                        PerformanceTrendsCard(period: selectedPeriod)
-                            .frame(maxHeight: .infinity)
-                    }
-                    .frame(height: 380)
-                    
-                    HStack(alignment: .top, spacing: 20) {
-                        // Left column - Performance analysis
-                        VStack(spacing: 20) {
-                            PerformanceHeatmapCard(
-                                hourlyMetrics: hourlyMetrics,
-                                weekdayMetrics: weekdayMetrics
-                            )
-                            
-                            SessionLengthAnalysisCard(period: selectedPeriod)
-                        }
-                        
-                        // Right column - Playstyle Fingerprint
-                        if let fingerprint = playstyleFingerprint {
-                            PlaystyleFingerprintCard(fingerprint: fingerprint)
-                        }
-                    }
-                }
+                headerSection
+                contentSection
             }
             .padding()
         }
@@ -114,7 +48,85 @@ struct PlaystyleInsightsView: View {
         }
     }
     
-    private func loadData() {
+    // MARK: - View Components
+    
+    private var headerSection: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text("Playstyle Insights")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Text("Advanced analytics based on your performance history")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            
+            Spacer()
+            
+            periodSelector
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+    
+    private var periodSelector: some View {
+        HStack(spacing: 8) {
+            Text("Period:")
+                .foregroundColor(Theme.textSecondary)
+            
+            Picker("Period", selection: $selectedPeriod) {
+                ForEach(periodOptions, id: \.self) { days in
+                    Text("\(days)d").tag(days)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 250)
+            .labelsHidden()
+        }
+    }
+    
+    @ViewBuilder
+    private var contentSection: some View {
+        if isLoading {
+            ProgressView()
+                .frame(maxWidth: .infinity, minHeight: 400)
+        } else {
+            topCardsRow
+            bottomCardsRow
+        }
+    }
+    
+    private var topCardsRow: some View {
+        HStack(alignment: .top, spacing: 20) {
+            if let form = formIndicator {
+                FormIndicatorCard(form: form, recommendations: recommendations)
+            }
+            
+            PerformanceTrendsCard(period: selectedPeriod)
+        }
+    }
+    
+    private var bottomCardsRow: some View {
+        HStack(alignment: .top, spacing: 20) {
+            VStack(spacing: 20) {
+                PerformanceHeatmapCard(
+                    hourlyMetrics: hourlyMetrics,
+                    weekdayMetrics: weekdayMetrics
+                )
+                
+                SessionLengthAnalysisCard(period: selectedPeriod)
+            }
+            
+            if let fingerprint = playstyleFingerprint {
+                PlaystyleFingerprintCard(fingerprint: fingerprint)
+            }
+        }
+    }
+    
+    private func loadData() -> Void {
         // Only show loading spinner on initial load
         if !hasLoadedOnce {
             isLoading = true
@@ -122,11 +134,11 @@ struct PlaystyleInsightsView: View {
         
         Task {
             // Load all analytics data
-            let hourly = historyManager.getPerformanceByHourOfDay(days: selectedPeriod)
-            let weekly = historyManager.getPerformanceByDayOfWeek(days: selectedPeriod)
-            let fingerprint = historyManager.getPlaystyleFingerprint(days: selectedPeriod)
-            let form = historyManager.getFormIndicator(days: selectedPeriod)
-            let recs = historyManager.getRecommendations(days: selectedPeriod)
+            let hourly: [Int: PerformanceMetrics] = historyManager.getPerformanceByHourOfDay(days: selectedPeriod)
+            let weekly: [Int: PerformanceMetrics] = historyManager.getPerformanceByDayOfWeek(days: selectedPeriod)
+            let fingerprint: PlaystyleFingerprint? = historyManager.getPlaystyleFingerprint(days: selectedPeriod)
+            let form: FormIndicator = historyManager.getFormIndicator(days: selectedPeriod)
+            let recs: [String] = historyManager.getRecommendations(days: selectedPeriod)
             
             await MainActor.run {
                 self.hourlyMetrics = hourly
@@ -148,125 +160,138 @@ struct FormIndicatorCard: View {
     let recommendations: [String]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Image(systemName: form.status.icon)
-                    .font(.title)
+        ZStack(alignment: .topLeading) {
+            VStack(alignment: .leading, spacing: 14) {
+                formHeader
+                performanceComparison
+                Divider()
+                sessionStats
+                Divider()
+                recommendationsSection
+                Spacer(minLength: 0)
+            }
+            .padding()
+        }
+        .frame(height: 380, alignment: .top)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+    }
+    
+    private var formHeader: some View {
+        HStack {
+            Image(systemName: form.status.icon)
+                .font(.title)
+                .foregroundColor(form.status.color)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Current Form")
+                    .font(.headline)
+                    .foregroundColor(Theme.textSecondary)
+                
+                Text(form.status.title)
+                    .font(.title2)
+                    .fontWeight(.bold)
                     .foregroundColor(form.status.color)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Current Form")
-                        .font(.headline)
-                        .foregroundColor(Theme.textSecondary)
-                    
-                    Text(form.status.title)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(form.status.color)
-                }
-                
-                Spacer()
             }
             
-            // Performance Comparison Grid
-            VStack(spacing: 12) {
-                HStack(spacing: 20) {
-                    StatComparisonColumn(
-                        title: "K/D Ratio",
-                        recentValue: form.recentKD,
-                        overallValue: form.overallKD,
-                        format: "%.2f"
-                    )
-                    
-                    Divider()
-                        .frame(height: 60)
-                    
-                    StatComparisonColumn(
-                        title: "Win Rate",
-                        recentValue: form.recentWinRate,
-                        overallValue: form.overallWinRate,
-                        format: "%.1f%%"
-                    )
-                }
+            Spacer()
+        }
+    }
+    
+    private var performanceComparison: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 20) {
+                StatComparisonColumn(
+                    title: "K/D Ratio",
+                    recentValue: form.recentKD,
+                    overallValue: form.overallKD,
+                    format: "%.2f"
+                )
                 
                 Divider()
+                    .frame(height: 60)
                 
-                // Form indicator bar
-                HStack(spacing: 8) {
-                    Text("Form Rating:")
+                StatComparisonColumn(
+                    title: "Win Rate",
+                    recentValue: form.recentWinRate,
+                    overallValue: form.overallWinRate,
+                    format: "%.1f%%"
+                )
+            }
+            
+            Divider()
+            formRatingBar
+        }
+    }
+    
+    private var formRatingBar: some View {
+        HStack(spacing: 8) {
+            Text("Form Rating:")
+                .font(.subheadline)
+                .foregroundColor(Theme.textSecondary)
+            
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 8)
+                    
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(form.status.color)
+                        .frame(width: geometry.size.width * formRatingPercentage, height: 8)
+                }
+            }
+            .frame(height: 8)
+        }
+        .padding(.vertical, 4)
+    }
+    
+    private var sessionStats: some View {
+        HStack(spacing: 20) {
+            VStack(spacing: 4) {
+                Text("Sessions")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                Text("\(form.sessionsAnalyzed)")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+            }
+            .frame(maxWidth: .infinity)
+            
+            Divider()
+                .frame(height: 40)
+            
+            VStack(spacing: 4) {
+                Text("Improvement")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+                Text(improvementText)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(improvementColor)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+    
+    private var recommendationsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Recommendations")
+                .font(.headline)
+                .foregroundColor(Theme.textPrimary)
+            
+            ForEach(recommendations, id: \.self) { recommendation in
+                HStack(alignment: .top, spacing: 8) {
+                    Text("•")
+                        .foregroundColor(Theme.textSecondary)
+                    Text(recommendation)
                         .font(.subheadline)
                         .foregroundColor(Theme.textSecondary)
-                    
-                    GeometryReader { geometry in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(height: 8)
-                            
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(form.status.color)
-                                .frame(width: geometry.size.width * formRatingPercentage, height: 8)
-                        }
-                    }
-                    .frame(height: 8)
-                }
-                .padding(.vertical, 4)
-            }
-            
-            Divider()
-            
-            // Session Stats
-            HStack(spacing: 20) {
-                VStack(spacing: 4) {
-                    Text("Sessions")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                    Text("\(form.sessionsAnalyzed)")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.textPrimary)
-                }
-                .frame(maxWidth: .infinity)
-                
-                Divider()
-                    .frame(height: 40)
-                
-                VStack(spacing: 4) {
-                    Text("Improvement")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                    Text(improvementText)
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(improvementColor)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            
-            Divider()
-            
-            // Recommendations
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Recommendations")
-                    .font(.headline)
-                    .foregroundColor(Theme.textPrimary)
-                
-                ForEach(recommendations, id: \.self) { recommendation in
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("•")
-                            .foregroundColor(Theme.textSecondary)
-                        Text(recommendation)
-                            .font(.subheadline)
-                            .foregroundColor(Theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
-        .padding()
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.cardBackground)
-        .cornerRadius(12)
     }
     
     private var formRatingPercentage: CGFloat {
@@ -322,42 +347,60 @@ struct StatComparisonColumn: View {
         }
     }
     
+    private var deltaIcon: String {
+        delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "minus"
+    }
+    
     var body: some View {
         VStack(spacing: 8) {
             Text(title)
                 .font(.caption)
                 .foregroundColor(Theme.textSecondary)
             
-            VStack(spacing: 4) {
-                HStack(spacing: 4) {
-                    Text("Recent:")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                    Text(String(format: format, recentValue))
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.textPrimary)
-                }
-                
-                HStack(spacing: 4) {
-                    Text("Overall:")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                    Text(String(format: format, overallValue))
-                        .font(.subheadline)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                
-                HStack(spacing: 4) {
-                    Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "minus")
-                        .font(.caption2)
-                    Text(String(format: format, abs(delta)))
-                        .font(.caption)
-                }
-                .foregroundColor(deltaColor)
-            }
+            statsContent
         }
         .frame(maxWidth: .infinity)
+    }
+    
+    private var statsContent: some View {
+        VStack(spacing: 4) {
+            recentStat
+            overallStat
+            deltaStat
+        }
+    }
+    
+    private var recentStat: some View {
+        HStack(spacing: 4) {
+            Text("Recent:")
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+            Text(String(format: format, recentValue))
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(Theme.textPrimary)
+        }
+    }
+    
+    private var overallStat: some View {
+        HStack(spacing: 4) {
+            Text("Overall:")
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+            Text(String(format: format, overallValue))
+                .font(.subheadline)
+                .foregroundColor(Theme.textSecondary)
+        }
+    }
+    
+    private var deltaStat: some View {
+        HStack(spacing: 4) {
+            Image(systemName: deltaIcon)
+                .font(.caption2)
+            Text(String(format: format, abs(delta)))
+                .font(.caption)
+        }
+        .foregroundColor(deltaColor)
     }
 }
 
@@ -414,72 +457,83 @@ struct HourlyHeatmap: View {
         metrics.values.map { $0.kdRatio }.min() ?? 0.0
     }
     
+    private var gridColumns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 4), count: 12)
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("K/D Ratio by Hour of Day")
                 .font(.subheadline)
                 .foregroundColor(Theme.textSecondary)
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 12), spacing: 4) {
-                ForEach(0..<24, id: \.self) { hour in
-                    if let metric = metrics[hour] {
-                        VStack(spacing: 2) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(colorForKD(metric.kdRatio))
-                                .frame(height: 40)
-                                .overlay(
-                                    Text(String(format: "%.2f", metric.kdRatio))
-                                        .font(.caption2)
-                                        .foregroundColor(.white)
-                                )
-                            
-                            Text(hourLabel(hour))
-                                .font(.caption2)
-                                .foregroundColor(Theme.textSecondary)
-                        }
-                    } else {
-                        VStack(spacing: 2) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(height: 40)
-                            
-                            Text(hourLabel(hour))
-                                .font(.caption2)
-                                .foregroundColor(Theme.textSecondary)
-                        }
-                    }
-                }
+            heatmapGrid
+            legendView
+        }
+    }
+    
+    private var heatmapGrid: some View {
+        LazyVGrid(columns: gridColumns, spacing: 4) {
+            ForEach(0..<24, id: \.self) { hour in
+                hourCell(for: hour)
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func hourCell(for hour: Int) -> some View {
+        if let metric = metrics[hour] {
+            filledHourCell(hour: hour, metric: metric)
+        } else {
+            emptyHourCell(hour: hour)
+        }
+    }
+    
+    private func filledHourCell(hour: Int, metric: PerformanceMetrics) -> some View {
+        VStack(spacing: 2) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(colorForKD(metric.kdRatio))
+                .frame(height: 40)
+                .overlay(
+                    Text(String(format: "%.2f", metric.kdRatio))
+                        .font(.caption2)
+                        .foregroundColor(.white)
+                )
             
-            // Legend
-            HStack(spacing: 16) {
-                HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Theme.bf6Red)
-                        .frame(width: 20, height: 12)
-                    Text("Low")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                
-                HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.yellow)
-                        .frame(width: 20, height: 12)
-                    Text("Medium")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-                
-                HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Theme.bf6Green)
-                        .frame(width: 20, height: 12)
-                    Text("High")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                }
-            }
+            Text(hourLabel(hour))
+                .font(.caption2)
+                .foregroundColor(Theme.textSecondary)
+        }
+    }
+    
+    private func emptyHourCell(hour: Int) -> some View {
+        VStack(spacing: 2) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.gray.opacity(0.2))
+                .frame(height: 40)
+            
+            Text(hourLabel(hour))
+                .font(.caption2)
+                .foregroundColor(Theme.textSecondary)
+        }
+    }
+    
+    private var legendView: some View {
+        HStack(spacing: 16) {
+            legendItem(color: Theme.bf6Red, label: "Low")
+            legendItem(color: .yellow, label: "Medium")
+            legendItem(color: Theme.bf6Green, label: "High")
+        }
+    }
+    
+    private func legendItem(color: Color, label: String) -> some View {
+        HStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color)
+                .frame(width: 20, height: 12)
+            Text(label)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
         }
     }
     
@@ -514,7 +568,7 @@ struct WeeklyHeatmap: View {
         metrics.values.map { $0.kdRatio }.min() ?? 0.0
     }
     
-    private let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    private let dayNames: [String] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -524,60 +578,75 @@ struct WeeklyHeatmap: View {
             
             HStack(spacing: 12) {
                 ForEach(1...7, id: \.self) { day in
-                    if let metric = metrics[day] {
-                        VStack(spacing: 8) {
-                            Text(dayNames[day - 1])
-                                .font(.subheadline)
-                                .foregroundColor(Theme.textPrimary)
-                                .frame(maxWidth: .infinity)
-                            
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(colorForKD(metric.kdRatio))
-                                .frame(height: 120)
-                                .overlay(
-                                    VStack(spacing: 4) {
-                                        Text(String(format: "%.2f", metric.kdRatio))
-                                            .font(.title2)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.white)
-                                        
-                                        Text("K/D")
-                                            .font(.caption)
-                                            .foregroundColor(.white.opacity(0.8))
-                                        
-                                        Divider()
-                                            .background(Color.white.opacity(0.5))
-                                        
-                                        Text(String(format: "%.0f%%", metric.winRate))
-                                            .font(.subheadline)
-                                            .foregroundColor(.white)
-                                        
-                                        Text("Win Rate")
-                                            .font(.caption2)
-                                            .foregroundColor(.white.opacity(0.8))
-                                    }
-                                    .padding(8)
-                                )
-                        }
-                    } else {
-                        VStack(spacing: 8) {
-                            Text(dayNames[day - 1])
-                                .font(.subheadline)
-                                .foregroundColor(Theme.textPrimary)
-                                .frame(maxWidth: .infinity)
-                            
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(height: 120)
-                                .overlay(
-                                    Text("No Data")
-                                        .font(.caption)
-                                        .foregroundColor(Theme.textSecondary)
-                                )
-                        }
-                    }
+                    dayColumn(for: day)
                 }
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func dayColumn(for day: Int) -> some View {
+        if let metric = metrics[day] {
+            filledDayColumn(day: day, metric: metric)
+        } else {
+            emptyDayColumn(day: day)
+        }
+    }
+    
+    private func filledDayColumn(day: Int, metric: PerformanceMetrics) -> some View {
+        VStack(spacing: 8) {
+            Text(dayNames[day - 1])
+                .font(.subheadline)
+                .foregroundColor(Theme.textPrimary)
+                .frame(maxWidth: .infinity)
+            
+            RoundedRectangle(cornerRadius: 8)
+                .fill(colorForKD(metric.kdRatio))
+                .frame(height: 120)
+                .overlay(metricOverlay(metric: metric))
+        }
+    }
+    
+    private func metricOverlay(metric: PerformanceMetrics) -> some View {
+        VStack(spacing: 4) {
+            Text(String(format: "%.2f", metric.kdRatio))
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text("K/D")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.8))
+            
+            Divider()
+                .background(Color.white.opacity(0.5))
+            
+            Text(String(format: "%.0f%%", metric.winRate))
+                .font(.subheadline)
+                .foregroundColor(.white)
+            
+            Text("Win Rate")
+                .font(.caption2)
+                .foregroundColor(.white.opacity(0.8))
+        }
+        .padding(8)
+    }
+    
+    private func emptyDayColumn(day: Int) -> some View {
+        VStack(spacing: 8) {
+            Text(dayNames[day - 1])
+                .font(.subheadline)
+                .foregroundColor(Theme.textPrimary)
+                .frame(maxWidth: .infinity)
+            
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.2))
+                .frame(height: 120)
+                .overlay(
+                    Text("No Data")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                )
         }
     }
     
@@ -780,77 +849,80 @@ struct PerformanceTrendsCard: View {
     @State private var spmTrend: [Double] = []
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Performance Trends")
-                .font(.headline)
-                .foregroundColor(Theme.textPrimary)
-            
-            Text("Recent session trends over last \(period) days")
-                .font(.subheadline)
-                .foregroundColor(Theme.textSecondary)
-            
-            if recentSnapshots.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 48))
-                        .foregroundColor(Theme.textSecondary.opacity(0.5))
-                    
-                    Text("Not enough data")
-                        .foregroundColor(Theme.textSecondary)
+        ZStack(alignment: .topLeading) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Performance Trends")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Text("Recent session trends over last \(period) days")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textSecondary)
+                
+                if recentSnapshots.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 48))
+                            .foregroundColor(Theme.textSecondary.opacity(0.5))
+                        
+                        Text("Not enough data")
+                            .foregroundColor(Theme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 200)
+                } else {
+                    VStack(spacing: 16) {
+                        // K/D Trend
+                        TrendRow(
+                            title: "K/D Ratio",
+                            icon: "scope",
+                            current: kdTrend.last ?? 0,
+                            trend: kdTrend,
+                            format: "%.2f",
+                            color: Theme.bf6Green
+                        )
+                        
+                        Divider()
+                        
+                        // Win Rate Trend
+                        TrendRow(
+                            title: "Win Rate",
+                            icon: "trophy.fill",
+                            current: winRateTrend.last ?? 0,
+                            trend: winRateTrend,
+                            format: "%.1f%%",
+                            color: Theme.bf6Blue
+                        )
+                        
+                        Divider()
+                        
+                        // KPM Trend
+                        TrendRow(
+                            title: "Kills/Min",
+                            icon: "bolt.fill",
+                            current: kpmTrend.last ?? 0,
+                            trend: kpmTrend,
+                            format: "%.2f",
+                            color: Theme.bf6Orange
+                        )
+                        
+                        Divider()
+                        
+                        // Score Per Minute Trend
+                        TrendRow(
+                            title: "Score/Min",
+                            icon: "star.fill",
+                            current: spmTrend.last ?? 0,
+                            trend: spmTrend,
+                            format: "%.0f",
+                            color: .yellow
+                        )
+                    }
                 }
-                .frame(maxWidth: .infinity, minHeight: 200)
-            } else {
-                VStack(spacing: 16) {
-                    // K/D Trend
-                    TrendRow(
-                        title: "K/D Ratio",
-                        icon: "scope",
-                        current: kdTrend.last ?? 0,
-                        trend: kdTrend,
-                        format: "%.2f",
-                        color: Theme.bf6Green
-                    )
-                    
-                    Divider()
-                    
-                    // Win Rate Trend
-                    TrendRow(
-                        title: "Win Rate",
-                        icon: "trophy.fill",
-                        current: winRateTrend.last ?? 0,
-                        trend: winRateTrend,
-                        format: "%.1f%%",
-                        color: Theme.bf6Blue
-                    )
-                    
-                    Divider()
-                    
-                    // KPM Trend
-                    TrendRow(
-                        title: "Kills/Min",
-                        icon: "bolt.fill",
-                        current: kpmTrend.last ?? 0,
-                        trend: kpmTrend,
-                        format: "%.2f",
-                        color: Theme.bf6Orange
-                    )
-                    
-                    Divider()
-                    
-                    // Score Per Minute Trend
-                    TrendRow(
-                        title: "Score/Min",
-                        icon: "star.fill",
-                        current: spmTrend.last ?? 0,
-                        trend: spmTrend,
-                        format: "%.0f",
-                        color: .yellow
-                    )
-                }
+                Spacer(minLength: 0)
             }
+            .padding()
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(height: 380, alignment: .top)
         .background(Theme.cardBackground)
         .cornerRadius(12)
         .onAppear {
@@ -1210,7 +1282,7 @@ struct SessionLengthAnalysisCard: View {
                 if let bucket = SessionLengthBucket.allCases.first(where: { $0.minutes.contains(timeDelta) }) {
                     let kd = deathsDelta > 0 ? Double(killsDelta) / Double(deathsDelta) : Double(killsDelta)
                     let winRate = matchesDelta > 0 ? Double(winsDelta) / Double(matchesDelta) * 100 : 0
-                    let kpm = Double(killsDelta) / timeDelta
+                    let _ = Double(killsDelta) / timeDelta  // kpm - not currently used
                     
                     let metrics = PerformanceMetrics(
                         kdRatio: kd,
