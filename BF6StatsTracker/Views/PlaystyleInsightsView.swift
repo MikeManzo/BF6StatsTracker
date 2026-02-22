@@ -27,6 +27,7 @@ struct PlaystyleInsightsView: View {
     @State private var formIndicator: FormIndicator?
     @State private var recommendations: [String] = []
     @State private var isLoading = true
+    @State private var hasLoadedOnce = false
     
     let periodOptions = [7, 14, 30, 60, 90]
     
@@ -114,39 +115,18 @@ struct PlaystyleInsightsView: View {
     }
     
     private func loadData() {
-        isLoading = true
+        // Only show loading spinner on initial load
+        if !hasLoadedOnce {
+            isLoading = true
+        }
         
         Task {
             // Load all analytics data
-            let hourly = await Task.detached {
-                await MainActor.run {
-                    historyManager.getPerformanceByHourOfDay(days: selectedPeriod)
-                }
-            }.value
-            
-            let weekly = await Task.detached {
-                await MainActor.run {
-                    historyManager.getPerformanceByDayOfWeek(days: selectedPeriod)
-                }
-            }.value
-            
-            let fingerprint = await Task.detached {
-                await MainActor.run {
-                    historyManager.getPlaystyleFingerprint(days: selectedPeriod)
-                }
-            }.value
-            
-            let form = await Task.detached {
-                await MainActor.run {
-                    historyManager.getFormIndicator(days: selectedPeriod)
-                }
-            }.value
-            
-            let recs = await Task.detached {
-                await MainActor.run {
-                    historyManager.getRecommendations(days: selectedPeriod)
-                }
-            }.value
+            let hourly = historyManager.getPerformanceByHourOfDay(days: selectedPeriod)
+            let weekly = historyManager.getPerformanceByDayOfWeek(days: selectedPeriod)
+            let fingerprint = historyManager.getPlaystyleFingerprint(days: selectedPeriod)
+            let form = historyManager.getFormIndicator(days: selectedPeriod)
+            let recs = historyManager.getRecommendations(days: selectedPeriod)
             
             await MainActor.run {
                 self.hourlyMetrics = hourly
@@ -155,6 +135,7 @@ struct PlaystyleInsightsView: View {
                 self.formIndicator = form
                 self.recommendations = recs
                 self.isLoading = false
+                self.hasLoadedOnce = true
             }
         }
     }
@@ -884,10 +865,10 @@ struct PerformanceTrendsCard: View {
     }
     
     private func loadTrends() {
+        print("📊 [PerformanceTrendsCard] Loading trends for period: \(period) days")
         Task {
-            let snapshots = await Task.detached {
-                await historyManager.getSnapshotsInRange(days: period)
-            }.value
+            let snapshots = await historyManager.getSnapshotsInRange(days: period)
+            print("📊 [PerformanceTrendsCard] Loaded \(snapshots.count) snapshots for \(period) days")
             
             guard snapshots.count >= 2 else {
                 await MainActor.run {
@@ -936,14 +917,50 @@ struct PerformanceTrendsCard: View {
                 headshots.append(next.headshotPercentage)
             }
             
-            // Limit to last 20 data points for visualization
+            // Limit to max 20 data points, sampling evenly across the period
             let maxPoints = 20
-            let kdSlice = kds.suffix(maxPoints)
-            let wrSlice = winRates.suffix(maxPoints)
-            let kpmSlice = kpms.suffix(maxPoints)
-            let spmSlice = spms.suffix(maxPoints)
-            let accSlice = accuracies.suffix(maxPoints)
-            let hsSlice = headshots.suffix(maxPoints)
+            let kdSlice: ArraySlice<Double>
+            let wrSlice: ArraySlice<Double>
+            let kpmSlice: ArraySlice<Double>
+            let spmSlice: ArraySlice<Double>
+            let accSlice: ArraySlice<Double>
+            let hsSlice: ArraySlice<Double>
+            
+            if kds.count <= maxPoints {
+                // If we have fewer than maxPoints, use all data
+                kdSlice = kds[...]
+                wrSlice = winRates[...]
+                kpmSlice = kpms[...]
+                spmSlice = spms[...]
+                accSlice = accuracies[...]
+                hsSlice = headshots[...]
+            } else {
+                // Sample evenly across the entire period
+                let step = Double(kds.count) / Double(maxPoints)
+                var sampledKds: [Double] = []
+                var sampledWRs: [Double] = []
+                var sampledKpms: [Double] = []
+                var sampledSpms: [Double] = []
+                var sampledAccs: [Double] = []
+                var sampledHSs: [Double] = []
+                
+                for i in 0..<maxPoints {
+                    let index = min(Int(Double(i) * step), kds.count - 1)
+                    sampledKds.append(kds[index])
+                    sampledWRs.append(winRates[index])
+                    sampledKpms.append(kpms[index])
+                    sampledSpms.append(spms[index])
+                    sampledAccs.append(accuracies[index])
+                    sampledHSs.append(headshots[index])
+                }
+                
+                kdSlice = sampledKds[...]
+                wrSlice = sampledWRs[...]
+                kpmSlice = sampledKpms[...]
+                spmSlice = sampledSpms[...]
+                accSlice = sampledAccs[...]
+                hsSlice = sampledHSs[...]
+            }
             
             await MainActor.run {
                 self.recentSnapshots = snapshots
@@ -953,6 +970,7 @@ struct PerformanceTrendsCard: View {
                 self.spmTrend = Array(spmSlice)
                 self.accuracyTrend = Array(accSlice)
                 self.headshotTrend = Array(hsSlice)
+                print("📊 [PerformanceTrendsCard] Updated trends - K/D points: \(self.kdTrend.count), first: \(self.kdTrend.first ?? 0), last: \(self.kdTrend.last ?? 0)")
             }
         }
     }
@@ -1164,9 +1182,7 @@ struct SessionLengthAnalysisCard: View {
     
     private func loadSessionMetrics() {
         Task {
-            let snapshots = await Task.detached {
-                await historyManager.getSnapshotsInRange(days: period)
-            }.value
+            let snapshots = await historyManager.getSnapshotsInRange(days: period)
             
             guard snapshots.count >= 2 else {
                 await MainActor.run {
