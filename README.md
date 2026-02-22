@@ -170,7 +170,10 @@ Other shortcuts:
 
 ## API
 
-Uses the free [GameTools.Network](https://api.gametools.network) API for BF6 stats.
+Uses the following free APIs:
+
+- [GameTools.Network](https://api.gametools.network) - BF6 player statistics, weapons, vehicles, classes, and server browser
+- [rip-bf.com](https://rip-bf.com/) - EA Identity Management (nucleusId and personaId lookup)
 
 Cached for 5 minutes to reduce load. Rate limited to 1 request per second.
 
@@ -209,6 +212,7 @@ AI Coach provides statistical suggestions only, not professional gaming advice.
 ## Credits
 
 - [GameTools.Network](https://gametools.network) for the stats API
+- [rip-bf.com](https://rip-bf.com/) for EA Identity Management
 - Battlefield community for feedback
 - Apple frameworks (SwiftUI, SwiftData, FoundationModels)
 
