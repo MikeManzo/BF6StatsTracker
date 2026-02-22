@@ -102,7 +102,7 @@ struct OverviewStatsView: View {
                 if let topClass = viewModel.topClass, let stats = viewModel.playerStats {
                     EnhancedClassCard(
                         classStats: topClass,
-                        overallSPM: stats.scorePerMinute,
+                        overallKPM: stats.killsPerMinute,
                         overallWinRate: stats.wlRatio,
                         totalTimePlayed: stats.timePlayed
                     )

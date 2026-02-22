@@ -19,7 +19,7 @@ import SwiftUI
 
 struct EnhancedClassCard: View {
     let classStats: ClassStats
-    let overallSPM: Double
+    let overallKPM: Double
     let overallWinRate: Double
     let totalTimePlayed: Int
 
@@ -37,15 +37,15 @@ struct EnhancedClassCard: View {
         timePlayedPercentage > 50
     }
 
-    private var spmComparison: Double {
-        guard overallSPM > 0 else { return 0 }
-        return ((classStats.scorePerMinute - overallSPM) / overallSPM) * 100
+    private var kpmComparison: Double {
+        guard overallKPM > 0 else { return 0 }
+        return ((classStats.killsPerMinute - overallKPM) / overallKPM) * 100
     }
 
-    private var spmPerformance: PerformanceLevel {
-        if abs(spmComparison) < 5 {
+    private var kpmPerformance: PerformanceLevel {
+        if abs(kpmComparison) < 5 {
             return .average
-        } else if spmComparison > 0 {
+        } else if kpmComparison > 0 {
             return .aboveAverage
         } else {
             return .belowAverage
@@ -156,29 +156,29 @@ struct EnhancedClassCard: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 16) {
-                // Score Per Minute with comparison
+                // Kills Per Minute with comparison
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
                         Image(systemName: "speedometer")
                             .font(.caption2)
                             .foregroundColor(Theme.warning)
-                        Text("Score/Min")
+                        Text("Kills/Min")
                             .font(.caption2)
                             .foregroundColor(Theme.textSecondary)
                     }
 
-                    Text(String(format: "%.0f", classStats.scorePerMinute))
+                    Text(String(format: "%.2f", classStats.killsPerMinute))
                         .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundColor(Theme.textPrimary)
 
-                    // Comparison to overall SPM
+                    // Comparison to overall KPM
                     HStack(spacing: 2) {
-                        Image(systemName: spmPerformance.comparisonIcon)
+                        Image(systemName: kpmPerformance.comparisonIcon)
                             .font(.caption2)
-                        Text(String(format: "%.0f%% vs avg", abs(spmComparison)))
+                        Text(String(format: "%.0f%% vs avg", abs(kpmComparison)))
                             .font(.caption2)
                     }
-                    .foregroundColor(spmPerformance.color)
+                    .foregroundColor(kpmPerformance.color)
                 }
 
                 // Win Rate (calculated from overall stats proportionally)

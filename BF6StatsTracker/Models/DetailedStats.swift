@@ -76,6 +76,12 @@ struct ClassStats: Codable, Identifiable, Hashable {
     static func == (lhs: ClassStats, rhs: ClassStats) -> Bool {
         lhs.id == rhs.id
     }
+    
+    /// Calculate kills per minute
+    var killsPerMinute: Double {
+        let minutes = Double(timePlayed) / 60.0
+        return minutes > 0 ? Double(kills) / minutes : 0.0
+    }
 }
 
 // MARK: - Weapon Stats
