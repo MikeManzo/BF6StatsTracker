@@ -61,7 +61,7 @@ struct BF6StatsTrackerApp: App {
 
     var body: some Scene {
         // Main Window
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(viewModel)
                 .environmentObject(historyManager)

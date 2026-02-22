@@ -20,6 +20,7 @@ import SwiftUI
 struct MenuBarView: View {
     @Environment(\.accentColor) private var accentColor
     @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
+    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject var viewModel: StatsViewModel
 
     private var usesGlass: Bool {
@@ -83,17 +84,19 @@ struct MenuBarView: View {
                     .foregroundColor(Theme.textPrimary)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
                     Text(stats.userName)
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(Theme.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
                     PlatformIconView(size: 12)
                 }
 
-                // XP Info
+                // XP and Rank Info
                 if let xpArray = stats.xpData, let xp = xpArray.first {
                     HStack(spacing: 6) {
                         Image(systemName: "star.fill")
@@ -103,6 +106,23 @@ struct MenuBarView: View {
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundColor(Theme.textPrimary)
+                        
+                        // Rank badge
+                        if let profileData = viewModel.profileData, let rank = profileData.rank {
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundColor(Theme.textSecondary)
+                            
+                            HStack(spacing: 2) {
+                                Image(systemName: "shield.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(accentColor)
+                                Text("Rank \(rank)")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Theme.textPrimary)
+                            }
+                        }
                     }
                 } else {
                     Text("\(viewModel.formattedPlayTime) played")
@@ -110,8 +130,7 @@ struct MenuBarView: View {
                         .foregroundColor(Theme.textSecondary)
                 }
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Last Updated
             VStack(alignment: .trailing, spacing: 2) {
@@ -439,18 +458,32 @@ struct MenuBarView: View {
             logInfo("Disabled menu bar only mode - user opened full app", category: .general)
         }
 
-        NSApp.activate(ignoringOtherApps: true)
-
-        if let window = NSApp.windows.first(where: { $0.title.contains("BF6") || $0.isKeyWindow == false }) {
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-        } else {
-            // Create new window if needed
-            for window in NSApp.windows {
+        // First, try to find and show any existing hidden window
+        var foundExistingWindow = false
+        for window in NSApp.windows {
+            let className = String(describing: type(of: window))
+            
+            // Look for the main content window (not status bar or menu bar windows)
+            if className.contains("NSWindow") && 
+               !className.contains("StatusBar") && 
+               !className.contains("MenuBarExtra") &&
+               window.canBecomeKey {
                 window.makeKeyAndOrderFront(nil)
                 window.orderFrontRegardless()
+                foundExistingWindow = true
+                logInfo("Showing existing hidden window", category: .general)
+                break
             }
         }
+        
+        // If no existing window found, create a new one using openWindow
+        if !foundExistingWindow {
+            logInfo("No existing window found - opening new window", category: .general)
+            openWindow(id: "main")
+        }
+        
+        // Activate the app to bring it to front
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func formatXP(_ xp: Int) -> String {
