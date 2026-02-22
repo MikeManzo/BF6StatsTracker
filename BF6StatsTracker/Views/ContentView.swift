@@ -118,6 +118,8 @@ struct ContentView: View {
                         LoadoutAnalyzerView()
                     case .modeEfficiency:
                         ModeEfficiencyView()
+                    case .playstyleInsights:
+                        PlaystyleInsightsView()
                     case .servers:
                         ServerBrowserView()
                     case .logViewer:

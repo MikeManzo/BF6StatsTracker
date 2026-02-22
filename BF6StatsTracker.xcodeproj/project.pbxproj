@@ -50,6 +50,7 @@
 		274F85542F141AD4000B1B90 /* StatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85532F141AD4000B1B90 /* StatsViewModel.swift */; };
 		274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85552F141AF0000B1B90 /* LogViewerView.swift */; };
 		274F85592F141B32000B1B90 /* LogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F85572F141B32000B1B90 /* LogViewModel.swift */; };
+		275C316D2F4B5D96004000BC /* PlaystyleInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 275C316C2F4B5D96004000BC /* PlaystyleInsightsView.swift */; };
 		276C746B2F0D94F4002674A4 /* ProgressionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */; };
 		276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */; };
 		276C74712F0EDC88002674A4 /* MapsPlayedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */; };
@@ -152,6 +153,7 @@
 		274F85532F141AD4000B1B90 /* StatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsViewModel.swift; sourceTree = "<group>"; };
 		274F85552F141AF0000B1B90 /* LogViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerView.swift; sourceTree = "<group>"; };
 		274F85572F141B32000B1B90 /* LogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewModel.swift; sourceTree = "<group>"; };
+		275C316C2F4B5D96004000BC /* PlaystyleInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaystyleInsightsView.swift; sourceTree = "<group>"; };
 		276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionBadge.swift; sourceTree = "<group>"; };
 		276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeEfficiencyView.swift; sourceTree = "<group>"; };
 		276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapsPlayedCard.swift; sourceTree = "<group>"; };
@@ -382,6 +384,7 @@
 				1000000000000010 /* VehicleStatsView.swift */,
 				27C4B8962F0ADCA400B07E9D /* WeaponMasteryView.swift */,
 				1000000000000008 /* WeaponStatsView.swift */,
+				275C316C2F4B5D96004000BC /* PlaystyleInsightsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -575,6 +578,7 @@
 				2749FA1E2F080A96004D2E1D /* AboutView.swift in Sources */,
 				2747A79C2F037B7C001CF709 /* StoredEAAccount.swift in Sources */,
 				0000000000000018 /* OverviewStatsView.swift in Sources */,
+				275C316D2F4B5D96004000BC /* PlaystyleInsightsView.swift in Sources */,
 				271CA0FE2F26DCD00037D232 /* AICoachView.swift in Sources */,
 				27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */,
 				0000000000000019 /* LastMatchStatsView.swift in Sources */,

@@ -49,13 +49,19 @@ struct PlaystyleInsightsView: View {
                     Spacer()
                     
                     // Period selector
-                    Picker("Period", selection: $selectedPeriod) {
-                        ForEach(periodOptions, id: \.self) { days in
-                            Text("\(days)d").tag(days)
+                    HStack(spacing: 8) {
+                        Text("Period:")
+                            .foregroundColor(Theme.textSecondary)
+                        
+                        Picker("Period", selection: $selectedPeriod) {
+                            ForEach(periodOptions, id: \.self) { days in
+                                Text("\(days)d").tag(days)
+                            }
                         }
+                        .pickerStyle(.segmented)
+                        .frame(width: 250)
+                        .labelsHidden()
                     }
-                    .pickerStyle(.segmented)
-                    .frame(width: 250)
                 }
                 .padding()
                 .background(Theme.cardBackground)
@@ -65,19 +71,31 @@ struct PlaystyleInsightsView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity, minHeight: 400)
                 } else {
-                    // Form Indicator Section
-                    if let form = formIndicator {
-                        FormIndicatorCard(form: form, recommendations: recommendations)
+                    HStack(alignment: .top, spacing: 20) {
+                        // Form Indicator Section
+                        if let form = formIndicator {
+                            FormIndicatorCard(form: form, recommendations: recommendations)
+                                .frame(maxHeight: .infinity)
+                        }
+                        
+                        // Performance Trends Card
+                        PerformanceTrendsCard(period: selectedPeriod)
+                            .frame(maxHeight: .infinity)
                     }
+                    .frame(height: 380)
                     
                     HStack(alignment: .top, spacing: 20) {
-                        // Performance Heatmap
-                        PerformanceHeatmapCard(
-                            hourlyMetrics: hourlyMetrics,
-                            weekdayMetrics: weekdayMetrics
-                        )
+                        // Left column - Performance analysis
+                        VStack(spacing: 20) {
+                            PerformanceHeatmapCard(
+                                hourlyMetrics: hourlyMetrics,
+                                weekdayMetrics: weekdayMetrics
+                            )
+                            
+                            SessionLengthAnalysisCard(period: selectedPeriod)
+                        }
                         
-                        // Playstyle Fingerprint
+                        // Right column - Playstyle Fingerprint
                         if let fingerprint = playstyleFingerprint {
                             PlaystyleFingerprintCard(fingerprint: fingerprint)
                         }
@@ -86,7 +104,7 @@ struct PlaystyleInsightsView: View {
             }
             .padding()
         }
-        .background(Theme.background)
+        .background(Theme.backgroundPrimary)
         .onChange(of: selectedPeriod) { _, _ in
             loadData()
         }
@@ -149,7 +167,7 @@ struct FormIndicatorCard: View {
     let recommendations: [String]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Image(systemName: form.status.icon)
                     .font(.title)
@@ -167,32 +185,81 @@ struct FormIndicatorCard: View {
                 }
                 
                 Spacer()
-                
-                VStack(alignment: .trailing, spacing: 8) {
-                    HStack {
-                        Text("Recent K/D:")
-                            .foregroundColor(Theme.textSecondary)
-                        Text(String(format: "%.2f", form.recentKD))
-                            .fontWeight(.bold)
-                            .foregroundColor(form.recentKD > form.overallKD ? Theme.bf6Green : Theme.bf6Red)
-                    }
+            }
+            
+            // Performance Comparison Grid
+            VStack(spacing: 12) {
+                HStack(spacing: 20) {
+                    StatComparisonColumn(
+                        title: "K/D Ratio",
+                        recentValue: form.recentKD,
+                        overallValue: form.overallKD,
+                        format: "%.2f"
+                    )
                     
-                    HStack {
-                        Text("Overall K/D:")
-                            .foregroundColor(Theme.textSecondary)
-                        Text(String(format: "%.2f", form.overallKD))
-                            .fontWeight(.bold)
-                            .foregroundColor(Theme.textPrimary)
-                    }
+                    Divider()
+                        .frame(height: 60)
                     
-                    HStack {
-                        Text("Recent Win Rate:")
-                            .foregroundColor(Theme.textSecondary)
-                        Text(String(format: "%.1f%%", form.recentWinRate))
-                            .fontWeight(.bold)
-                            .foregroundColor(form.recentWinRate > form.overallWinRate ? Theme.bf6Green : Theme.bf6Red)
-                    }
+                    StatComparisonColumn(
+                        title: "Win Rate",
+                        recentValue: form.recentWinRate,
+                        overallValue: form.overallWinRate,
+                        format: "%.1f%%"
+                    )
                 }
+                
+                Divider()
+                
+                // Form indicator bar
+                HStack(spacing: 8) {
+                    Text("Form Rating:")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textSecondary)
+                    
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(height: 8)
+                            
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(form.status.color)
+                                .frame(width: geometry.size.width * formRatingPercentage, height: 8)
+                        }
+                    }
+                    .frame(height: 8)
+                }
+                .padding(.vertical, 4)
+            }
+            
+            Divider()
+            
+            // Session Stats
+            HStack(spacing: 20) {
+                VStack(spacing: 4) {
+                    Text("Sessions")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    Text("\(form.sessionsAnalyzed)")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(Theme.textPrimary)
+                }
+                .frame(maxWidth: .infinity)
+                
+                Divider()
+                    .frame(height: 40)
+                
+                VStack(spacing: 4) {
+                    Text("Improvement")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    Text(improvementText)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(improvementColor)
+                }
+                .frame(maxWidth: .infinity)
             }
             
             Divider()
@@ -208,19 +275,108 @@ struct FormIndicatorCard: View {
                         Text("•")
                             .foregroundColor(Theme.textSecondary)
                         Text(recommendation)
+                            .font(.subheadline)
                             .foregroundColor(Theme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
-            
-            Text("Based on \(form.sessionsAnalyzed) recent sessions")
-                .font(.caption)
-                .foregroundColor(Theme.textSecondary)
         }
         .padding()
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(Theme.cardBackground)
         .cornerRadius(12)
+    }
+    
+    private var formRatingPercentage: CGFloat {
+        switch form.status {
+        case .hot: return 1.0
+        case .good: return 0.75
+        case .neutral: return 0.5
+        case .declining: return 0.25
+        case .cold: return 0.15
+        }
+    }
+    
+    private var improvementText: String {
+        let kdDiff = form.recentKD - form.overallKD
+        if kdDiff > 0.1 {
+            return "+\(String(format: "%.2f", kdDiff))"
+        } else if kdDiff < -0.1 {
+            return String(format: "%.2f", kdDiff)
+        } else {
+            return "~"
+        }
+    }
+    
+    private var improvementColor: Color {
+        let kdDiff = form.recentKD - form.overallKD
+        if kdDiff > 0.1 {
+            return Theme.bf6Green
+        } else if kdDiff < -0.1 {
+            return Theme.bf6Red
+        } else {
+            return Theme.textSecondary
+        }
+    }
+}
+
+struct StatComparisonColumn: View {
+    let title: String
+    let recentValue: Double
+    let overallValue: Double
+    let format: String
+    
+    private var delta: Double {
+        recentValue - overallValue
+    }
+    
+    private var deltaColor: Color {
+        if delta > 0.01 {
+            return Theme.bf6Green
+        } else if delta < -0.01 {
+            return Theme.bf6Red
+        } else {
+            return Theme.textSecondary
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+            
+            VStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    Text("Recent:")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    Text(String(format: format, recentValue))
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(Theme.textPrimary)
+                }
+                
+                HStack(spacing: 4) {
+                    Text("Overall:")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    Text(String(format: format, overallValue))
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                
+                HStack(spacing: 4) {
+                    Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "minus")
+                        .font(.caption2)
+                    Text(String(format: format, abs(delta)))
+                        .font(.caption)
+                }
+                .foregroundColor(deltaColor)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -628,3 +784,524 @@ extension Array {
         indices.contains(index) ? self[index] : nil
     }
 }
+// MARK: - Performance Trends Card
+
+struct PerformanceTrendsCard: View {
+    @EnvironmentObject var historyManager: HistoryManager
+    let period: Int
+    
+    @State private var recentSnapshots: [StatsSnapshot] = []
+    @State private var kdTrend: [Double] = []
+    @State private var winRateTrend: [Double] = []
+    @State private var kpmTrend: [Double] = []
+    @State private var accuracyTrend: [Double] = []
+    @State private var headshotTrend: [Double] = []
+    @State private var spmTrend: [Double] = []
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Performance Trends")
+                .font(.headline)
+                .foregroundColor(Theme.textPrimary)
+            
+            Text("Recent session trends over last \(period) days")
+                .font(.subheadline)
+                .foregroundColor(Theme.textSecondary)
+            
+            if recentSnapshots.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 48))
+                        .foregroundColor(Theme.textSecondary.opacity(0.5))
+                    
+                    Text("Not enough data")
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 200)
+            } else {
+                VStack(spacing: 16) {
+                    // K/D Trend
+                    TrendRow(
+                        title: "K/D Ratio",
+                        icon: "scope",
+                        current: kdTrend.last ?? 0,
+                        trend: kdTrend,
+                        format: "%.2f",
+                        color: Theme.bf6Green
+                    )
+                    
+                    Divider()
+                    
+                    // Win Rate Trend
+                    TrendRow(
+                        title: "Win Rate",
+                        icon: "trophy.fill",
+                        current: winRateTrend.last ?? 0,
+                        trend: winRateTrend,
+                        format: "%.1f%%",
+                        color: Theme.bf6Blue
+                    )
+                    
+                    Divider()
+                    
+                    // KPM Trend
+                    TrendRow(
+                        title: "Kills/Min",
+                        icon: "bolt.fill",
+                        current: kpmTrend.last ?? 0,
+                        trend: kpmTrend,
+                        format: "%.2f",
+                        color: Theme.bf6Orange
+                    )
+                    
+                    Divider()
+                    
+                    // Score Per Minute Trend
+                    TrendRow(
+                        title: "Score/Min",
+                        icon: "star.fill",
+                        current: spmTrend.last ?? 0,
+                        trend: spmTrend,
+                        format: "%.0f",
+                        color: .yellow
+                    )
+                }
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .onAppear {
+            loadTrends()
+        }
+        .onChange(of: period) { _, _ in
+            loadTrends()
+        }
+        .onChange(of: historyManager.snapshotVersion) { _, _ in
+            loadTrends()
+        }
+    }
+    
+    private func loadTrends() {
+        Task {
+            let snapshots = await Task.detached {
+                await historyManager.getSnapshotsInRange(days: period)
+            }.value
+            
+            guard snapshots.count >= 2 else {
+                await MainActor.run {
+                    self.recentSnapshots = []
+                    self.kdTrend = []
+                    self.winRateTrend = []
+                    self.kpmTrend = []
+                    self.spmTrend = []
+                    self.accuracyTrend = []
+                    self.headshotTrend = []
+                }
+                return
+            }
+            
+            // Calculate trends from consecutive snapshots
+            var kds: [Double] = []
+            var winRates: [Double] = []
+            var kpms: [Double] = []
+            var accuracies: [Double] = []
+            var headshots: [Double] = []
+            var spms: [Double] = []
+            
+            for i in 0..<snapshots.count - 1 {
+                let current = snapshots[i]
+                let next = snapshots[i + 1]
+                
+                let killsDelta = next.kills - current.kills
+                let deathsDelta = next.deaths - current.deaths
+                let kd = deathsDelta > 0 ? Double(killsDelta) / Double(deathsDelta) : Double(killsDelta)
+                kds.append(kd)
+                
+                let matchesDelta = next.matchesPlayed - current.matchesPlayed
+                let winsDelta = next.wins - current.wins
+                let winRate = matchesDelta > 0 ? Double(winsDelta) / Double(matchesDelta) * 100 : 0
+                winRates.append(winRate)
+                
+                let timeDelta = Double(next.timePlayed - current.timePlayed) / 60.0
+                let kpm = timeDelta > 0 ? Double(killsDelta) / timeDelta : 0
+                kpms.append(kpm)
+                
+                let scoreDelta = next.totalScore - current.totalScore
+                let spm = timeDelta > 0 ? Double(scoreDelta) / timeDelta : 0
+                spms.append(spm)
+                
+                accuracies.append(next.accuracy)
+                headshots.append(next.headshotPercentage)
+            }
+            
+            // Limit to last 20 data points for visualization
+            let maxPoints = 20
+            let kdSlice = kds.suffix(maxPoints)
+            let wrSlice = winRates.suffix(maxPoints)
+            let kpmSlice = kpms.suffix(maxPoints)
+            let spmSlice = spms.suffix(maxPoints)
+            let accSlice = accuracies.suffix(maxPoints)
+            let hsSlice = headshots.suffix(maxPoints)
+            
+            await MainActor.run {
+                self.recentSnapshots = snapshots
+                self.kdTrend = Array(kdSlice)
+                self.winRateTrend = Array(wrSlice)
+                self.kpmTrend = Array(kpmSlice)
+                self.spmTrend = Array(spmSlice)
+                self.accuracyTrend = Array(accSlice)
+                self.headshotTrend = Array(hsSlice)
+            }
+        }
+    }
+}
+
+struct TrendRow: View {
+    let title: String
+    let icon: String
+    let current: Double
+    let trend: [Double]
+    let format: String
+    let color: Color
+    
+    private var trendDirection: String {
+        guard trend.count >= 2 else { return "arrow.right" }
+        let recent = Array(trend.suffix(5))
+        let avg = recent.reduce(0, +) / Double(recent.count)
+        let previous = Array(trend.dropLast(5).suffix(5))
+        let prevAvg = previous.isEmpty ? avg : previous.reduce(0, +) / Double(previous.count)
+        
+        if avg > prevAvg * 1.05 {
+            return "arrow.up.right"
+        } else if avg < prevAvg * 0.95 {
+            return "arrow.down.right"
+        } else {
+            return "arrow.right"
+        }
+    }
+    
+    private var trendColor: Color {
+        guard trend.count >= 2 else { return Theme.textSecondary }
+        let recent = Array(trend.suffix(5))
+        let avg = recent.reduce(0, +) / Double(recent.count)
+        let previous = Array(trend.dropLast(5).suffix(5))
+        let prevAvg = previous.isEmpty ? avg : previous.reduce(0, +) / Double(previous.count)
+        
+        if avg > prevAvg * 1.05 {
+            return Theme.bf6Green
+        } else if avg < prevAvg * 0.95 {
+            return Theme.bf6Red
+        } else {
+            return Theme.textSecondary
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(color)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textSecondary)
+                
+                Text(String(format: format, current))
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(Theme.textPrimary)
+            }
+            
+            Spacer()
+            
+            // Mini sparkline
+            if !trend.isEmpty {
+                MiniSparkline(data: trend, color: color)
+                    .frame(width: 80, height: 30)
+            }
+            
+            Image(systemName: trendDirection)
+                .foregroundColor(trendColor)
+                .font(.title3)
+        }
+    }
+}
+
+struct MiniSparkline: View {
+    let data: [Double]
+    let color: Color
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let maxValue = data.max() ?? 1.0
+            let minValue = data.min() ?? 0.0
+            let range = maxValue - minValue
+            let safeRange = range > 0 ? range : 1.0
+            
+            Path { path in
+                guard !data.isEmpty else { return }
+                
+                let stepX = geometry.size.width / CGFloat(max(data.count - 1, 1))
+                
+                for (index, value) in data.enumerated() {
+                    let x = CGFloat(index) * stepX
+                    let normalizedValue = (value - minValue) / safeRange
+                    let y = geometry.size.height * (1 - normalizedValue)
+                    
+                    if index == 0 {
+                        path.move(to: CGPoint(x: x, y: y))
+                    } else {
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
+                }
+            }
+            .stroke(color, lineWidth: 2)
+        }
+    }
+}
+
+// MARK: - Session Length Analysis Card
+
+struct SessionLengthAnalysisCard: View {
+    @EnvironmentObject var historyManager: HistoryManager
+    let period: Int
+    
+    @State private var sessionMetrics: [SessionLengthBucket: PerformanceMetrics] = [:]
+    
+    enum SessionLengthBucket: String, CaseIterable {
+        case veryShort = "< 30m"
+        case short = "30-60m"
+        case medium = "1-2h"
+        case long = "2-3h"
+        case veryLong = "> 3h"
+        
+        var minutes: ClosedRange<Double> {
+            switch self {
+            case .veryShort: return 0...30
+            case .short: return 30...60
+            case .medium: return 60...120
+            case .long: return 120...180
+            case .veryLong: return 180...10000
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .veryShort: return Theme.bf6Red
+            case .short: return Theme.bf6Orange
+            case .medium: return Theme.bf6Green
+            case .long: return Theme.bf6Blue
+            case .veryLong: return .purple
+            }
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Session Length Analysis")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                
+                Spacer()
+                
+                Text("Performance by session duration")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            
+            if sessionMetrics.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 36))
+                        .foregroundColor(Theme.textSecondary.opacity(0.5))
+                    
+                    Text("Not enough session data")
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 150)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(SessionLengthBucket.allCases, id: \.self) { bucket in
+                        if let metrics = sessionMetrics[bucket], metrics.sessionCount > 0 {
+                            SessionLengthRow(bucket: bucket, metrics: metrics)
+                        }
+                    }
+                }
+                
+                Divider()
+                
+                // Insight
+                if let bestBucket = sessionMetrics.max(by: { $0.value.kdRatio < $1.value.kdRatio })?.key {
+                    HStack(spacing: 8) {
+                        Image(systemName: "lightbulb.fill")
+                            .foregroundColor(.yellow)
+                        
+                        Text("You perform best in \(bestBucket.rawValue) sessions")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .onAppear {
+            loadSessionMetrics()
+        }
+        .onChange(of: period) { _, _ in
+            loadSessionMetrics()
+        }
+        .onChange(of: historyManager.snapshotVersion) { _, _ in
+            loadSessionMetrics()
+        }
+    }
+    
+    private func loadSessionMetrics() {
+        Task {
+            let snapshots = await Task.detached {
+                await historyManager.getSnapshotsInRange(days: period)
+            }.value
+            
+            guard snapshots.count >= 2 else {
+                await MainActor.run {
+                    self.sessionMetrics = [:]
+                }
+                return
+            }
+            
+            var bucketData: [SessionLengthBucket: [PerformanceMetrics]] = [:]
+            
+            // Analyze each session
+            for i in 0..<snapshots.count - 1 {
+                let current = snapshots[i]
+                let next = snapshots[i + 1]
+                
+                let timeDelta = Double(next.timePlayed - current.timePlayed) / 60.0 // minutes
+                let killsDelta = next.kills - current.kills
+                let deathsDelta = next.deaths - current.deaths
+                let matchesDelta = next.matchesPlayed - current.matchesPlayed
+                let winsDelta = next.wins - current.wins
+                
+                guard timeDelta > 0 else { continue }
+                
+                // Find bucket
+                if let bucket = SessionLengthBucket.allCases.first(where: { $0.minutes.contains(timeDelta) }) {
+                    let kd = deathsDelta > 0 ? Double(killsDelta) / Double(deathsDelta) : Double(killsDelta)
+                    let winRate = matchesDelta > 0 ? Double(winsDelta) / Double(matchesDelta) * 100 : 0
+                    let kpm = Double(killsDelta) / timeDelta
+                    
+                    let metrics = PerformanceMetrics(
+                        kdRatio: kd,
+                        winRate: winRate,
+                        killsPerMatch: matchesDelta > 0 ? Double(killsDelta) / Double(matchesDelta) : 0,
+                        accuracy: next.accuracy,
+                        sessionCount: 1
+                    )
+                    
+                    bucketData[bucket, default: []].append(metrics)
+                }
+            }
+            
+            // Average metrics for each bucket
+            var result: [SessionLengthBucket: PerformanceMetrics] = [:]
+            for (bucket, metricsList) in bucketData {
+                let avgKD = metricsList.map { $0.kdRatio }.reduce(0, +) / Double(metricsList.count)
+                let avgWR = metricsList.map { $0.winRate }.reduce(0, +) / Double(metricsList.count)
+                let avgKPM = metricsList.map { $0.killsPerMatch }.reduce(0, +) / Double(metricsList.count)
+                let avgAcc = metricsList.map { $0.accuracy }.reduce(0, +) / Double(metricsList.count)
+                
+                result[bucket] = PerformanceMetrics(
+                    kdRatio: avgKD,
+                    winRate: avgWR,
+                    killsPerMatch: avgKPM,
+                    accuracy: avgAcc,
+                    sessionCount: metricsList.count
+                )
+            }
+            
+            await MainActor.run {
+                self.sessionMetrics = result
+            }
+        }
+    }
+}
+
+struct SessionLengthRow: View {
+    let bucket: SessionLengthAnalysisCard.SessionLengthBucket
+    let metrics: PerformanceMetrics
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Bucket label with color indicator
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(bucket.color)
+                    .frame(width: 8, height: 8)
+                
+                Text(bucket.rawValue)
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textPrimary)
+                    .frame(width: 60, alignment: .leading)
+            }
+            
+            // Session count
+            Text("(\(metrics.sessionCount))")
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+                .frame(width: 40, alignment: .leading)
+            
+            Spacer()
+            
+            // K/D
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(String(format: "%.2f", metrics.kdRatio))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+                Text("K/D")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            .frame(width: 50)
+            
+            // Win Rate
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(String(format: "%.0f%%", metrics.winRate))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Theme.textPrimary)
+                Text("Win")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            .frame(width: 50)
+            
+            // Performance bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 6)
+                    
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(bucket.color)
+                        .frame(width: geometry.size.width * normalizedPerformance, height: 6)
+                }
+            }
+            .frame(width: 60, height: 6)
+        }
+    }
+    
+    private var normalizedPerformance: CGFloat {
+        // Normalize K/D to 0-1 scale (2.0 K/D = 100%)
+        let normalized = min(metrics.kdRatio / 2.0, 1.0)
+        return CGFloat(normalized)
+    }
+}
+

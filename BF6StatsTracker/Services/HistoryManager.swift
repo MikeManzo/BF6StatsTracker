@@ -1410,6 +1410,281 @@ class HistoryManager: ObservableObject {
         // Reload daily performances
         loadDailyPerformances(playerName: playerName)
     }
+    
+    // MARK: - Advanced Analytics
+    
+    /// Get performance metrics grouped by hour of day (0-23)
+    func getPerformanceByHourOfDay(days: Int = 30) -> [Int: PerformanceMetrics] {
+        guard let context = modelContext else { return [:] }
+        
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let descriptor = FetchDescriptor<StatsSnapshot>(
+            predicate: #Predicate<StatsSnapshot> { snapshot in
+                snapshot.timestamp >= startDate
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        
+        guard let snapshots = try? context.fetch(descriptor) else { return [:] }
+        
+        var metricsByHour: [Int: [PerformanceMetrics]] = [:]
+        
+        for i in 0..<snapshots.count - 1 {
+            let current = snapshots[i]
+            let next = snapshots[i + 1]
+            
+            let hour = Calendar.current.component(.hour, from: next.timestamp)
+            let metrics = calculateSessionMetrics(from: current, to: next)
+            
+            metricsByHour[hour, default: []].append(metrics)
+        }
+        
+        // Average metrics for each hour
+        var result: [Int: PerformanceMetrics] = [:]
+        for (hour, metricsList) in metricsByHour {
+            result[hour] = averageMetrics(metricsList)
+        }
+        
+        return result
+    }
+    
+    /// Get performance metrics grouped by day of week (1=Sunday, 7=Saturday)
+    func getPerformanceByDayOfWeek(days: Int = 30) -> [Int: PerformanceMetrics] {
+        guard let context = modelContext else { return [:] }
+        
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let descriptor = FetchDescriptor<StatsSnapshot>(
+            predicate: #Predicate<StatsSnapshot> { snapshot in
+                snapshot.timestamp >= startDate
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        
+        guard let snapshots = try? context.fetch(descriptor) else { return [:] }
+        
+        var metricsByDay: [Int: [PerformanceMetrics]] = [:]
+        
+        for i in 0..<snapshots.count - 1 {
+            let current = snapshots[i]
+            let next = snapshots[i + 1]
+            
+            let dayOfWeek = Calendar.current.component(.weekday, from: next.timestamp)
+            let metrics = calculateSessionMetrics(from: current, to: next)
+            
+            metricsByDay[dayOfWeek, default: []].append(metrics)
+        }
+        
+        // Average metrics for each day
+        var result: [Int: PerformanceMetrics] = [:]
+        for (day, metricsList) in metricsByDay {
+            result[day] = averageMetrics(metricsList)
+        }
+        
+        return result
+    }
+    
+    /// Calculate playstyle fingerprint metrics
+    func getPlaystyleFingerprint(days: Int = 30) -> PlaystyleFingerprint {
+        guard let context = modelContext else {
+            return PlaystyleFingerprint(aggression: 0, accuracy: 0, teamSupport: 0, survival: 0, objective: 0)
+        }
+        
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let descriptor = FetchDescriptor<StatsSnapshot>(
+            predicate: #Predicate<StatsSnapshot> { snapshot in
+                snapshot.timestamp >= startDate
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        
+        guard let snapshots = try? context.fetch(descriptor), snapshots.count >= 2 else {
+            return PlaystyleFingerprint(aggression: 0, accuracy: 0, teamSupport: 0, survival: 0, objective: 0)
+        }
+        
+        let first = snapshots.first!
+        let last = snapshots.last!
+        
+        let timePlayed = Double(last.timePlayed - first.timePlayed) / 60.0 // minutes
+        let killsGained = last.kills - first.kills
+        let deathsGained = last.deaths - first.deaths
+        let matchesGained = last.matchesPlayed - first.matchesPlayed
+        
+        // Aggression: Kills per minute (normalized to 0-1 scale, 2 KPM = 1.0)
+        let kpm = timePlayed > 0 ? Double(killsGained) / timePlayed : 0
+        let aggression = min(kpm / 2.0, 1.0)
+        
+        // Accuracy: Headshot percentage (normalized to 0-1 scale, 30% = 1.0)
+        let accuracy = min(last.headshotPercentage / 30.0, 1.0)
+        
+        // Team Support: (Revives + Resupplies) per match (normalized, 10 per match = 1.0)
+        let supportActions = last.revives - first.revives + last.resupplies - first.resupplies
+        let supportPerMatch = matchesGained > 0 ? Double(supportActions) / Double(matchesGained) : 0
+        let teamSupport = min(supportPerMatch / 10.0, 1.0)
+        
+        // Survival: Inverse of deaths per match (normalized, 10 deaths/match = 0, 5 = 0.5, 0 = 1.0)
+        let deathsPerMatch = matchesGained > 0 ? Double(deathsGained) / Double(matchesGained) : 10
+        let survival = max(0, 1.0 - (deathsPerMatch / 20.0))
+        
+        // Objective: Win rate (already 0-1 scale)
+        let winsGained = last.wins - first.wins
+        let objective = matchesGained > 0 ? Double(winsGained) / Double(matchesGained) : 0
+        
+        return PlaystyleFingerprint(
+            aggression: aggression,
+            accuracy: accuracy,
+            teamSupport: teamSupport,
+            survival: survival,
+            objective: objective
+        )
+    }
+    
+    /// Get form indicator based on recent performance vs overall average
+    func getFormIndicator() -> FormIndicator {
+        guard let context = modelContext else {
+            return FormIndicator(status: .neutral, recentKD: 0, overallKD: 0, recentWinRate: 0, overallWinRate: 0, sessionsAnalyzed: 0)
+        }
+        
+        // Get all snapshots
+        let allDescriptor = FetchDescriptor<StatsSnapshot>(
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        
+        guard let allSnapshots = try? context.fetch(allDescriptor), allSnapshots.count >= 10 else {
+            return FormIndicator(status: .neutral, recentKD: 0, overallKD: 0, recentWinRate: 0, overallWinRate: 0, sessionsAnalyzed: 0)
+        }
+        
+        // Calculate overall performance
+        let overallFirst = allSnapshots.first!
+        let overallLast = allSnapshots.last!
+        let overallKillsGained = overallLast.kills - overallFirst.kills
+        let overallDeathsGained = overallLast.deaths - overallFirst.deaths
+        let overallKD = overallDeathsGained > 0 ? Double(overallKillsGained) / Double(overallDeathsGained) : 0
+        
+        let overallMatchesGained = overallLast.matchesPlayed - overallFirst.matchesPlayed
+        let overallWinsGained = overallLast.wins - overallFirst.wins
+        let overallWinRate = overallMatchesGained > 0 ? Double(overallWinsGained) / Double(overallMatchesGained) * 100 : 0
+        
+        // Calculate recent performance (last 10 sessions)
+        let recentCount = min(10, allSnapshots.count - 1)
+        let recentSnapshots = Array(allSnapshots.suffix(recentCount + 1))
+        
+        let recentFirst = recentSnapshots.first!
+        let recentLast = recentSnapshots.last!
+        let recentKillsGained = recentLast.kills - recentFirst.kills
+        let recentDeathsGained = recentLast.deaths - recentFirst.deaths
+        let recentKD = recentDeathsGained > 0 ? Double(recentKillsGained) / Double(recentDeathsGained) : 0
+        
+        let recentMatchesGained = recentLast.matchesPlayed - recentFirst.matchesPlayed
+        let recentWinsGained = recentLast.wins - recentFirst.wins
+        let recentWinRate = recentMatchesGained > 0 ? Double(recentWinsGained) / Double(recentMatchesGained) * 100 : 0
+        
+        // Determine form status
+        let kdDiff = recentKD - overallKD
+        let winRateDiff = recentWinRate - overallWinRate
+        
+        let status: FormStatus
+        if kdDiff > 0.15 && winRateDiff > 5 {
+            status = .hot
+        } else if kdDiff > 0.05 || winRateDiff > 2 {
+            status = .good
+        } else if kdDiff < -0.15 && winRateDiff < -5 {
+            status = .cold
+        } else if kdDiff < -0.05 || winRateDiff < -2 {
+            status = .declining
+        } else {
+            status = .neutral
+        }
+        
+        return FormIndicator(
+            status: status,
+            recentKD: recentKD,
+            overallKD: overallKD,
+            recentWinRate: recentWinRate,
+            overallWinRate: overallWinRate,
+            sessionsAnalyzed: recentCount
+        )
+    }
+    
+    /// Generate recommendations based on current form and patterns
+    func getRecommendations() -> [String] {
+        let form = getFormIndicator()
+        let hourMetrics = getPerformanceByHourOfDay(days: 30)
+        let dayMetrics = getPerformanceByDayOfWeek(days: 30)
+        
+        var recommendations: [String] = []
+        
+        // Form-based recommendations
+        switch form.status {
+        case .hot:
+            recommendations.append("🔥 You're on fire! Keep playing while your form is hot.")
+        case .good:
+            recommendations.append("✅ Solid performance. You're playing above your average.")
+        case .declining:
+            recommendations.append("⚠️ Performance dipping. Consider switching tactics or taking a break.")
+        case .cold:
+            recommendations.append("❄️ Rough patch. Take a break and come back refreshed.")
+        case .neutral:
+            recommendations.append("➡️ Steady performance. Maintain your current approach.")
+        }
+        
+        // Time-based recommendations
+        let currentHour = Calendar.current.component(.hour, from: Date())
+        if let currentHourMetrics = hourMetrics[currentHour] {
+            let avgKD = hourMetrics.values.map { $0.kdRatio }.reduce(0, +) / Double(hourMetrics.count)
+            if currentHourMetrics.kdRatio > avgKD * 1.2 {
+                recommendations.append("⏰ This is typically one of your best performing hours!")
+            } else if currentHourMetrics.kdRatio < avgKD * 0.8 {
+                recommendations.append("⏰ Performance tends to be lower at this hour. Stay focused!")
+            }
+        }
+        
+        // Best time recommendations
+        if let bestHour = hourMetrics.max(by: { $0.value.kdRatio < $1.value.kdRatio }) {
+            let hourString = bestHour.key == 0 ? "12 AM" : bestHour.key < 12 ? "\(bestHour.key) AM" : bestHour.key == 12 ? "12 PM" : "\(bestHour.key - 12) PM"
+            recommendations.append("🎯 Your peak performance is typically around \(hourString)")
+        }
+        
+        return recommendations
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func calculateSessionMetrics(from: StatsSnapshot, to: StatsSnapshot) -> PerformanceMetrics {
+        let killsGained = to.kills - from.kills
+        let deathsGained = to.deaths - from.deaths
+        let matchesGained = to.matchesPlayed - from.matchesPlayed
+        let winsGained = to.wins - from.wins
+        
+        let kdRatio = deathsGained > 0 ? Double(killsGained) / Double(deathsGained) : Double(killsGained)
+        let winRate = matchesGained > 0 ? Double(winsGained) / Double(matchesGained) * 100 : 0
+        
+        return PerformanceMetrics(
+            kdRatio: kdRatio,
+            winRate: winRate,
+            killsPerMatch: matchesGained > 0 ? Double(killsGained) / Double(matchesGained) : 0,
+            accuracy: to.accuracy,
+            sessionCount: 1
+        )
+    }
+    
+    private func averageMetrics(_ metricsList: [PerformanceMetrics]) -> PerformanceMetrics {
+        guard !metricsList.isEmpty else {
+            return PerformanceMetrics(kdRatio: 0, winRate: 0, killsPerMatch: 0, accuracy: 0, sessionCount: 0)
+        }
+        
+        let avgKD = metricsList.map { $0.kdRatio }.reduce(0, +) / Double(metricsList.count)
+        let avgWinRate = metricsList.map { $0.winRate }.reduce(0, +) / Double(metricsList.count)
+        let avgKPM = metricsList.map { $0.killsPerMatch }.reduce(0, +) / Double(metricsList.count)
+        let avgAccuracy = metricsList.map { $0.accuracy }.reduce(0, +) / Double(metricsList.count)
+        
+        return PerformanceMetrics(
+            kdRatio: avgKD,
+            winRate: avgWinRate,
+            killsPerMatch: avgKPM,
+            accuracy: avgAccuracy,
+            sessionCount: metricsList.count
+        )
+    }
 }
 
 // MARK: - Supporting Types
@@ -1442,4 +1717,75 @@ enum TrendDirection {
         case .stable: return Theme.textSecondary
         }
     }
+}
+
+struct PerformanceMetrics {
+    let kdRatio: Double
+    let winRate: Double
+    let killsPerMatch: Double
+    let accuracy: Double
+    let sessionCount: Int
+}
+
+struct PlaystyleFingerprint {
+    let aggression: Double      // 0-1 scale based on KPM
+    let accuracy: Double         // 0-1 scale based on headshot %
+    let teamSupport: Double      // 0-1 scale based on revives/resupplies
+    let survival: Double         // 0-1 scale based on deaths per match
+    let objective: Double        // 0-1 scale based on win rate
+    
+    var values: [Double] {
+        [aggression, accuracy, teamSupport, survival, objective]
+    }
+    
+    var labels: [String] {
+        ["Aggression", "Accuracy", "Team Support", "Survival", "Objective"]
+    }
+}
+
+enum FormStatus {
+    case hot        // Significantly above average
+    case good       // Above average
+    case neutral    // Around average
+    case declining  // Below average
+    case cold       // Significantly below average
+    
+    var color: Color {
+        switch self {
+        case .hot: return .orange
+        case .good: return Theme.bf6Green
+        case .neutral: return Theme.textSecondary
+        case .declining: return .yellow
+        case .cold: return Theme.bf6Red
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .hot: return "flame.fill"
+        case .good: return "arrow.up.circle.fill"
+        case .neutral: return "arrow.left.arrow.right.circle.fill"
+        case .declining: return "arrow.down.circle.fill"
+        case .cold: return "snowflake"
+        }
+    }
+    
+    var title: String {
+        switch self {
+        case .hot: return "On Fire"
+        case .good: return "In Form"
+        case .neutral: return "Steady"
+        case .declining: return "Declining"
+        case .cold: return "Cold Streak"
+        }
+    }
+}
+
+struct FormIndicator {
+    let status: FormStatus
+    let recentKD: Double
+    let overallKD: Double
+    let recentWinRate: Double
+    let overallWinRate: Double
+    let sessionsAnalyzed: Int
 }

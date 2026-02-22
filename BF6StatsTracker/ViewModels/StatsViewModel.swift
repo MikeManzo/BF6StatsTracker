@@ -946,7 +946,7 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .vehicles:
             return [.vehicleStats, .vehicleSpec]
         case .analysis:
-            return [.charts, .maps, .modeEfficiency]
+            return [.charts, .playstyleInsights, .modeEfficiency, .maps ]
         case .teamplay:
             return [.loadout, .support, .intel, .classes]
         case .tools:
@@ -990,6 +990,7 @@ enum StatTab: String, CaseIterable, Identifiable {
     case charts = "Charts"
     case maps = "Maps"
     case modeEfficiency = "Modes"
+    case playstyleInsights = "Playstyle Insights"
 
     // Teamplay sub-tabs
     case classes = "Classes"
@@ -1018,6 +1019,7 @@ enum StatTab: String, CaseIterable, Identifiable {
         case .charts: return "chart.xyaxis.line"
         case .maps: return "map.fill"
         case .modeEfficiency: return "chart.bar.xaxis"
+        case .playstyleInsights: return "chart.pie.fill"
         case .classes: return "person.3.fill"
         case .support: return "heart.text.square.fill"
         case .intel: return "eye.fill"
