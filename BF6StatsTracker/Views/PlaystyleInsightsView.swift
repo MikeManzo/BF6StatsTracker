@@ -937,10 +937,8 @@ struct PerformanceTrendsCard: View {
     }
     
     private func loadTrends() {
-        print("📊 [PerformanceTrendsCard] Loading trends for period: \(period) days")
         Task {
             let snapshots = await historyManager.getSnapshotsInRange(days: period)
-            print("📊 [PerformanceTrendsCard] Loaded \(snapshots.count) snapshots for \(period) days")
             
             guard snapshots.count >= 2 else {
                 await MainActor.run {
@@ -955,7 +953,7 @@ struct PerformanceTrendsCard: View {
                 return
             }
             
-            // Calculate trends from consecutive snapshots
+            // Calculate cumulative trends from first snapshot to each subsequent snapshot
             var kds: [Double] = []
             var winRates: [Double] = []
             var kpms: [Double] = []
@@ -963,30 +961,32 @@ struct PerformanceTrendsCard: View {
             var headshots: [Double] = []
             var spms: [Double] = []
             
-            for i in 0..<snapshots.count - 1 {
+            let first = snapshots[0]
+            
+            for i in 1..<snapshots.count {
                 let current = snapshots[i]
-                let next = snapshots[i + 1]
                 
-                let killsDelta = next.kills - current.kills
-                let deathsDelta = next.deaths - current.deaths
-                let kd = deathsDelta > 0 ? Double(killsDelta) / Double(deathsDelta) : Double(killsDelta)
+                // Calculate cumulative stats from first snapshot to current
+                let totalKills = current.kills - first.kills
+                let totalDeaths = current.deaths - first.deaths
+                let kd = totalDeaths > 0 ? Double(totalKills) / Double(totalDeaths) : Double(totalKills)
                 kds.append(kd)
                 
-                let matchesDelta = next.matchesPlayed - current.matchesPlayed
-                let winsDelta = next.wins - current.wins
-                let winRate = matchesDelta > 0 ? Double(winsDelta) / Double(matchesDelta) * 100 : 0
+                let totalMatches = current.matchesPlayed - first.matchesPlayed
+                let totalWins = current.wins - first.wins
+                let winRate = totalMatches > 0 ? Double(totalWins) / Double(totalMatches) * 100 : 0
                 winRates.append(winRate)
                 
-                let timeDelta = Double(next.timePlayed - current.timePlayed) / 60.0
-                let kpm = timeDelta > 0 ? Double(killsDelta) / timeDelta : 0
+                let totalTime = Double(current.timePlayed - first.timePlayed) / 60.0
+                let kpm = totalTime > 0 ? Double(totalKills) / totalTime : 0
                 kpms.append(kpm)
                 
-                let scoreDelta = next.totalScore - current.totalScore
-                let spm = timeDelta > 0 ? Double(scoreDelta) / timeDelta : 0
+                let totalScore = current.totalScore - first.totalScore
+                let spm = totalTime > 0 ? Double(totalScore) / totalTime : 0
                 spms.append(spm)
                 
-                accuracies.append(next.accuracy)
-                headshots.append(next.headshotPercentage)
+                accuracies.append(current.accuracy)
+                headshots.append(current.headshotPercentage)
             }
             
             // Limit to max 20 data points, sampling evenly across the period
@@ -1042,7 +1042,6 @@ struct PerformanceTrendsCard: View {
                 self.spmTrend = Array(spmSlice)
                 self.accuracyTrend = Array(accSlice)
                 self.headshotTrend = Array(hsSlice)
-                print("📊 [PerformanceTrendsCard] Updated trends - K/D points: \(self.kdTrend.count), first: \(self.kdTrend.first ?? 0), last: \(self.kdTrend.last ?? 0)")
             }
         }
     }
