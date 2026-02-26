@@ -668,25 +668,32 @@ class HistoryManager: ObservableObject {
     }
 
     /// Calculate trend for W/L ratio (win rate)
-    /// Uses more sensitive threshold since all-time win rate changes slowly
+    /// Compares second-to-last snapshot to most recent snapshot to show immediate trend
     func calculateWLTrend(days: Int = 7) -> TrendDirection {
-        let wlData = getWLTrend(days: days)
-        guard wlData.count >= 2 else { return .stable }
+        guard let context = modelContext else { return .stable }
+        
+        // Get the last 2 snapshots to compare immediate trend
+        var descriptor = FetchDescriptor<StatsSnapshot>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        descriptor.fetchLimit = 2
+        let recentSnapshots = (try? context.fetch(descriptor)) ?? []
+        
+        guard recentSnapshots.count >= 2 else { return .stable }
+        
+        let mostRecent = recentSnapshots[0]
+        let secondToLast = recentSnapshots[1]
+        
+        // Calculate win rates for both snapshots
+        guard mostRecent.matchesPlayed > 0, secondToLast.matchesPlayed > 0 else { return .stable }
+        
+        let currentWinRate = (Double(mostRecent.wins) / Double(mostRecent.matchesPlayed)) * 100.0
+        let previousWinRate = (Double(secondToLast.wins) / Double(secondToLast.matchesPlayed)) * 100.0
+        
+        let difference = currentWinRate - previousWinRate
 
-        let values = wlData.map { $0.1 }
-
-        // For win rate, compare oldest value to most recent value
-        // (all-time win rate should show consistent direction)
-        let oldestValue = values.first!
-        let newestValue = values.last!
-
-        let difference = newestValue - oldestValue
-
-        // Use absolute difference threshold of 0.1% for win rate
-        // (since it's already a percentage and changes slowly)
-        if difference > 0.1 {
+        // Use absolute difference threshold of 0.01% for immediate trend
+        if difference > 0.01 {
             return .improving
-        } else if difference < -0.1 {
+        } else if difference < -0.01 {
             return .declining
         } else {
             return .stable
@@ -789,20 +796,20 @@ class HistoryManager: ObservableObject {
             kdTrend = .stable
         }
         
-        // Calculate W/L trend using all snapshots
+        // Calculate W/L trend - compare second-to-last to most recent snapshot
         let wlTrend: TrendDirection
         if allSnapshots.count >= 2 {
-            let sorted = allSnapshots.sorted { $0.timestamp < $1.timestamp }
-            let winRates = sorted.compactMap { snapshot -> Double? in
-                guard snapshot.matchesPlayed > 0 else { return nil }
-                return (Double(snapshot.wins) / Double(snapshot.matchesPlayed)) * 100.0
-            }
+            let mostRecent = allSnapshots[0]
+            let secondToLast = allSnapshots[1]
             
-            if winRates.count >= 2 {
-                let difference = winRates.last! - winRates.first!
-                if difference > 0.1 {
+            if mostRecent.matchesPlayed > 0 && secondToLast.matchesPlayed > 0 {
+                let currentWinRate = (Double(mostRecent.wins) / Double(mostRecent.matchesPlayed)) * 100.0
+                let previousWinRate = (Double(secondToLast.wins) / Double(secondToLast.matchesPlayed)) * 100.0
+                let difference = currentWinRate - previousWinRate
+                
+                if difference > 0.01 {
                     wlTrend = .improving
-                } else if difference < -0.1 {
+                } else if difference < -0.01 {
                     wlTrend = .declining
                 } else {
                     wlTrend = .stable
