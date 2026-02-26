@@ -36,6 +36,7 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
     let status: String?
     let createdAt: String?
     let platformIcon: String?
+    let lastRefreshed: Date?
 
     /// The text to display in the UI (custom name or EA ID)
     var displayText: String {
@@ -59,6 +60,7 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
         self.status = nil
         self.createdAt = nil
         self.platformIcon = nil
+        self.lastRefreshed = nil
     }
 
     /// Initialize from rip-bf.com API response
@@ -82,10 +84,11 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
         self.status = apiUser.status
         self.createdAt = apiUser.createdAt
         self.platformIcon = apiUser.platformIcon
+        self.lastRefreshed = Date()
     }
 
     /// Initialize with all fields (for decoding or testing)
-    init(id: UUID = UUID(), nucleusId: String, personaId: String, eaId: String, displayName: String? = nil, lastUsed: Date = Date(), addedAt: Date = Date(), userId: String? = nil, avatarUrl: String? = nil, subscriptionLevel: String? = nil, nickname: String? = nil, platform: String? = nil, status: String? = nil, createdAt: String? = nil, platformIcon: String? = nil) {
+    init(id: UUID = UUID(), nucleusId: String, personaId: String, eaId: String, displayName: String? = nil, lastUsed: Date = Date(), addedAt: Date = Date(), userId: String? = nil, avatarUrl: String? = nil, subscriptionLevel: String? = nil, nickname: String? = nil, platform: String? = nil, status: String? = nil, createdAt: String? = nil, platformIcon: String? = nil, lastRefreshed: Date? = nil) {
         self.id = id
         self.nucleusId = nucleusId
         self.personaId = personaId
@@ -101,6 +104,7 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
         self.status = status
         self.createdAt = createdAt
         self.platformIcon = platformIcon
+        self.lastRefreshed = lastRefreshed
     }
 
     /// Convert to EAPlayerIdentity for use with existing authentication system
@@ -130,7 +134,8 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
             platform: platform,
             status: status,
             createdAt: createdAt,
-            platformIcon: platformIcon
+            platformIcon: platformIcon,
+            lastRefreshed: lastRefreshed
         )
     }
 
@@ -151,7 +156,8 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
             platform: platform,
             status: status,
             createdAt: createdAt,
-            platformIcon: platformIcon
+            platformIcon: platformIcon,
+            lastRefreshed: lastRefreshed
         )
     }
 
@@ -172,6 +178,18 @@ struct StoredEAAccount: Codable, Identifiable, Equatable {
         } else {
             return "Just now"
         }
+    }
+    
+    /// Formatted string for last refresh time
+    var lastRefreshedFormatted: String {
+        guard let lastRefreshed = lastRefreshed else {
+            return "Never"
+        }
+        
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: lastRefreshed)
     }
 }
 

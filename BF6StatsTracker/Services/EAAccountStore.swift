@@ -150,6 +150,82 @@ class EAAccountStore: ObservableObject {
         accounts.removeAll()
         persistAccounts()
     }
+    
+    /// Refresh account data from the API
+    /// - Parameter account: The account to refresh
+    /// - Returns: The updated account with fresh data from the API
+    func refreshAccountData(for account: StoredEAAccount) async throws -> StoredEAAccount {
+        logInfo("Refreshing account data for \(account.eaId)", category: .api)
+        
+        // Fetch fresh data from rip-bf.com API using the same endpoint as lookupEAAccount
+        let encodedName = account.eaId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? account.eaId
+        let urlString = "https://rip-bf.com/api/eaid/?name=\(encodedName)"
+        
+        guard let url = URL(string: urlString) else {
+            throw NSError(domain: "EAAccountStore", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("BF6StatsTracker/1.0", forHTTPHeaderField: "User-Agent")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            logError("Invalid HTTP response when refreshing account", category: .api)
+            throw NSError(domain: "EAAccountStore", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+        }
+        
+        logInfo("API response status code: \(httpResponse.statusCode)", category: .api)
+        
+        guard httpResponse.statusCode == 200 else {
+            logError("API returned status code \(httpResponse.statusCode)", category: .api)
+            throw NSError(domain: "EAAccountStore", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "API returned status \(httpResponse.statusCode)"])
+        }
+        
+        // Log the raw response for debugging
+        if let jsonString = String(data: data, encoding: .utf8) {
+            logDebug("API response: \(jsonString)", category: .api)
+        }
+        
+        let decoder = JSONDecoder()
+        let apiResponse = try decoder.decode(RipBFAPIResponse.self, from: data)
+        
+        guard let apiUser = apiResponse.users?.first else {
+            logError("No user data found in API response", category: .api)
+            throw NSError(domain: "EAAccountStore", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user data found in response"])
+        }
+        
+        // Create updated account preserving the original ID and dates
+        let updatedAccount = StoredEAAccount(
+            id: account.id,
+            nucleusId: apiUser.userId,
+            personaId: apiUser.id,
+            eaId: apiUser.EAID,
+            displayName: account.displayName,
+            lastUsed: account.lastUsed,
+            addedAt: account.addedAt,
+            userId: apiUser.userId,
+            avatarUrl: apiUser.avatarUrl,
+            subscriptionLevel: apiUser.subscriptionLevel,
+            nickname: apiUser.nickname,
+            platform: apiUser.platform,
+            status: apiUser.status,
+            createdAt: apiUser.createdAt,
+            platformIcon: apiUser.platformIcon,
+            lastRefreshed: Date()
+        )
+        
+        // Update in store
+        if let index = accounts.firstIndex(where: { $0.id == account.id }) {
+            accounts[index] = updatedAccount
+            persistAccounts()
+        }
+        
+        logSuccess("Successfully refreshed account data for \(account.eaId)", category: .success)
+        return updatedAccount
+    }
 
     // MARK: - Persistence
 

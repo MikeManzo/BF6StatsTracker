@@ -1332,11 +1332,14 @@ struct AccentColorButton: View {
 
 struct EAAccountRow: View {
     @Environment(\.accentColor) private var accentColor
+    @StateObject private var accountStore = EAAccountStore.shared
     let account: StoredEAAccount
     let isCurrentUser: Bool
     let onDelete: () -> Void
 
     @State private var isExpanded: Bool
+    @State private var isRefreshing: Bool = false
+    @State private var refreshError: String?
 
     init(account: StoredEAAccount, isCurrentUser: Bool = false, onDelete: @escaping () -> Void) {
         self.account = account
@@ -1375,9 +1378,32 @@ struct EAAccountRow: View {
                     Text("Last used: \(account.lastUsedFormatted)")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                    
+                    Text("Last updated: \(account.lastRefreshedFormatted)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
                 Spacer()
+                
+                // Refresh button
+                Button {
+                    Task {
+                        await refreshAccountData()
+                    }
+                } label: {
+                    if isRefreshing {
+                        ProgressView()
+                            .controlSize(.small)
+                            .frame(width: 16, height: 16)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(accentColor)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(isRefreshing)
+                .help("Refresh account data from EA")
 
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -1404,6 +1430,21 @@ struct EAAccountRow: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Divider()
                         .padding(.vertical, 12)
+                    
+                    // Refresh error message
+                    if let error = refreshError {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(8)
+                        .background(Color.orange.opacity(0.1))
+                        .cornerRadius(6)
+                        .padding(.bottom, 12)
+                    }
 
                     // Identity Section
                     Text("Identity")
@@ -1515,6 +1556,21 @@ struct EAAccountRow: View {
         }
 
         return dateString
+    }
+    
+    private func refreshAccountData() async {
+        isRefreshing = true
+        refreshError = nil
+        
+        do {
+            _ = try await accountStore.refreshAccountData(for: account)
+            logSuccess("Account data refreshed for \(account.eaId)", category: .success)
+        } catch {
+            refreshError = "Failed to refresh: \(error.localizedDescription)"
+            logError("Failed to refresh account data: \(error)", category: .error)
+        }
+        
+        isRefreshing = false
     }
 }
 
