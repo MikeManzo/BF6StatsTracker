@@ -392,8 +392,6 @@ actor APIService {
             urlString += "&nucleus_id=\(nucleusId)"
         }
         
-        logInfo("Fetching profile data from: \(urlString)", category: .api)
-        
         guard let url = URL(string: urlString) else {
             throw BF6TrackerError.invalidURL
         }
@@ -416,7 +414,12 @@ actor APIService {
             
             do {
                 let profileData = try decoder.decode(ProfileData.self, from: data)
-                logSuccess("Fetched profile data: rank=\(profileData.rank ?? 0), badges=\(profileData.badges ?? 0)", category: .api)
+                
+                // Warn if API returned empty playerProfiles array
+                if profileData.playerProfiles?.isEmpty ?? true {
+                    logWarning("Profile API returned empty playerProfiles array for '\(identifier.name)' - rank data currently unavailable. Check that your profile is set to public in the Battlefield settings.", category: .api)
+                }
+                
                 return profileData
             } catch {
                 logError("Profile data decoding error: \(error)", category: .api)
