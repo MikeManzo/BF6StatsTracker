@@ -120,7 +120,7 @@ struct MenuBarView: View {
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .foregroundColor(Theme.textPrimary)
-                                .lineLimit(1)
+                                .fixedSize()
                         }
                     }
                 } else {

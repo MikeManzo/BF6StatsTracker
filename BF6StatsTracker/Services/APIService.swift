@@ -418,6 +418,8 @@ actor APIService {
                 // Warn if API returned empty playerProfiles array
                 if profileData.playerProfiles?.isEmpty ?? true {
                     logWarning("Profile API returned empty playerProfiles array for '\(identifier.name)' - rank data currently unavailable. Check that your profile is set to public in the Battlefield settings.", category: .api)
+                } else if let rank = profileData.rank {
+                    logSuccess("Successfully fetched rank \(rank) for '\(identifier.name)'", category: .api)
                 }
                 
                 return profileData
