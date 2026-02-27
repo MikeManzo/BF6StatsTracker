@@ -87,7 +87,7 @@ struct PercentilePopoverView: View {
             }
         }
         .padding()
-        .frame(maxWidth: 300)
+        .frame(maxWidth: 190)
         .background(Theme.cardBackground)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 4)

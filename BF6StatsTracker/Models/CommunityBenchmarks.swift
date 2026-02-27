@@ -160,7 +160,7 @@ struct CommunityBenchmarks {
     
     // MARK: - Disclaimer
     
-    static let disclaimer = "Percentile estimates based on community data and public leaderboard analysis. These rankings are approximations and may not reflect official statistics. Individual performance may vary."
+    static let disclaimer = "Percentile estimates based on community data and public leaderboard analysis. Rankings are approximate and may not reflect actual statistics."
     
     // MARK: - K/D Ratio Percentiles
     
