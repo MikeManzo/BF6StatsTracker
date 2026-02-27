@@ -27,6 +27,12 @@ struct HeaderSection: View {
     @Binding var showingRankDetail: Bool
     let usesLiquidGlass: Bool
     
+    // State for percentile popovers
+    @State private var showingKDPercentile = false
+    @State private var showingKillsPercentile = false
+    @State private var showingAssistsPercentile = false
+    @State private var showingWinRatePercentile = false
+    
     var body: some View {
         HStack(spacing: 20) {
             // LEADING SECTION: Player Identity
@@ -276,45 +282,97 @@ struct HeaderSection: View {
 
     private func quickStatsSection(stats: PlayerStats) -> some View {
         HStack(spacing: 20) {
-            CleanStatCard(
-                value: String(format: "%.2f", stats.kdRatio),
-                label: "KILLS / DEATH",
-                color: .green,
-                trend: viewModel.kdTrend
-            ).help("All-Time Kills / Death Ratio")
+            Button {
+                showingKDPercentile.toggle()
+            } label: {
+                CleanStatCard(
+                    value: String(format: "%.2f", stats.kdRatio),
+                    label: "KILLS / DEATH",
+                    color: .green,
+                    trend: viewModel.kdTrend
+                )
+            }
+            .buttonStyle(.plain)
+            .help("All-Time Kills / Death Ratio - Click to see community ranking")
+            .popover(isPresented: $showingKDPercentile) {
+                PercentilePopoverView(
+                    statName: "K/D Ratio",
+                    statValue: String(format: "%.2f", stats.kdRatio),
+                    tier: stats.kdPerformanceTier
+                )
+            }
 
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
                 .frame(width: 1, height: 40)
 
-            CleanStatCard(
-                value: formatKills(stats.kills),
-                label: "KILLS",
-                color: .orange,
-                trend: viewModel.killsTrend
-            ).help("All-Time Kills")
+            Button {
+                showingKillsPercentile.toggle()
+            } label: {
+                CleanStatCard(
+                    value: formatKills(stats.kills),
+                    label: "KILLS",
+                    color: .orange,
+                    trend: viewModel.killsTrend
+                )
+            }
+            .buttonStyle(.plain)
+            .help("All-Time Kills - Click to see community ranking")
+            .popover(isPresented: $showingKillsPercentile) {
+                PercentilePopoverView(
+                    statName: "Kills per Minute",
+                    statValue: String(format: "%.2f", stats.killsPerMinute),
+                    tier: stats.killsPerformanceTier
+                )
+            }
 
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
                 .frame(width: 1, height: 40)
 
-            CleanStatCard(
-                value: formatKills(stats.assists),
-                label: "ASSISTS",
-                color: .purple,
-                trend: viewModel.assistsTrend
-            ).help("All-Time Assists")
+            Button {
+                showingAssistsPercentile.toggle()
+            } label: {
+                CleanStatCard(
+                    value: formatKills(stats.assists),
+                    label: "ASSISTS",
+                    color: .purple,
+                    trend: viewModel.assistsTrend
+                )
+            }
+            .buttonStyle(.plain)
+            .help("All-Time Assists - Click to see community ranking")
+            .popover(isPresented: $showingAssistsPercentile) {
+                PercentilePopoverView(
+                    statName: "Assists",
+                    statValue: formatKills(stats.assists),
+                    tier: stats.assistsPerformanceTier
+                )
+            }
 
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
                 .frame(width: 1, height: 40)
 
-            CleanStatCard(
-                value: String(format: "%.1f%%", stats.wlRatio),
-                label: "WIN RATE",
-                color: .blue,
-                trend: viewModel.wlTrend
-            ).help("All-Time Win Rate")
+            Button {
+                showingWinRatePercentile.toggle()
+            } label: {
+                CleanStatCard(
+                    value: String(format: "%.1f%%", stats.wlRatio),
+                    label: "WIN RATE",
+                    color: .blue,
+                    trend: viewModel.wlTrend
+                )
+            }
+            .buttonStyle(.plain)
+            .help("All-Time Win Rate - Click to see community ranking")
+            .popover(isPresented: $showingWinRatePercentile) {
+                PercentilePopoverView(
+                    statName: "Win Rate",
+                    statValue: String(format: "%.1f%%", stats.wlRatio),
+                    tier: stats.winRatePerformanceTier
+                )
+            }
         }
         .layoutPriority(1)
         .accessibilityElement(children: .contain)

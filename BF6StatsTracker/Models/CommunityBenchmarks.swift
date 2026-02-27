@@ -16,6 +16,71 @@
 //  Based on research from Tracker.gg, EA Forums, and community discussions
 //
 
+// There is no public API for this data, so I turned to AI to help define it.
+// Below is the prompt used in the first generation of this file.
+
+/*
+ AI PROMPT FOR UPDATING BENCHMARKS:
+ 
+ I need you to update the CommunityBenchmarks.swift file with new performance thresholds based on recent community data for Battlefild 6 only.
+ 
+ Instructions:
+ 1. Research the latest Battlefield 6 community statistics from these sources:
+    - Tracker.gg leaderboards and percentile data
+    - Steam Community forum discussions about player performance
+    - EA Forums player statistics discussions
+    - Reddit r/battlefield6 community data posts
+ 
+ 2. For each metric below, provide updated threshold ranges for the 9 performance tiers:
+    - Bottom (0-10th percentile)
+    - Below Average (10th-30th percentile)
+    - Low Average (30th-50th percentile)
+    - Average (50th-70th percentile)
+    - Above Average (70th-85th percentile)
+    - Good (85th-93rd percentile)
+    - Very Good (93rd-97th percentile)
+    - Excellent (97th-99th percentile)
+    - Elite (Top 1%)
+ 
+ 3. Metrics to update:
+    a) K/D Ratio (kdPercentile function)
+    b) Win Rate Percentage (winRatePercentile function)
+    c) Kills Per Minute (kpmPercentile function)
+    d) Score Per Minute (spmPercentile function)
+    e) Accuracy Percentage (accuracyPercentile function)
+    f) Weapon Kills (weaponKillsPercentile function)
+    g) Revives Per Match (revivesPercentile function)
+    h) Assists Per Match (assistsPercentile function)
+ 
+ 4. Update each function's switch statement with the new thresholds
+ 
+ 5. Update the inline comments documenting:
+    - What constitutes "average" for that metric
+    - What elite players typically achieve
+    - Any notable percentile landmarks (e.g., "2.0 K/D = Top 5%")
+ 
+ 6. Preserve the existing code structure, PerformanceTier enum, and disclaimer text
+ 
+ 7. Add a comment at the top noting when the benchmarks were last updated and the data sources used
+ 
+ Example output format for each function:
+ ```swift
+ /// Calculate K/D performance tier
+ /// Updated: [DATE]
+ /// Average K/D: ~[VALUE], Top 10%: [VALUE]+, Elite: [VALUE]+
+ /// Sources: [List sources]
+ static func kdPercentile(kd: Double) -> PerformanceTier {
+     switch kd {
+     case 0..<[THRESHOLD]: return .bottom
+     case [THRESHOLD]..<[THRESHOLD]: return .belowAverage
+     // ... etc
+     }
+ }
+ ```
+ 
+ After researching and updating, provide a summary of the major changes in threshold values.
+*/
+
 import Foundation
 import SwiftUI
 
@@ -95,7 +160,7 @@ struct CommunityBenchmarks {
     
     // MARK: - Disclaimer
     
-    static let disclaimer = "Percentile estimates based on community data from Tracker.gg, EA Forums, and player discussions. Actual rankings may vary."
+    static let disclaimer = "Percentile estimates based on community data and public leaderboard analysis. These rankings are approximations and may not reflect official statistics. Individual performance may vary."
     
     // MARK: - K/D Ratio Percentiles
     

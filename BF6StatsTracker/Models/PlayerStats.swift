@@ -155,6 +155,25 @@ struct PlayerStats: Codable, Identifiable {
         let killsAndAssists = kills + assists
         return deaths > 0 ? Double(killsAndAssists) / Double(deaths) : Double(killsAndAssists)
     }
+    
+    // MARK: - Community Performance Tiers
+    
+    var kdPerformanceTier: PerformanceTier {
+        CommunityBenchmarks.kdPercentile(kd: kdRatio)
+    }
+    
+    var killsPerformanceTier: PerformanceTier {
+        CommunityBenchmarks.kpmPercentile(kpm: killsPerMinute)
+    }
+    
+    var assistsPerformanceTier: PerformanceTier {
+        let assistsPerMatch = matchesPlayed > 0 ? Double(assists) / Double(matchesPlayed) : 0.0
+        return CommunityBenchmarks.assistsPercentile(assistsPerMatch: assistsPerMatch)
+    }
+    
+    var winRatePerformanceTier: PerformanceTier {
+        CommunityBenchmarks.winRatePercentile(winRate: wlRatio)
+    }
 
     enum CodingKeys: String, CodingKey {
         // Basic Info
