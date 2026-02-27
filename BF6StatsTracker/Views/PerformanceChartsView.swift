@@ -42,9 +42,15 @@ struct PerformanceChartsView: View {
 
     /// Number of days of data available based on oldest snapshot
     private var daysOfDataAvailable: Int {
-        guard let oldestSnapshot = allSnapshots.last else { return 0 }
+        guard !allSnapshots.isEmpty else { return 0 }
+        
+        // Find the oldest and newest snapshots by comparing timestamps
+        let timestamps = allSnapshots.map { $0.timestamp }
+        guard let oldestDate = timestamps.min(),
+              let newestDate = timestamps.max() else { return 0 }
+        
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.day], from: oldestSnapshot.timestamp, to: Date())
+        let components = calendar.dateComponents([.day], from: oldestDate, to: newestDate)
         return max(0, components.day ?? 0)
     }
 

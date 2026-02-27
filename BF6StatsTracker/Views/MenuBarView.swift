@@ -59,7 +59,7 @@ struct MenuBarView: View {
             }
         }
         .padding()
-        .frame(width: 300)
+        .frame(width: 260)
         }
     }
     
@@ -131,17 +131,11 @@ struct MenuBarView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Last Updated
-            VStack(alignment: .trailing, spacing: 2) {
-                Circle()
-                    .fill(viewModel.isLoading ? Theme.warning : Theme.success)
-                    .frame(width: 8, height: 8)
-
-                Text(viewModel.formatTimeAgo(viewModel.lastUpdated))
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
-            }
-            .help(viewModel.isLoading ? "Updating stats..." : "Last updated: \(viewModel.lastUpdated?.formatted(date: .abbreviated, time: .shortened) ?? "Never")")
+            // Last Updated Indicator
+            Circle()
+                .fill(viewModel.isLoading ? Theme.warning : viewModel.refreshButtonColor)
+                .frame(width: 8, height: 8)
+                .help(viewModel.isLoading ? "Updating stats..." : "Last updated: \(viewModel.lastUpdated?.formatted(date: .abbreviated, time: .shortened) ?? "Never")")
         }
     }
     
@@ -204,8 +198,8 @@ struct MenuBarView: View {
 
                 MenuBarStatItem(
                     icon: "clock.fill",
-                    label: "Time Played",
-                    value: viewModel.formattedPlayTime,
+                    label: "Playtime",
+                    value: formatPlayTimeHours(stats.timePlayed),
                     color: Theme.bf6Purple,
                     tooltip: "Total time spent in matches"
                 )
@@ -307,54 +301,71 @@ struct MenuBarView: View {
 
     private var actionsSection: some View {
         VStack(spacing: 8) {
-            // Refresh Button
-            Button {
-                Task {
-                    await viewModel.forceRefreshStats()
+            // Inline Action Buttons
+            HStack(spacing: 8) {
+                // Refresh Button
+                Button {
+                    Task {
+                        await viewModel.forceRefreshStats()
+                    }
+                } label: {
+                    Text(viewModel.isLoading ? "Refreshing..." : "Refresh")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(usesGlass ? Color.clear : Theme.bf6Blue.opacity(0.2))
+                        .cornerRadius(8)
+                        .modifier(SubTabGlassModifier(
+                            isSelected: true,
+                            accentColor: Theme.bf6Blue.opacity(0.4),
+                            usesGlass: usesGlass
+                        ))
                 }
-            } label: {
-                HStack {
-                    Image(systemName: "arrow.clockwise")
-                    Text(viewModel.isLoading ? "Refreshing..." : "Refresh Stats")
-                }
-                .font(.subheadline)
-                .foregroundColor(Theme.textPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(usesGlass ? Color.clear : Theme.bf6Blue.opacity(0.2))
-                .cornerRadius(8)
-                .modifier(SubTabGlassModifier(
-                    isSelected: true,
-                    accentColor: Theme.bf6Blue.opacity(0.4),
-                    usesGlass: usesGlass
-                ))
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isLoading)
-            .help("Fetch latest stats from EA servers")
+                .buttonStyle(.plain)
+                .disabled(viewModel.isLoading)
+                .help("Fetch latest stats from EA servers")
 
-            // Open Main Window Button
-            Button {
-                openMainWindow()
-            } label: {
-                HStack {
-                    Image(systemName: "macwindow")
-                    Text("Open Full Stats")
+                // Open Main Window Button
+                Button {
+                    openMainWindow()
+                } label: {
+                    Text("Full Stats")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(usesGlass ? Color.clear : Theme.overlayColor)
+                        .cornerRadius(8)
+                        .modifier(SubTabGlassModifier(
+                            isSelected: true,
+                            accentColor: accentColor.opacity(0.4),
+                            usesGlass: usesGlass
+                        ))
                 }
-                .font(.subheadline)
-                .foregroundColor(Theme.textPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(usesGlass ? Color.clear : Theme.overlayColor)
-                .cornerRadius(8)
-                .modifier(SubTabGlassModifier(
-                    isSelected: true,
-                    accentColor: accentColor.opacity(0.4),
-                    usesGlass: usesGlass
-                ))
+                .buttonStyle(.plain)
+                .help("Open the main application window with detailed stats")
+
+                // Settings Button
+                Button {
+                    openSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(usesGlass ? Color.clear : Theme.overlayColor)
+                        .cornerRadius(8)
+                        .modifier(SubTabGlassModifier(
+                            isSelected: true,
+                            accentColor: accentColor.opacity(0.4),
+                            usesGlass: usesGlass
+                        ))
+                }
+                .buttonStyle(.plain)
+                .help("Open application settings")
             }
-            .buttonStyle(.plain)
-            .help("Open the main application window with detailed stats")
 
             Divider()
 
@@ -484,6 +495,17 @@ struct MenuBarView: View {
         // Activate the app to bring it to front
         NSApp.activate(ignoringOtherApps: true)
     }
+    
+    private func openSettings() {
+        // First ensure the main window is visible (settings is a sheet on the main window)
+        openMainWindow()
+        
+        // Wait briefly for window to appear, then trigger settings
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            // Post notification to open settings
+            NotificationCenter.default.post(name: NSNotification.Name("OpenSettings"), object: nil)
+        }
+    }
 
     private func formatXP(_ xp: Int) -> String {
         if xp >= 1_000_000 {
@@ -493,6 +515,11 @@ struct MenuBarView: View {
         } else {
             return "\(xp)"
         }
+    }
+    
+    private func formatPlayTimeHours(_ seconds: Int) -> String {
+        let hours = seconds / 3600
+        return "\(hours)h"
     }
 }
 

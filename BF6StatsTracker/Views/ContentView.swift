@@ -76,6 +76,9 @@ struct ContentView: View {
             AccountSelectionView()
                 .environmentObject(viewModel)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenSettings"))) { _ in
+            showingSettings = true
+        }
     }
     
     // MARK: - Main Content View
