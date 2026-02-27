@@ -192,15 +192,8 @@ struct OverviewStatsView: View {
 
             // Hero Stats Row - Primary career metrics
             HStack(spacing: 16) {
-                StatCard(
-                    title: "Kills",
-                    value: stats.kills.formatted(),
-                    icon: "target",
-                    color: Theme.bf6Red,
-                    subtitle: "\(String(format: "%.1f", stats.killsPerMinute)) per min",
-                    trend: convertTrend(viewModel.killsTrend)
-                )
-                .frame(maxWidth: .infinity)
+                enhancedKillsCard(stats: stats)
+                    .frame(maxWidth: .infinity)
 
                 StatCard(
                     title: "Deaths",
@@ -375,13 +368,118 @@ struct OverviewStatsView: View {
 
             // Expandable content
             if isCombatStatsExpanded {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    StatRow(label: "Headshots", value: stats.headshots.formatted())
-                    StatRow(label: "HS %", value: "\(String(format: "%.1f", stats.headshotPercentage))%")
-                    StatRow(label: "Accuracy", value: "\(String(format: "%.1f", stats.accuracy))%")
-                    StatRow(label: "Savior Kills", value: stats.saviorKills.formatted())
-                    StatRow(label: "Assists", value: stats.assists.formatted())
-                    StatRow(label: "Revives", value: stats.revives.formatted())
+                VStack(alignment: .leading, spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        StatRow(label: "Headshots", value: stats.headshots.formatted())
+                        StatRow(label: "HS %", value: "\(String(format: "%.1f", stats.headshotPercentage))%")
+                        StatRow(label: "Accuracy", value: "\(String(format: "%.1f", stats.accuracy))%")
+                        StatRow(label: "Savior Kills", value: stats.saviorKills.formatted())
+                        StatRow(label: "Assists", value: stats.assists.formatted())
+                        StatRow(label: "Revives", value: stats.revives.formatted())
+                    }
+                    
+                    // Combat Style breakdown (if available)
+                    if let extended = viewModel.extendedProfileStats,
+                       (extended.adsKills + extended.hipfireKills) > 0 {
+                        Divider()
+                            .padding(.vertical, 4)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Combat Style")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Theme.textSecondary)
+                            
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                                // ADS Kills
+                                HStack(spacing: 4) {
+                                    Image(systemName: "scope")
+                                        .font(.caption2)
+                                        .foregroundColor(Theme.bf6Red)
+                                    Text("ADS")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.textSecondary)
+                                    Spacer()
+                                    Text("\(extended.adsKills)")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Theme.textPrimary)
+                                    Text("(\(String(format: "%.0f", extended.aimingPercentage))%)")
+                                        .font(.caption2)
+                                        .foregroundColor(Theme.textSecondary)
+                                }
+                                
+                                // Hipfire Kills
+                                HStack(spacing: 4) {
+                                    Image(systemName: "dot.scope")
+                                        .font(.caption2)
+                                        .foregroundColor(Theme.bf6Blue)
+                                    Text("Hipfire")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.textSecondary)
+                                    Spacer()
+                                    Text("\(extended.hipfireKills)")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Theme.textPrimary)
+                                }
+                                
+                                // Melee Kills (if available)
+                                if extended.meleeKills > 0 {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "figure.boxing")
+                                            .font(.caption2)
+                                            .foregroundColor(.orange)
+                                        Text("Melee")
+                                            .font(.caption)
+                                            .foregroundColor(Theme.textSecondary)
+                                        Spacer()
+                                        Text("\(extended.meleeKills)")
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(Theme.textPrimary)
+                                    }
+                                }
+                                
+                                // Grenade Kills (if available)
+                                if extended.grenadeKills > 0 {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "circle.dotted.circle")
+                                            .font(.caption2)
+                                            .foregroundColor(Theme.bf6Green)
+                                        Text("Grenade")
+                                            .font(.caption)
+                                            .foregroundColor(Theme.textSecondary)
+                                        Spacer()
+                                        Text("\(extended.grenadeKills)")
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(Theme.textPrimary)
+                                    }
+                                }
+                                
+                                // Headshot Kills (if available)
+                                if extended.headshotKills > 0 {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "scope.circle")
+                                            .font(.caption2)
+                                            .foregroundColor(.yellow)
+                                        Text("Headshot")
+                                            .font(.caption)
+                                            .foregroundColor(Theme.textSecondary)
+                                        Spacer()
+                                        Text("\(extended.headshotKills)")
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(Theme.textPrimary)
+                                        Text("(\(String(format: "%.0f", extended.headshotPercentage))%)")
+                                            .font(.caption2)
+                                            .foregroundColor(Theme.textSecondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 .padding(.top, 8)
                 .transition(.opacity.combined(with: .move(edge: .top)))
@@ -431,13 +529,59 @@ struct OverviewStatsView: View {
 
             // Expandable content
             if isTeamSupportExpanded {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    StatRow(label: "Revives", value: stats.revives.formatted())
-                    StatRow(label: "Resupplies", value: stats.resupplies.formatted())
-                    StatRow(label: "Repairs", value: stats.repairs.formatted())
-                    StatRow(label: "Heals", value: stats.heals.formatted())
-                    StatRow(label: "Savior Kills", value: stats.saviorKills.formatted())
-                    StatRow(label: "Enemies Spotted", value: stats.enemiesSpotted.formatted())
+                VStack(alignment: .leading, spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        StatRow(label: "Revives", value: stats.revives.formatted())
+                        StatRow(label: "Resupplies", value: stats.resupplies.formatted())
+                        StatRow(label: "Repairs", value: stats.repairs.formatted())
+                        StatRow(label: "Heals", value: stats.heals.formatted())
+                        StatRow(label: "Savior Kills", value: stats.saviorKills.formatted())
+                        StatRow(label: "Enemies Spotted", value: stats.enemiesSpotted.formatted())
+                    }
+                    
+                    // Assist Breakdown (if available)
+                    if let extended = viewModel.extendedProfileStats {
+                        let totalAssists = extended.spotAssists + extended.suppressAssists + 
+                                          extended.smokeAssists + extended.flashAssists + 
+                                          extended.concussAssists + extended.driverAssists + 
+                                          extended.pilotAssists
+                        
+                        if totalAssists > 0 {
+                            Divider()
+                                .padding(.vertical, 4)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Assist Breakdown")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Theme.textSecondary)
+                                
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                                    if extended.spotAssists > 0 {
+                                        assistTypeRow(icon: "eye.fill", label: "Spot", value: extended.spotAssists, color: Theme.bf6Blue)
+                                    }
+                                    if extended.suppressAssists > 0 {
+                                        assistTypeRow(icon: "exclamationmark.triangle.fill", label: "Suppress", value: extended.suppressAssists, color: .orange)
+                                    }
+                                    if extended.smokeAssists > 0 {
+                                        assistTypeRow(icon: "cloud.fill", label: "Smoke", value: extended.smokeAssists, color: .gray)
+                                    }
+                                    if extended.flashAssists > 0 {
+                                        assistTypeRow(icon: "sparkles", label: "Flash", value: extended.flashAssists, color: .yellow)
+                                    }
+                                    if extended.concussAssists > 0 {
+                                        assistTypeRow(icon: "waveform", label: "Concuss", value: extended.concussAssists, color: .purple)
+                                    }
+                                    if extended.driverAssists > 0 {
+                                        assistTypeRow(icon: "car.fill", label: "Driver", value: extended.driverAssists, color: Theme.bf6Green)
+                                    }
+                                    if extended.pilotAssists > 0 {
+                                        assistTypeRow(icon: "airplane", label: "Pilot", value: extended.pilotAssists, color: Theme.bf6Red)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 .padding(.top, 8)
                 .transition(.opacity.combined(with: .move(edge: .top)))
@@ -450,6 +594,117 @@ struct OverviewStatsView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(accentColor.opacity(0.1), lineWidth: 1)
+        )
+    }
+    
+    // MARK: - Assist Type Row Helper
+    
+    private func assistTypeRow(icon: String, label: String, value: Int, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundColor(color)
+            Text(label)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+            Spacer()
+            Text("\(value)")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(Theme.textPrimary)
+        }
+    }
+    
+    // MARK: - Enhanced Kills Card
+    
+    private func enhancedKillsCard(stats: PlayerStats) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack(spacing: 6) {
+                Image(systemName: "target")
+                    .font(.caption)
+                    .foregroundStyle(Theme.bf6Red)
+
+                Text("KILLS")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Theme.textSecondary)
+
+                Spacer()
+            }
+            
+            // Value
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(stats.kills.formatted())
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .fontDesign(.rounded)
+                    .foregroundStyle(Theme.textPrimary)
+
+                Spacer()
+            }
+            
+            // Subtitle with human vs bot breakdown on same line
+            HStack(spacing: 0) {
+                // Kills per minute
+                Text("\(String(format: "%.1f", stats.killsPerMinute)) per min")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                
+                // Human vs Bot (if available)
+                if let extended = viewModel.extendedProfileStats,
+                   extended.totalKills > 0 {
+                    Text(" • ")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.fill")
+                            .font(.caption2)
+                            .foregroundColor(Theme.bf6Blue)
+                        Text("\(extended.humanKills)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                    
+                    Text(" / ")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "cpu")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+                        Text("\(extended.botKills)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                }
+                
+                Spacer()
+            }
+            
+            // Trend
+            if let trend = convertTrend(viewModel.killsTrend) {
+                HStack(spacing: 4) {
+                    Image(systemName: trend.value > 0 ? "arrow.up" : "arrow.down")
+                        .font(.caption)
+                    Text(trend.text)
+                        .font(.caption)
+                }
+                .foregroundColor(trend.value > 0 ? Theme.bf6Green : Theme.error)
+            } else {
+                Color.clear
+                    .frame(height: 16)
+            }
+        }
+        .padding(16)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(accentColor.opacity(0.2), lineWidth: 1)
         )
     }
 }

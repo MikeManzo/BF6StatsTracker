@@ -18,6 +18,8 @@
 import SwiftUI
 
 struct EnhancedClassCard: View {
+    @EnvironmentObject var viewModel: StatsViewModel
+    
     let classStats: ClassStats
     let overallKPM: Double
     let overallWinRate: Double
@@ -150,75 +152,102 @@ struct EnhancedClassCard: View {
             Divider()
                 .background(Theme.borderColor)
 
-            // Performance Stats Grid
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
-                // Kills Per Minute with comparison
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "speedometer")
-                            .font(.caption2)
-                            .foregroundColor(Theme.warning)
-                        Text("Kills/Min")
+            // Performance Stats Grid - with per-class K/D if available
+            VStack(alignment: .leading, spacing: 12) {
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 16) {
+                    // Kills Per Minute with comparison
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "speedometer")
+                                .font(.caption2)
+                                .foregroundColor(Theme.warning)
+                            Text("Kills/Min")
+                                .font(.caption2)
+                                .foregroundColor(Theme.textSecondary)
+                        }
+
+                        Text(String(format: "%.2f", classStats.killsPerMinute))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(Theme.textPrimary)
+
+                        // Comparison to overall KPM
+                        HStack(spacing: 2) {
+                            Image(systemName: kpmPerformance.comparisonIcon)
+                                .font(.caption2)
+                            Text(String(format: "%.0f%% vs avg", abs(kpmComparison)))
+                                .font(.caption2)
+                        }
+                        .foregroundColor(kpmPerformance.color)
+                    }
+
+                    // Win Rate (calculated from overall stats proportionally)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trophy.fill")
+                                .font(.caption2)
+                                .foregroundColor(Theme.warning)
+                            Text("Win Rate")
+                                .font(.caption2)
+                                .foregroundColor(Theme.textSecondary)
+                        }
+
+                        Text(String(format: "%.1f%%", overallWinRate))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(Theme.textPrimary)
+
+                        Text("overall avg")
                             .font(.caption2)
                             .foregroundColor(Theme.textSecondary)
                     }
 
-                    Text(String(format: "%.2f", classStats.killsPerMinute))
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.textPrimary)
+                    // Deaths
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.caption2)
+                                .foregroundColor(Theme.error)
+                            Text("Deaths")
+                                .font(.caption2)
+                                .foregroundColor(Theme.textSecondary)
+                        }
 
-                    // Comparison to overall KPM
-                    HStack(spacing: 2) {
-                        Image(systemName: kpmPerformance.comparisonIcon)
+                        Text("\(classStats.deaths.formatted())")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(Theme.textPrimary)
+
+                        Text("\(String(format: "%.1f", Double(classStats.deaths) / Double(max(1, classStats.kills)))) D/K")
                             .font(.caption2)
-                        Text(String(format: "%.0f%% vs avg", abs(kpmComparison)))
-                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
                     }
-                    .foregroundColor(kpmPerformance.color)
                 }
-
-                // Win Rate (calculated from overall stats proportionally)
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trophy.fill")
-                            .font(.caption2)
-                            .foregroundColor(Theme.warning)
-                        Text("Win Rate")
-                            .font(.caption2)
+                
+                // Per-Class K/D comparison (if available from extended stats)
+                if let extended = viewModel.extendedProfileStats {
+                    Divider()
+                        .background(Theme.borderColor)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("All Classes K/D Comparison")
+                            .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundColor(Theme.textSecondary)
+                        
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible()),
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 12) {
+                            classKDItem(name: "Assault", kd: extended.assaultKD, current: classStats.className)
+                            classKDItem(name: "Engineer", kd: extended.engineerKD, current: classStats.className)
+                            classKDItem(name: "Support", kd: extended.supportKD, current: classStats.className)
+                            classKDItem(name: "Recon", kd: extended.reconKD, current: classStats.className)
+                        }
                     }
-
-                    Text(String(format: "%.1f%%", overallWinRate))
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.textPrimary)
-
-                    Text("overall avg")
-                        .font(.caption2)
-                        .foregroundColor(Theme.textSecondary)
-                }
-
-                // Deaths
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.caption2)
-                            .foregroundColor(Theme.error)
-                        Text("Deaths")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-
-                    Text("\(classStats.deaths.formatted())")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.textPrimary)
-
-                    Text("\(String(format: "%.1f", Double(classStats.deaths) / Double(max(1, classStats.kills)))) D/K")
-                        .font(.caption2)
-                        .foregroundColor(Theme.textSecondary)
                 }
             }
 
@@ -275,6 +304,35 @@ struct EnhancedClassCard: View {
                 .strokeBorder(
                     isSpecialized ? Theme.warning.opacity(0.4) : Theme.borderColor,
                     lineWidth: isSpecialized ? 2 : 1
+                )
+        )
+    }
+    
+    // MARK: - Class K/D Item Helper
+    
+    private func classKDItem(name: String, kd: Double, current: String) -> some View {
+        let isCurrent = name == current
+        
+        return VStack(spacing: 4) {
+            Text(name)
+                .font(.caption2)
+                .foregroundColor(isCurrent ? Theme.bf6Blue : Theme.textSecondary)
+                .fontWeight(isCurrent ? .semibold : .regular)
+            
+            Text(String(format: "%.2f", kd))
+                .font(.caption)
+                .fontWeight(isCurrent ? .bold : .semibold)
+                .foregroundColor(isCurrent ? Theme.textPrimary : Theme.textSecondary)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(isCurrent ? Theme.bf6Blue.opacity(0.15) : Color.clear)
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(
+                    isCurrent ? Theme.bf6Blue.opacity(0.3) : Color.clear,
+                    lineWidth: 1
                 )
         )
     }

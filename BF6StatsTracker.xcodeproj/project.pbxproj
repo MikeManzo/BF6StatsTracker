@@ -54,6 +54,7 @@
 		276C746B2F0D94F4002674A4 /* ProgressionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */; };
 		276C746F2F0D9502002674A4 /* ModeEfficiencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */; };
 		276C74712F0EDC88002674A4 /* MapsPlayedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */; };
+		277B4AF62F51EC0B00CA71B1 /* ExtendedProfileStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4AF52F51EC0B00CA71B1 /* ExtendedProfileStats.swift */; };
 		27AIC0012F4EABC100000001 /* AICoachAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */; };
 		27B060442F28D8D600D4AEC1 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 27B060432F28D8D600D4AEC1 /* MLX */; };
 		27B060472F28D8FA00D4AEC1 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 27B060462F28D8FA00D4AEC1 /* MLXLLM */; };
@@ -157,6 +158,7 @@
 		276C746A2F0D94F4002674A4 /* ProgressionBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionBadge.swift; sourceTree = "<group>"; };
 		276C746C2F0D9502002674A4 /* ModeEfficiencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeEfficiencyView.swift; sourceTree = "<group>"; };
 		276C74702F0EDC88002674A4 /* MapsPlayedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapsPlayedCard.swift; sourceTree = "<group>"; };
+		277B4AF52F51EC0B00CA71B1 /* ExtendedProfileStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtendedProfileStats.swift; sourceTree = "<group>"; };
 		27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachAnalysis.swift; sourceTree = "<group>"; };
 		27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundNotificationService.swift; sourceTree = "<group>"; };
 		27C267BB2EEF35AF006168AA /* MapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTracker.swift; sourceTree = "<group>"; };
@@ -324,6 +326,7 @@
 				27E228E12F48866E005F4F4D /* Progression.swift */,
 				27E228E32F488693005F4F4D /* AppSettings.swift */,
 				27E228E52F4886A3005F4F4D /* ErrorTypes.swift */,
+				277B4AF52F51EC0B00CA71B1 /* ExtendedProfileStats.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -580,6 +583,7 @@
 				0000000000000018 /* OverviewStatsView.swift in Sources */,
 				275C316D2F4B5D96004000BC /* PlaystyleInsightsView.swift in Sources */,
 				271CA0FE2F26DCD00037D232 /* AICoachView.swift in Sources */,
+				277B4AF62F51EC0B00CA71B1 /* ExtendedProfileStats.swift in Sources */,
 				27E543872EE98F4000B01618 /* ServerBrowserView.swift in Sources */,
 				0000000000000019 /* LastMatchStatsView.swift in Sources */,
 				0000000000000020 /* LastCompletedMatchView.swift in Sources */,

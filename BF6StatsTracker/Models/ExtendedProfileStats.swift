@@ -34,11 +34,20 @@ struct ExtendedProfileStats: Codable {
     // MARK: - Combat Style
     let adsKills: Int
     let hipfireKills: Int
+    let meleeKills: Int
+    let grenadeKills: Int
+    let headshotKills: Int
 
     var aimingPercentage: Double {
         let total = adsKills + hipfireKills
         guard total > 0 else { return 0 }
         return (Double(adsKills) / Double(total)) * 100
+    }
+    
+    var headshotPercentage: Double {
+        let combatKills = adsKills + hipfireKills
+        guard combatKills > 0 else { return 0 }
+        return (Double(headshotKills) / Double(combatKills)) * 100
     }
 
     // MARK: - Assist Breakdown
@@ -94,6 +103,9 @@ struct ExtendedProfileStats: Codable {
         // Combat Style
         self.adsKills = getValue(for: "Kills_ADS_Total")
         self.hipfireKills = getValue(for: "Kills_Hipfire_Total")
+        self.meleeKills = getValue(for: "Kills_Melee_Total")
+        self.grenadeKills = getValue(for: "Kills_Grenade_Total")
+        self.headshotKills = getValue(for: "Kills_Headshot_Total")
 
         // Assist Breakdown
         self.spotAssists = getValue(for: "Spot_Assists_Enemies_Total")

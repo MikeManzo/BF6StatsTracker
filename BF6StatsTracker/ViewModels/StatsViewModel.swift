@@ -25,6 +25,7 @@ class StatsViewModel: ObservableObject {
 
     @Published var playerStats: PlayerStats?
     @Published var profileData: ProfileData?
+    @Published private(set) var extendedProfileStats: ExtendedProfileStats?
     @Published var classStats: [ClassStats] = []
     @Published var weaponStats: [WeaponStats] = []
     @Published var vehicleStats: [VehicleStats] = []
@@ -413,6 +414,7 @@ class StatsViewModel: ObservableObject {
                         let profile = try await APIService.shared.fetchProfileData(identifier: identifier)
                         await MainActor.run {
                             self.profileData = profile
+                            self.extendedProfileStats = profile.extendedStats
                         }
                     } catch {
                         logWarning("Failed to fetch profile data from cache path: \(error.localizedDescription)", category: .network)
@@ -457,6 +459,7 @@ class StatsViewModel: ObservableObject {
             }
             self.playerStats = stats
             self.profileData = profile
+            self.extendedProfileStats = profile?.extendedStats
             self.classStats = filteredClasses
             self.weaponStats = stats.weapons ?? []
             self.vehicleStats = stats.vehicles ?? []

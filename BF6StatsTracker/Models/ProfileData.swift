@@ -55,6 +55,15 @@ struct ProfileData: Codable {
     var rankImg: String? {
         return playerCard?.rankImage?.small
     }
+    
+    /// Parse extended stats from profile stats array
+    var extendedStats: ExtendedProfileStats? {
+        guard let profile = playerProfiles?.first,
+              let stats = profile.stats else {
+            return nil
+        }
+        return ExtendedProfileStats(from: stats)
+    }
 }
 
 /// Individual player profile entry
