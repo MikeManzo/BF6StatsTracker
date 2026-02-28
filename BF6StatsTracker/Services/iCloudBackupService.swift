@@ -261,7 +261,7 @@ class iCloudBackupService: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                logWarning("Failed to fetch backup status: \(error.localizedDescription)", category: .general)
+                logError("Failed to fetch backup status: \(error.localizedDescription)", category: .error)
             }
         }
     }

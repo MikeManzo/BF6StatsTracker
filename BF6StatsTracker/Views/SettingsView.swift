@@ -925,33 +925,61 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 20) {
             SettingsGroupBox {
                 VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        SettingsToggleRow(
-                            title: "AI Coach",
-                            subtitle: "On-device AI-powered coaching that analyzes your gameplay",
-                            isOn: $aiCoachEnabled
-                        )
-                        .onChange(of: aiCoachEnabled) { _, _ in saveSettings() }
+                    if SystemUtility.isAppleSilicon {
+                        HStack {
+                            SettingsToggleRow(
+                                title: "AI Coach",
+                                subtitle: "On-device AI-powered coaching that analyzes your gameplay",
+                                isOn: $aiCoachEnabled
+                            )
+                            .onChange(of: aiCoachEnabled) { _, _ in saveSettings() }
 
-                        Text("BETA")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(themeManager.accent)
-                            .cornerRadius(4)
-                    }
+                            Text("BETA")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(themeManager.accent)
+                                .cornerRadius(4)
+                        }
 
-                    if aiCoachEnabled {
-                        VStack(alignment: .leading, spacing: 8) {
-                            FeatureInfoRow(icon: "cpu", text: "Runs entirely on your Mac using Apple Silicon", color: themeManager.accent)
-                            FeatureInfoRow(icon: "memorychip", text: "Uses ~2GB RAM only when AI Coach tab is open", color: themeManager.accent)
-                            FeatureInfoRow(icon: "lock.shield", text: "Your data never leaves your device", color: themeManager.accent)
+                        if aiCoachEnabled {
+                            VStack(alignment: .leading, spacing: 8) {
+                                FeatureInfoRow(icon: "cpu", text: "Runs entirely on your Mac using Apple Silicon", color: themeManager.accent)
+                                FeatureInfoRow(icon: "memorychip", text: "Uses ~2GB RAM only when AI Coach tab is open", color: themeManager.accent)
+                                FeatureInfoRow(icon: "lock.shield", text: "Your data never leaves your device", color: themeManager.accent)
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(themeManager.accent.opacity(0.1))
+                            .cornerRadius(8)
+                        }
+                    } else {
+                        // Intel Mac - AI Coach not available
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.title3)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("AI Coach Unavailable")
+                                        .font(.headline)
+                                    
+                                    Text("AI Coach requires Apple Silicon (M1 or later)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            
+                            Text("Your Mac uses an Intel processor. The AI Coach feature requires Apple Silicon to run on-device AI models efficiently.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(themeManager.accent.opacity(0.1))
+                        .background(Color.orange.opacity(0.1))
                         .cornerRadius(8)
                     }
                 }

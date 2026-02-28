@@ -75,6 +75,11 @@ class StatsViewModel: ObservableObject {
                 return false
             }
             
+            // Filter out AI Coach on Intel Macs (requires Apple Silicon)
+            if tab == .aiCoach && !SystemUtility.isAppleSilicon {
+                return false
+            }
+            
             // Filter out experimental tabs if not enabled
             if tab.isExperimental {
                 switch tab {
@@ -417,7 +422,7 @@ class StatsViewModel: ObservableObject {
                             self.extendedProfileStats = profile.extendedStats
                         }
                     } catch {
-                        logWarning("Failed to fetch profile data from cache path: \(error.localizedDescription)", category: .network)
+                        logError("Failed to fetch profile data from cache path: \(error.localizedDescription)", category: .network)
                     }
                 }
                 

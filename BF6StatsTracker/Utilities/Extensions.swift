@@ -556,3 +556,17 @@ extension Color: @retroactive RawRepresentable {
         return "\(nsColor.redComponent),\(nsColor.greenComponent),\(nsColor.blueComponent),\(nsColor.alphaComponent)"
     }
 }
+
+// MARK: - System Utilities
+
+/// Utility for detecting system architecture
+enum SystemUtility {
+    /// Returns true if running on Apple Silicon (ARM), false if running on Intel (x86_64)
+    static var isAppleSilicon: Bool {
+        #if arch(arm64)
+        return true
+        #else
+        return false
+        #endif
+    }
+}
