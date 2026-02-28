@@ -254,7 +254,7 @@ struct OverviewStatsView: View {
 
             // Expandable content
             if isPerMatchAveragesExpanded {
-                HStack(spacing: 24) {
+                HStack(spacing: 20) {
                     CompactStatItem(
                         label: "Matches",
                         value: stats.matchesPlayed.formatted(),
@@ -269,6 +269,30 @@ struct OverviewStatsView: View {
                         icon: "target",
                         color: Theme.bf6Red,
                         detail: "Humans + Bots"
+                    )
+                    
+                    CompactStatItem(
+                        label: "Deaths/Match",
+                        value: String(format: "%.1f", stats.matchesPlayed > 0 ? Double(stats.deaths) / Double(stats.matchesPlayed) : 0.0),
+                        icon: "xmark.circle",
+                        color: Theme.textSecondary,
+                        detail: "K/D: \(String(format: "%.2f", stats.kdRatio))"
+                    )
+
+                    CompactStatItem(
+                        label: "Score/Match",
+                        value: String(format: "%.0f", stats.matchesPlayed > 0 ? Double(stats.totalScore) / Double(stats.matchesPlayed) : 0.0),
+                        icon: "star.fill",
+                        color: .yellow,
+                        detail: "XP earned"
+                    )
+                    
+                    CompactStatItem(
+                        label: "Assists/Match",
+                        value: String(format: "%.1f", stats.matchesPlayed > 0 ? Double(stats.assists) / Double(stats.matchesPlayed) : 0.0),
+                        icon: "hand.thumbsup.fill",
+                        color: Theme.bf6Green,
+                        detail: "Team assists"
                     )
 
                     CompactStatItem(
