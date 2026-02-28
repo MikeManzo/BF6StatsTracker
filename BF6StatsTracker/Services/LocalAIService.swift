@@ -352,6 +352,7 @@ struct AIModelInfo {
     let name: String
     let displayName: String
     let size: String
+    let version: String
     let downloadURL: URL
     let files: [String]
 
@@ -359,6 +360,7 @@ struct AIModelInfo {
         name: "Phi-3-mini-4k-instruct-4bit",
         displayName: "Phi-3 Mini (4-bit)",
         size: "~2.2 GB",
+        version: "1.0.0",
         downloadURL: URL(string: "https://huggingface.co/mlx-community/Phi-3-mini-4k-instruct-4bit/resolve/main/")!,
         files: [
             "config.json",
@@ -381,6 +383,9 @@ class LocalAIService: ObservableObject {
     @Published var isModelLoaded: Bool = false
     @Published var downloadProgress: Double = 0.0
     @Published var currentDownloadFile: String = ""
+    @Published var installedModelVersion: String?
+    @Published var isCheckingForUpdates: Bool = false
+    @Published var updateAvailable: Bool = false
 
     private var unloadTimer: Timer?
     private let unloadTimeout: TimeInterval = 300 // 5 minutes
@@ -465,14 +470,75 @@ class LocalAIService: ObservableObject {
         return ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
     }
 
+    /// Version file to track installed model version
+    private var versionFilePath: URL {
+        modelDirectory.appendingPathComponent("version.txt")
+    }
+
+    /// Save the current model version to disk
+    private func saveModelVersion() {
+        do {
+            try modelInfo.version.write(to: versionFilePath, atomically: true, encoding: .utf8)
+            installedModelVersion = modelInfo.version
+            logInfo("Saved model version: \(modelInfo.version)", category: .general)
+        } catch {
+            logError("Failed to save model version: \(error.localizedDescription)", category: .error)
+        }
+    }
+
+    /// Load the installed model version from disk
+    private func loadModelVersion() {
+        do {
+            let version = try String(contentsOf: versionFilePath, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+            installedModelVersion = version
+            logInfo("Loaded installed model version: \(version)", category: .general)
+        } catch {
+            // Version file doesn't exist or couldn't be read
+            installedModelVersion = nil
+        }
+    }
+
+    /// Check if an update is available
+    func checkForUpdates() async {
+        guard isModelDownloaded else {
+            updateAvailable = false
+            return
+        }
+
+        isCheckingForUpdates = true
+        loadModelVersion()
+
+        // Compare installed version with current model info version
+        if let installed = installedModelVersion {
+            updateAvailable = installed != modelInfo.version
+            if updateAvailable {
+                logInfo("Update available: \(installed) -> \(modelInfo.version)", category: .general)
+            } else {
+                logInfo("Model is up to date (version \(installed))", category: .general)
+            }
+        } else {
+            // No version file found - likely old installation
+            updateAvailable = true
+            logInfo("No version file found - update recommended", category: .general)
+        }
+
+        isCheckingForUpdates = false
+    }
+
     // MARK: - Model Status Check
 
     func checkModelStatus() async {
         if isModelDownloaded {
             status = .downloaded
+            loadModelVersion()
             logInfo("AI Model found at: \(modelDirectory.path)", category: .general)
+
+            // Check for updates in the background
+            await checkForUpdates()
         } else {
             status = .notDownloaded
+            installedModelVersion = nil
+            updateAvailable = false
             logInfo("AI Model not found. Download required.", category: .general)
         }
     }
@@ -544,6 +610,11 @@ class LocalAIService: ObservableObject {
 
         currentDownloadFile = ""
         status = .downloaded
+
+        // Save the model version
+        saveModelVersion()
+        updateAvailable = false
+
         logSuccess("AI Model download complete!", category: .success)
     }
 
@@ -568,8 +639,30 @@ class LocalAIService: ObservableObject {
         try? FileManager.default.removeItem(at: modelDirectory)
         status = .notDownloaded
         downloadProgress = 0.0
+        installedModelVersion = nil
+        updateAvailable = false
 
         logInfo("AI Model deleted", category: .general)
+    }
+
+    /// Update the model by deleting the old version and downloading the new one
+    func updateModel() async {
+        guard updateAvailable else {
+            logInfo("No update available", category: .general)
+            return
+        }
+
+        logInfo("Starting model update: \(installedModelVersion ?? "unknown") -> \(modelInfo.version)", category: .general)
+
+        // Unload and delete the old model
+        deleteModel()
+
+        // Download the new model
+        await downloadModel()
+
+        if status == .downloaded {
+            logSuccess("Model updated successfully to version \(modelInfo.version)", category: .success)
+        }
     }
 
     // MARK: - Model Lifecycle

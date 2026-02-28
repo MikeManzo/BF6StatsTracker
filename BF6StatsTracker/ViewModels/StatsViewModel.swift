@@ -988,7 +988,7 @@ enum StatTab: String, CaseIterable, Identifiable {
     case weapons = "Weapons"
     case weaponMastery = "Weapons Mastery"
     case gadgets = "Gadgets"
-    case utility = "Utility"
+    case utility = "Gadget Mastery"
 
     // Vehicles sub-tabs
     case vehicleStats = "Vehicle Stats"

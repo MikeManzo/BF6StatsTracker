@@ -421,32 +421,102 @@ struct AICoachView: View {
                 .cornerRadius(12)
 
             case .downloaded:
-                // Show a subtle indicator that model is ready
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(Theme.bf6Green)
+                // Show version info and update status
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: aiService.updateAvailable ? "arrow.triangle.2.circlepath.circle.fill" : "checkmark.circle.fill")
+                            .foregroundColor(aiService.updateAvailable ? Theme.bf6Orange : Theme.bf6Green)
 
-                    Text("Model ready")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(aiService.updateAvailable ? "Update Available" : "Model Up to Date")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Theme.textPrimary)
 
-                    Spacer()
-
-                    Button {
-                        showDeleteConfirmation = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "trash")
-                            Text("Delete")
+                            if let version = aiService.installedModelVersion {
+                                Text("Version \(version)")
+                                    .font(.caption2)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
                         }
-                        .font(.caption)
-                        .foregroundColor(Theme.bf6Red)
+
+                        Spacer()
+
+                        if aiService.isCheckingForUpdates {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        }
                     }
-                    .buttonStyle(.plain)
+
+                    // Update button if update available
+                    if aiService.updateAvailable {
+                        HStack(spacing: 8) {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(Theme.bf6Orange)
+                                .font(.caption)
+
+                            if let installedVersion = aiService.installedModelVersion {
+                                Text("Update available: \(installedVersion) → \(aiService.modelInfo.version) (\(aiService.modelInfo.size))")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            } else {
+                                Text("Version \(aiService.modelInfo.version) is available (\(aiService.modelInfo.size))")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+
+                            Spacer()
+                        }
+
+                        HStack(spacing: 8) {
+                            Button {
+                                Task {
+                                    await aiService.updateModel()
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.down.circle.fill")
+                                    Text("Download Update")
+                                }
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Theme.bf6Orange)
+                                .cornerRadius(6)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                showDeleteConfirmation = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "trash")
+                                    Text("Delete")
+                                }
+                                .font(.caption)
+                                .foregroundColor(Theme.bf6Red)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    } else {
+                        // Just show delete button if up to date
+                        Button {
+                            showDeleteConfirmation = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "trash")
+                                Text("Delete Model")
+                            }
+                            .font(.caption)
+                            .foregroundColor(Theme.bf6Red)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(Theme.cardBackground)
+                .padding(.vertical, 12)
+                .background(aiService.updateAvailable ? Theme.bf6Orange.opacity(0.1) : Theme.cardBackground)
                 .cornerRadius(8)
 
             default:
