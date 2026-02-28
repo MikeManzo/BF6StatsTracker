@@ -24,6 +24,7 @@ struct SessionHistoryView: View {
     @StateObject private var historyManager = HistoryManager.shared
     @StateObject private var backupService = iCloudBackupService.shared
     @EnvironmentObject var viewModel: StatsViewModel
+    @Environment(\.modelContext) private var modelContext
 
     // Use @Query to automatically handle object lifecycle
     @Query(sort: \StatsSnapshot.timestamp, order: .reverse)
@@ -65,20 +66,47 @@ struct SessionHistoryView: View {
                 iCloudBackupCard
             }
 
-            // Snapshots list - show immediately as data loads
-            if isBuildingCache && groupedSnapshotsCache.isEmpty {
-                skeletonLoader
-            } else if filteredSnapshots.isEmpty {
-                if isInitialLoad {
-                    skeletonLoader
-                } else {
-                    emptyStateView
-                }
+            // Snapshots list
+            if filteredSnapshots.isEmpty {
+                emptyStateView
             } else {
                 snapshotsList
             }
         }
         .background(Theme.backgroundPrimary)
+        .onAppear {
+            // Build cache immediately on first appear
+            if groupedSnapshotsCache.isEmpty && !allSnapshots.isEmpty {
+                let calendar = Calendar.current
+                var grouped: [Date: [StatsSnapshot]] = [:]
+                
+                for snapshot in filteredSnapshots {
+                    let startOfDay = calendar.startOfDay(for: snapshot.timestamp)
+                    grouped[startOfDay, default: []].append(snapshot)
+                }
+                
+                var map: [UUID: StatsSnapshot] = [:]
+                for i in 0..<allSnapshots.count - 1 {
+                    map[allSnapshots[i].id] = allSnapshots[i + 1]
+                }
+                
+                groupedSnapshotsCache = grouped
+                snapshotMapCache = map
+                
+                // Auto-collapse all sections except Today and Yesterday
+                if collapsedSections.isEmpty {
+                    let today = calendar.startOfDay(for: Date())
+                    let yesterday = calendar.date(byAdding: .day, value: -1, to: today)
+                    
+                    for date in grouped.keys {
+                        if !calendar.isDate(date, inSameDayAs: today),
+                           let yesterday = yesterday, !calendar.isDate(date, inSameDayAs: yesterday) {
+                            collapsedSections.insert(date)
+                        }
+                    }
+                }
+            }
+        }
         .alert("Delete Snapshot", isPresented: $showingDeleteAlert, presenting: snapshotToDelete) { snapshot in
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -436,60 +464,37 @@ struct SessionHistoryView: View {
             }
         }
         .background(Theme.backgroundPrimary)
-        .task {
-            // Rebuild caches asynchronously in background to not block UI
-            if cacheNeedsUpdate || groupedSnapshotsCache.isEmpty {
-                await Task.detached(priority: .userInitiated) {
-                    await MainActor.run {
-                        self.rebuildCaches()
-                    }
-                }.value
-            }
-        }
-        .onAppear {
-            // Mark initial load complete once we have data
-            if !allSnapshots.isEmpty {
-                isInitialLoad = false
+        .onChange(of: allSnapshots.count) { _, _ in
+            // Build cache when snapshots change - simple and fast
+            let calendar = Calendar.current
+            var grouped: [Date: [StatsSnapshot]] = [:]
+            
+            for snapshot in filteredSnapshots {
+                let startOfDay = calendar.startOfDay(for: snapshot.timestamp)
+                grouped[startOfDay, default: []].append(snapshot)
             }
             
-            // Auto-collapse all sections except Today and Yesterday (deferred)
-            if collapsedSections.isEmpty {
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
-                    
-                    let calendar = Calendar.current
-                    let today = calendar.startOfDay(for: Date())
-                    let yesterday = calendar.date(byAdding: .day, value: -1, to: today)
-                    
-                    for date in groupedSnapshots.keys {
-                        // Only keep Today and Yesterday expanded
-                        if !calendar.isDate(date, inSameDayAs: today),
-                           let yesterday = yesterday, !calendar.isDate(date, inSameDayAs: yesterday) {
-                            collapsedSections.insert(date)
-                        }
-                    }
-                }
-            }
-        }
-        .onChange(of: allSnapshots.count) { _, newCount in
-            // Rebuild caches asynchronously when snapshot count changes
-            cacheNeedsUpdate = true
-            
-            Task { @MainActor in
-                rebuildCaches()
+            var map: [UUID: StatsSnapshot] = [:]
+            for i in 0..<allSnapshots.count - 1 {
+                map[allSnapshots[i].id] = allSnapshots[i + 1]
             }
             
-            // As soon as snapshots load, dismiss skeleton
-            if newCount > 0 {
-                isInitialLoad = false
-            }
+            groupedSnapshotsCache = grouped
+            snapshotMapCache = map
         }
         .onChange(of: searchText) { _, _ in
-            // Rebuild grouped snapshots asynchronously when search changes
-            Task { @MainActor in
-                rebuildCaches()
+            // Rebuild grouped snapshots when search changes
+            let calendar = Calendar.current
+            var grouped: [Date: [StatsSnapshot]] = [:]
+            
+            for snapshot in filteredSnapshots {
+                let startOfDay = calendar.startOfDay(for: snapshot.timestamp)
+                grouped[startOfDay, default: []].append(snapshot)
             }
+            
+            groupedSnapshotsCache = grouped
         }
+
     }
 
     /// Group snapshots by day - returns cached value (updated via rebuildCaches())
@@ -503,18 +508,44 @@ struct SessionHistoryView: View {
     }
     
     /// Rebuild caches when data changes (called explicitly, not on every render)
-    private func rebuildCaches() {
+    private func rebuildCaches(async: Bool = true) {
         // Skip if already building
         guard !isBuildingCache else { return }
-        
-        isBuildingCache = true
         
         // Capture snapshots locally to avoid re-reading @Query
         let snapshots = allSnapshots
         let filtered = filteredSnapshots
         
-        // Do expensive computation in background
-        Task.detached(priority: .userInitiated) {
+        if async {
+            isBuildingCache = true
+            
+            // Do expensive computation in background
+            Task.detached(priority: .userInitiated) {
+                let calendar = Calendar.current
+                var grouped: [Date: [StatsSnapshot]] = [:]
+                
+                // Build grouped snapshots
+                for snapshot in filtered {
+                    let startOfDay = calendar.startOfDay(for: snapshot.timestamp)
+                    grouped[startOfDay, default: []].append(snapshot)
+                }
+                
+                // Build snapshot map
+                var map: [UUID: StatsSnapshot] = [:]
+                for i in 0..<snapshots.count - 1 {
+                    map[snapshots[i].id] = snapshots[i + 1]
+                }
+                
+                // Update UI on main thread
+                await MainActor.run {
+                    self.groupedSnapshotsCache = grouped
+                    self.snapshotMapCache = map
+                    self.cacheNeedsUpdate = false
+                    self.isBuildingCache = false
+                }
+            }
+        } else {
+            // Synchronous rebuild for initial load - fast enough to not block UI noticeably
             let calendar = Calendar.current
             var grouped: [Date: [StatsSnapshot]] = [:]
             
@@ -530,13 +561,9 @@ struct SessionHistoryView: View {
                 map[snapshots[i].id] = snapshots[i + 1]
             }
             
-            // Update UI on main thread
-            await MainActor.run {
-                self.groupedSnapshotsCache = grouped
-                self.snapshotMapCache = map
-                self.cacheNeedsUpdate = false
-                self.isBuildingCache = false
-            }
+            groupedSnapshotsCache = grouped
+            snapshotMapCache = map
+            cacheNeedsUpdate = false
         }
     }
 
