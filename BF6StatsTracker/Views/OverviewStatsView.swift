@@ -118,45 +118,16 @@ struct OverviewStatsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
 
-                // Top Weapons
-                VStack(alignment: .leading, spacing: 10) {
+                // Top Weapons - Enhanced
+                VStack(alignment: .leading, spacing: 12) {
                     SectionHeader(title: "Top Weapons", icon: "scope")
 
                     if viewModel.topWeapons.isEmpty {
                         Text("No weapon data available")
                             .foregroundColor(Theme.textSecondary)
                     } else {
-                        ForEach(viewModel.topWeapons.prefix(4), id: \.weaponName) { weapon in
-                            HStack {
-                                AsyncGameImage(
-                                    url: URL(string: weapon.image),
-                                    placeholder: Image(systemName: "scope")
-                                )
-                                .frame(width: 36, height: 36)
-                                .cornerRadius(6)
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(weapon.weaponName)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Theme.textPrimary)
-
-                                    Text("\(weapon.type)")
-                                        .font(.caption)
-                                        .foregroundColor(Theme.textSecondary)
-                                }
-
-                                Spacer()
-
-                                VStack(alignment: .trailing, spacing: 2) {
-                                    Text("\(weapon.kills)")
-                                        .fontWeight(.bold)
-                                        .foregroundColor(Theme.bf6Red)
-
-                                    Text("kills")
-                                        .font(.caption)
-                                        .foregroundColor(Theme.textSecondary)
-                                }
-                            }
+                        ForEach(viewModel.topWeapons.prefix(3), id: \.weaponName) { weapon in
+                            enhancedWeaponCard(weapon: weapon)
                         }
                     }
 
@@ -706,6 +677,133 @@ struct OverviewStatsView: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(accentColor.opacity(0.2), lineWidth: 1)
         )
+    }
+    
+    // MARK: - Enhanced Weapon Card
+    
+    /// Enhanced horizontal weapon card with rich statistics
+    private func enhancedWeaponCard(weapon: WeaponStats) -> some View {
+        let tier = CommunityBenchmarks.weaponKillsPercentile(kills: weapon.kills)
+        
+        return HStack(spacing: 12) {
+            // Weapon Image
+            AsyncGameImage(
+                url: URL(string: weapon.image),
+                placeholder: Image(systemName: "scope")
+            )
+            .frame(width: 52, height: 52)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(tier.color.opacity(0.3), lineWidth: 1.5)
+            )
+            
+            // Weapon Info & Stats Grid
+            VStack(alignment: .leading, spacing: 6) {
+                // Weapon Name & Type
+                HStack(spacing: 6) {
+                    Text(weapon.weaponName)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Theme.textPrimary)
+                        .lineLimit(1)
+                    
+                    Text(weapon.type)
+                        .font(.system(size: 10))
+                        .foregroundColor(Theme.textSecondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Theme.textSecondary.opacity(0.1))
+                        .cornerRadius(4)
+                }
+                
+                // Stats Grid - 3 columns
+                HStack(spacing: 12) {
+                    // KPM
+                    weaponStatMini(
+                        icon: "timer",
+                        label: "KPM",
+                        value: String(format: "%.2f", weapon.killsPerMinute),
+                        color: Theme.bf6Blue
+                    )
+                    
+                    // Accuracy
+                    weaponStatMini(
+                        icon: "scope",
+                        label: "Acc",
+                        value: "\(String(format: "%.1f", weapon.accuracy))%",
+                        color: Theme.bf6Green
+                    )
+                    
+                    // Headshot %
+                    weaponStatMini(
+                        icon: "target",
+                        label: "HS",
+                        value: "\(String(format: "%.1f", weapon.headshotPercentage))%",
+                        color: .orange
+                    )
+                }
+            }
+            
+            Spacer()
+            
+            // Right Side - Kills & Percentile Badge
+            VStack(alignment: .trailing, spacing: 6) {
+                // Kills
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(weapon.kills)")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Theme.bf6Red)
+                    
+                    Text("kills")
+                        .font(.system(size: 9))
+                        .foregroundColor(Theme.textSecondary)
+                }
+                
+                // Percentile Badge
+                HStack(spacing: 4) {
+                    Image(systemName: tier.icon)
+                        .font(.system(size: 9))
+                        .foregroundColor(tier.color)
+                    
+                    Text(tier.percentileRange)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(tier.color)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(tier.color.opacity(0.15))
+                .cornerRadius(6)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(tier.color.opacity(0.2), lineWidth: 1)
+        )
+    }
+    
+    /// Mini stat display for weapon cards
+    private func weaponStatMini(icon: String, label: String, value: String, color: Color) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .foregroundColor(color)
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.system(size: 9))
+                    .foregroundColor(Theme.textSecondary)
+                
+                Text(value)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
+            }
+        }
     }
 }
 
