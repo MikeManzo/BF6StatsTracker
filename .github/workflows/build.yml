@@ -1,10 +1,10 @@
-name: Build macOS App
+name: Build macOS App (Sparkle)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ sparkle ]
   pull_request:
-    branches: [ main ]
+    branches: [ sparkle ]
 
 jobs:
   build:
