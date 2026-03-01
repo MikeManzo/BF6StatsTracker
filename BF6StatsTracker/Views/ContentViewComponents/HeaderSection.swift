@@ -389,6 +389,7 @@ struct HeaderSection: View {
                     icon: "arrow.clockwise",
                     tooltip: "Refresh stats (⌘R)",
                     isLoading: viewModel.isLoading,
+                    buttonColor: viewModel.refreshButtonColor,
                     shouldPulsate: viewModel.shouldPulsateRefreshButton
                 ) {
                     Task {
