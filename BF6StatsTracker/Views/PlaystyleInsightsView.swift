@@ -747,51 +747,64 @@ struct RadarChartView: View {
             let radius = min(geometry.size.width, geometry.size.height) / 2 - 40
             
             ZStack {
-                // Background circles
-                ForEach([0.2, 0.4, 0.6, 0.8, 1.0], id: \.self) { scale in
-                    RadarPolygon(sides: 5, scale: scale)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                        .frame(width: radius * 2, height: radius * 2)
-                }
-                
-                // Data polygon
-                RadarPolygon(sides: 5, values: fingerprint.values)
-                    .fill(Theme.bf6Green.opacity(0.3))
-                    .frame(width: radius * 2, height: radius * 2)
-                
-                RadarPolygon(sides: 5, values: fingerprint.values)
-                    .stroke(Theme.bf6Green, lineWidth: 2)
-                    .frame(width: radius * 2, height: radius * 2)
-                
-                // Axis lines
-                ForEach(0..<5) { index in
-                    Path { path in
-                        path.move(to: center)
-                        let angle = Double(index) * (2 * .pi / 5) - .pi / 2
-                        let endPoint = CGPoint(
-                            x: center.x + cos(angle) * radius,
-                            y: center.y + sin(angle) * radius
-                        )
-                        path.addLine(to: endPoint)
-                    }
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                }
-                
-                // Labels
-                ForEach(0..<5) { index in
-                    let angle = Double(index) * (2 * .pi / 5) - .pi / 2
-                    let labelDistance = radius + 25
-                    let labelPoint = CGPoint(
-                        x: center.x + cos(angle) * labelDistance,
-                        y: center.y + sin(angle) * labelDistance
-                    )
-                    
-                    Text(fingerprint.labels[index])
-                        .font(.caption)
-                        .foregroundColor(Theme.textPrimary)
-                        .position(labelPoint)
-                }
+                backgroundCircles(radius: radius)
+                dataPolygon(radius: radius)
+                axisLines(center: center, radius: radius)
+                labels(center: center, radius: radius)
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func backgroundCircles(radius: CGFloat) -> some View {
+        ForEach([0.2, 0.4, 0.6, 0.8, 1.0], id: \.self) { scale in
+            RadarPolygon(sides: 5, scale: scale)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                .frame(width: radius * 2, height: radius * 2)
+        }
+    }
+    
+    @ViewBuilder
+    private func dataPolygon(radius: CGFloat) -> some View {
+        RadarPolygon(sides: 5, values: fingerprint.values)
+            .fill(Theme.bf6Green.opacity(0.3))
+            .frame(width: radius * 2, height: radius * 2)
+        
+        RadarPolygon(sides: 5, values: fingerprint.values)
+            .stroke(Theme.bf6Green, lineWidth: 2)
+            .frame(width: radius * 2, height: radius * 2)
+    }
+    
+    @ViewBuilder
+    private func axisLines(center: CGPoint, radius: CGFloat) -> some View {
+        ForEach(0..<5) { index in
+            Path { path in
+                path.move(to: center)
+                let angle = Double(index) * (2 * .pi / 5) - .pi / 2
+                let endPoint = CGPoint(
+                    x: center.x + CGFloat(cos(angle)) * radius,
+                    y: center.y + CGFloat(sin(angle)) * radius
+                )
+                path.addLine(to: endPoint)
+            }
+            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+        }
+    }
+    
+    @ViewBuilder
+    private func labels(center: CGPoint, radius: CGFloat) -> some View {
+        ForEach(0..<5) { index in
+            let angle = Double(index) * (2 * .pi / 5) - .pi / 2
+            let labelDistance = radius + 25
+            let labelPoint = CGPoint(
+                x: center.x + CGFloat(cos(angle)) * labelDistance,
+                y: center.y + CGFloat(sin(angle)) * labelDistance
+            )
+            
+            Text(fingerprint.labels[index])
+                .font(.caption)
+                .foregroundColor(Theme.textPrimary)
+                .position(labelPoint)
         }
     }
 }
@@ -810,11 +823,11 @@ struct RadarPolygon: Shape {
         for i in 0..<sides {
             let angle = Double(i) * (2 * .pi / Double(sides)) - .pi / 2
             let value = values?[safe: i] ?? 1.0
-            let distance = radius * (values != nil ? value : scale)
+            let distance = CGFloat(radius) * CGFloat(values != nil ? value : scale)
             
             let point = CGPoint(
-                x: center.x + cos(angle) * distance,
-                y: center.y + sin(angle) * distance
+                x: center.x + CGFloat(cos(angle)) * distance,
+                y: center.y + CGFloat(sin(angle)) * distance
             )
             
             if i == 0 {
