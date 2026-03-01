@@ -57,6 +57,8 @@
 		277B4AF62F51EC0B00CA71B1 /* ExtendedProfileStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4AF52F51EC0B00CA71B1 /* ExtendedProfileStats.swift */; };
 		277B4AF82F521B6A00CA71B1 /* CommunityBenchmarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4AF72F521B6A00CA71B1 /* CommunityBenchmarks.swift */; };
 		277B4AFA2F521C0900CA71B1 /* PercentilePopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4AF92F521C0900CA71B1 /* PercentilePopoverView.swift */; };
+		27A5E8742F54825B003C5997 /* UpdaterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A5E8732F54825B003C5997 /* UpdaterService.swift */; };
+		27A5E8772F548395003C5997 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 27A5E8762F548395003C5997 /* Sparkle */; };
 		27AIC0012F4EABC100000001 /* AICoachAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */; };
 		27B060442F28D8D600D4AEC1 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 27B060432F28D8D600D4AEC1 /* MLX */; };
 		27B060472F28D8FA00D4AEC1 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 27B060462F28D8FA00D4AEC1 /* MLXLLM */; };
@@ -163,6 +165,7 @@
 		277B4AF52F51EC0B00CA71B1 /* ExtendedProfileStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtendedProfileStats.swift; sourceTree = "<group>"; };
 		277B4AF72F521B6A00CA71B1 /* CommunityBenchmarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityBenchmarks.swift; sourceTree = "<group>"; };
 		277B4AF92F521C0900CA71B1 /* PercentilePopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PercentilePopoverView.swift; sourceTree = "<group>"; };
+		27A5E8732F54825B003C5997 /* UpdaterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterService.swift; sourceTree = "<group>"; };
 		27AIC0002F4EABC100000001 /* AICoachAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachAnalysis.swift; sourceTree = "<group>"; };
 		27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundNotificationService.swift; sourceTree = "<group>"; };
 		27C267BB2EEF35AF006168AA /* MapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTracker.swift; sourceTree = "<group>"; };
@@ -216,6 +219,7 @@
 				27B060492F28D8FA00D4AEC1 /* MLXLMCommon in Frameworks */,
 				27B0604C2F28D9C700D4AEC1 /* Hub in Frameworks */,
 				27B060582F28DAC500D4AEC1 /* MLXLMCommon in Frameworks */,
+				27A5E8772F548395003C5997 /* Sparkle in Frameworks */,
 				27B060562F28DAC500D4AEC1 /* MLXLLM in Frameworks */,
 				27B0605F2F28DAD000D4AEC1 /* Transformers in Frameworks */,
 				27B0605B2F28DAD000D4AEC1 /* Hub in Frameworks */,
@@ -352,6 +356,7 @@
 				27B6F3F42F1483BC007E5393 /* SoundNotificationService.swift */,
 				27D09C352F37E04C004572A8 /* SquadService.swift */,
 				27368F402F45E384005DCF95 /* iCloudBackupService.swift */,
+				27A5E8732F54825B003C5997 /* UpdaterService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -464,6 +469,7 @@
 				27B060512F28DAA600D4AEC1 /* XCRemoteSwiftPackageReference "mlx-swift" */,
 				27B060542F28DAC500D4AEC1 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 				27B060592F28DAD000D4AEC1 /* XCRemoteSwiftPackageReference "swift-transformers" */,
+				27A5E8752F548395003C5997 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			productRefGroup = 3000000000000003 /* Products */;
 			projectDirPath = "";
@@ -516,6 +522,7 @@
 				27E228E02F488652005F4F4D /* ProfileData.swift in Sources */,
 				274291AA2EDD12C4000D2B69 /* StatsViewModel+Logout.swift in Sources */,
 				274F85562F141AF0000B1B90 /* LogViewerView.swift in Sources */,
+				27A5E8742F54825B003C5997 /* UpdaterService.swift in Sources */,
 				277B4AF82F521B6A00CA71B1 /* CommunityBenchmarks.swift in Sources */,
 				2747A79E2F037BA5001CF709 /* EAAccountStore.swift in Sources */,
 				2749FA132F045D97004D2E1D /* PerformanceBadgeView.swift in Sources */,
@@ -821,6 +828,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		27A5E8752F548395003C5997 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.0;
+			};
+		};
 		27B060422F28D8D600D4AEC1 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ml-explore/mlx-swift";
@@ -872,6 +887,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		27A5E8762F548395003C5997 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27A5E8752F548395003C5997 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		27B060432F28D8D600D4AEC1 /* MLX */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 27B060422F28D8D600D4AEC1 /* XCRemoteSwiftPackageReference "mlx-swift" */;

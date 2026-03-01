@@ -58,6 +58,7 @@ struct CleanStatCard: View {
 
 struct ToolbarButton: View {
     @Environment(\.liquidGlassEnabled) private var liquidGlassEnabled
+    @Environment(\.accentColor) private var accentColor
     let icon: String
     let tooltip: String
     var isLoading: Bool = false
@@ -90,6 +91,7 @@ struct ToolbarButton: View {
                     .animation(isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isLoading)
             }
         }
+        .tint(.clear)
         .modifier(ToolbarGlassButtonStyle(usesGlass: usesLiquidGlass))
         .help(tooltip)
         .accessibilityLabel(tooltip)

@@ -25,6 +25,7 @@ struct BF6StatsTrackerApp: App {
     @StateObject private var viewModel = StatsViewModel()
     @StateObject private var historyManager = HistoryManager.shared
     @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var updater = UpdaterService.shared
     @State private var isWindowVisible = true
     @Environment(\.openWindow) private var openWindow
 
@@ -67,6 +68,7 @@ struct BF6StatsTrackerApp: App {
                 .environmentObject(historyManager)
                 .environmentObject(themeManager)
                 .environment(\.accentColor, themeManager.accent)
+                .tint(themeManager.accent)
                 .environment(\.liquidGlassEnabled, viewModel.settings.liquidGlassEnabled)
                 .frame(minWidth: 1000, minHeight: 700)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
@@ -92,6 +94,10 @@ struct BF6StatsTrackerApp: App {
                 Button("About BF6 Stats Tracker") {
                     openWindow(id: "about")
                 }
+                Button("Check for Updates...") {
+                    updater.checkForUpdates()
+                }
+                .disabled(!updater.canCheckForUpdates)
             }
             CommandGroup(replacing: .newItem) {}
             CommandMenu("Stats") {
@@ -123,6 +129,7 @@ struct BF6StatsTrackerApp: App {
                 .environmentObject(viewModel)
                 .environmentObject(themeManager)
                 .environment(\.accentColor, themeManager.accent)
+                .tint(themeManager.accent)
                 .environment(\.liquidGlassEnabled, viewModel.settings.liquidGlassEnabled)
                 .preferredColorScheme(viewModel.settings.appearanceMode.colorScheme)
         }

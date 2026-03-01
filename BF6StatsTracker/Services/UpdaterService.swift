@@ -10,23 +10,57 @@
 
 import Foundation
 import Sparkle
+import AppKit
+
+/// Custom user driver delegate to customize Sparkle's UI appearance
+@MainActor
+class CustomSparkleUserDriver: NSObject, SPUStandardUserDriverDelegate {
+    func standardUserDriverWillShowModalAlert() {
+        // Sparkle alerts use NSAlert which respects the button tint color
+        // We'll customize alert buttons to match the app's color scheme
+        DispatchQueue.main.async {
+            let accentColor = NSColor(ThemeManager.shared.accent)
+            
+            // Find and customize any alert windows
+            for window in NSApp.windows where window.className.contains("NSAlert") {
+                // Customize buttons in the alert
+                if let contentView = window.contentView {
+                    self.customizeButtons(in: contentView, with: accentColor)
+                }
+            }
+        }
+    }
+    
+    private func customizeButtons(in view: NSView, with color: NSColor) {
+        for subview in view.subviews {
+            if let button = subview as? NSButton {
+                // Set the bezel color for buttons to match our accent color
+                button.bezelColor = color
+            }
+            // Recursively check subviews
+            customizeButtons(in: subview, with: color)
+        }
+    }
+}
 
 /// Service to manage application updates using Sparkle framework
+@MainActor
 class UpdaterService: ObservableObject {
     static let shared = UpdaterService()
     
     private let updaterController: SPUStandardUpdaterController
+    private let customUserDriver = CustomSparkleUserDriver()
     
     @Published var canCheckForUpdates: Bool = false
     @Published var automaticallyChecksForUpdates: Bool = true
     @Published var automaticallyDownloadsUpdates: Bool = false
     
     private init() {
-        // Initialize Sparkle updater controller
+        // Initialize Sparkle updater controller with custom user driver
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: nil,
-            userDriverDelegate: nil
+            userDriverDelegate: customUserDriver
         )
         
         // Observe updater state

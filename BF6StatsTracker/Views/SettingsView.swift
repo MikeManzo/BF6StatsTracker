@@ -28,6 +28,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case tabs = "Tabs"
     case sound = "Sound"
     case autoRefresh = "Auto Refresh"
+    case updates = "Updates"
     case menuBar = "Menu Bar"
     case dataManagement = "Data Management"
     case experimental = "Experimental"
@@ -43,6 +44,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .tabs: return "square.grid.3x3.fill"
         case .sound: return "speaker.wave.3.fill"
         case .autoRefresh: return "arrow.clockwise"
+        case .updates: return "arrow.down.circle.fill"
         case .menuBar: return "menubar.rectangle"
         case .dataManagement: return "externaldrive.fill.badge.icloud"
         case .experimental: return "flask.fill"
@@ -58,6 +60,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .tabs: return .cyan
         case .sound: return .pink
         case .autoRefresh: return .green
+        case .updates: return .mint
         case .menuBar: return .gray
         case .dataManagement: return .orange
         case .experimental: return Theme.bf6Purple
@@ -240,6 +243,8 @@ struct SettingsView: View {
             soundPane
         case .autoRefresh:
             autoRefreshPane
+        case .updates:
+            updatesPane
         case .menuBar:
             menuBarPane
         case .dataManagement:
@@ -540,14 +545,14 @@ struct SettingsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "info.circle.fill")
                         .font(.caption)
-                        .foregroundColor(.blue)
+                        .foregroundColor(accentColor)
                     
                     Text("Drag the handle to reorder tabs. Right-click any tab in the main window to quickly hide it.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 .padding(12)
-                .background(Color.blue.opacity(0.1))
+                .background(accentColor.opacity(0.1))
                 .cornerRadius(8)
             }
         }
@@ -657,6 +662,84 @@ struct SettingsView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Updates Pane
+
+    private var updatesPane: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            SettingsGroupBox {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Current version info
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Current Version")
+                            .font(.headline)
+                        
+                        HStack {
+                            Text("Version \(UpdaterService.shared.currentVersion) (Build \(UpdaterService.shared.currentBuild))")
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            Button {
+                                UpdaterService.shared.checkForUpdates()
+                            } label: {
+                                Label("Check for Updates", systemImage: "arrow.clockwise")
+                            }
+                            .disabled(!UpdaterService.shared.canCheckForUpdates)
+                        }
+                        
+                        if let feedURL = UpdaterService.shared.feedURL {
+                            Text("Update feed: \(feedURL)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    // Auto-check toggle
+                    SettingsToggleRow(
+                        title: "Automatically check for updates",
+                        subtitle: "Check for new versions when the app launches",
+                        isOn: Binding(
+                            get: { UpdaterService.shared.automaticallyChecksForUpdates },
+                            set: { UpdaterService.shared.setAutomaticallyChecksForUpdates($0) }
+                        )
+                    )
+                    
+                    // Auto-download toggle
+                    SettingsToggleRow(
+                        title: "Automatically download updates",
+                        subtitle: "Download updates in the background and notify when ready to install",
+                        isOn: Binding(
+                            get: { UpdaterService.shared.automaticallyDownloadsUpdates },
+                            set: { UpdaterService.shared.setAutomaticallyDownloadsUpdates($0) }
+                        )
+                    )
+                }
+            }
+            
+            // Info section
+            SettingsGroupBox {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Updates via GitHub Releases")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("BF6 Stats Tracker uses Sparkle framework to deliver secure, automatic updates via GitHub. All updates are cryptographically signed to ensure authenticity.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(accentColor)
+                    }
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -808,14 +891,14 @@ struct SettingsView: View {
                             
                             HStack(spacing: 8) {
                                 Image(systemName: "chart.bar.fill")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(accentColor)
                                 Text("Storage used: \(backupService.status.formattedStorageSize) / 1 GB")
                                     .font(.subheadline)
                             }
                             
                             HStack(spacing: 8) {
                                 Image(systemName: "photo.stack.fill")
-                                    .foregroundColor(.purple)
+                                    .foregroundColor(accentColor)
                                 Text("Snapshots backed up: \(backupService.status.snapshotCount)")
                                     .font(.subheadline)
                             }
