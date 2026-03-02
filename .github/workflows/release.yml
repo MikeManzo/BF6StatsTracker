@@ -48,7 +48,7 @@ jobs:
             -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
-     - name: Build & Archive
+      - name: Build & Archive
         run: |
           xcodebuild clean archive \
             -project "BF6StatsTracker.xcodeproj" \
@@ -58,7 +58,7 @@ jobs:
             -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }}
-            
+                  
       - name: Export Archive
         run: |
           cat > $RUNNER_TEMP/ExportOptions.plist << EOF
