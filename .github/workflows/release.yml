@@ -48,9 +48,8 @@ jobs:
             -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
-      - name: Build & Archive
+     - name: Build & Archive
         run: |
-          set -o pipefail
           xcodebuild clean archive \
             -project "BF6StatsTracker.xcodeproj" \
             -scheme "BF6StatsTracker" \
@@ -58,14 +57,7 @@ jobs:
             -configuration Release \
             -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
             CODE_SIGN_IDENTITY="Developer ID Application" \
-            DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }} \
-            2>&1 | tee $RUNNER_TEMP/build.log | xcpretty; \
-            EXIT=${PIPESTATUS[0]}; \
-            if [ $EXIT -ne 0 ]; then \
-              echo "--- FULL BUILD LOG ---"; \
-              cat $RUNNER_TEMP/build.log; \
-              exit $EXIT; \
-            fi
+            DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }}
             
       - name: Export Archive
         run: |
