@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - sparkle
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Import Developer ID Certificate
+        env:
+          CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
+          CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PASSWORD=$(uuidgen)
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "$CERTIFICATES_P12" | base64 --decode -o $RUNNER_TEMP/cert.p12
+          security import "$RUNNER_TEMP/cert.p12" \
+            -P "$CERTIFICATES_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple: -s \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+      - name: Build & Archive
+        run: |
+          xcodebuild archive \
+            -scheme BF6StatsTracker \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }}
+
+      - name: Export Archive
+        run: |
+          cat > $RUNNER_TEMP/ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>developer-id</string>
+            <key>teamID</key>
+            <string>${{ secrets.TEAM_ID }}</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
+            -exportPath $RUNNER_TEMP/export \
+            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist
+
+      - name: Notarize App
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+        run: |
+          ditto -c -k --keepParent \
+            "$RUNNER_TEMP/export/BF6StatsTracker.app" \
+            "$RUNNER_TEMP/BF6StatsTracker-notarize.zip"
+
+          xcrun notarytool submit "$RUNNER_TEMP/BF6StatsTracker-notarize.zip" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$TEAM_ID" \
+            --wait
+
+      - name: Staple Notarization
+        run: |
+          xcrun stapler staple "$RUNNER_TEMP/export/BF6StatsTracker.app"
+
+      - name: Create DMG
+        run: |
+          hdiutil create \
+            -volname "BF6StatsTracker" \
+            -srcfolder "$RUNNER_TEMP/export/BF6StatsTracker.app" \
+            -ov -format UDZO \
+            "$RUNNER_TEMP/BF6StatsTracker.dmg"
+
+      - name: Download Sparkle Tools
+        run: |
+          SPARKLE_VERSION=$(grep -o '"sparkle-project/Sparkle"' BF6StatsTracker.xcodeproj/project.pbxproj \
+            | head -1 || echo "")
+          # Use current stable version — update this to match your Package.resolved
+          SPARKLE_VERSION="2.9.0"
+
+          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz" \
+            -o $RUNNER_TEMP/Sparkle.tar.xz
+          mkdir -p $RUNNER_TEMP/Sparkle
+          tar -xf $RUNNER_TEMP/Sparkle.tar.xz -C $RUNNER_TEMP/Sparkle
+
+      - name: Generate Appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          mkdir -p $RUNNER_TEMP/appcast
+          cp "$RUNNER_TEMP/BF6StatsTracker.dmg" $RUNNER_TEMP/appcast/
+
+          echo "$SPARKLE_PRIVATE_KEY" > $RUNNER_TEMP/sparkle_ed_key
+          chmod 600 $RUNNER_TEMP/sparkle_ed_key
+
+          $RUNNER_TEMP/Sparkle/bin/generate_appcast \
+            --ed-key-file $RUNNER_TEMP/sparkle_ed_key \
+            --download-url-prefix \
+              "https://github.com/MikeManzo/BF6StatsTracker/releases/download/${{ github.ref_name }}/" \
+            $RUNNER_TEMP/appcast/
+
+          rm $RUNNER_TEMP/sparkle_ed_key
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ runner.temp }}/BF6StatsTracker.dmg
+            ${{ runner.temp }}/appcast/appcast.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
