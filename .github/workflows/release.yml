@@ -59,8 +59,14 @@ jobs:
             -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }} \
-            2>&1 | xcpretty
-
+            2>&1 | tee $RUNNER_TEMP/build.log | xcpretty; \
+            EXIT=${PIPESTATUS[0]}; \
+            if [ $EXIT -ne 0 ]; then \
+              echo "--- FULL BUILD LOG ---"; \
+              cat $RUNNER_TEMP/build.log; \
+              exit $EXIT; \
+            fi
+            
       - name: Export Archive
         run: |
           cat > $RUNNER_TEMP/ExportOptions.plist << EOF
