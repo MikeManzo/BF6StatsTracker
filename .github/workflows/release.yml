@@ -6,6 +6,7 @@ on:
       - sparkle
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   release:
