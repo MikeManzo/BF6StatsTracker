@@ -57,13 +57,12 @@ jobs:
             -destination "platform=macOS" \
             -configuration Release \
             -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
+            -allowProvisioningUpdates \
             CODE_SIGN_IDENTITY="Developer ID Application" \
-            CODE_SIGN_STYLE="Manual" \
+            CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }} \
-            OTHER_CODE_SIGN_FLAGS="--timestamp" \
             -skipPackagePluginValidation \
-            CLANG_ENABLE_CODE_COVERAGE=NO \
-            "CODE_SIGN_IDENTITY[sdk=macosx*]"="Developer ID Application" \
+            -skipPackageSignatureValidation \
             2>&1 | xcpretty
                   
       - name: Export Archive
