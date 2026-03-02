@@ -50,6 +50,7 @@ jobs:
 
       - name: Build & Archive
         run: |
+          set -o pipefail
           xcodebuild clean archive \
             -project "BF6StatsTracker.xcodeproj" \
             -scheme "BF6StatsTracker" \
@@ -57,7 +58,13 @@ jobs:
             -configuration Release \
             -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
             CODE_SIGN_IDENTITY="Developer ID Application" \
-            DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }}
+            CODE_SIGN_STYLE="Manual" \
+            DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }} \
+            OTHER_CODE_SIGN_FLAGS="--timestamp" \
+            -skipPackagePluginValidation \
+            CLANG_ENABLE_CODE_COVERAGE=NO \
+            "CODE_SIGN_IDENTITY[sdk=macosx*]"="Developer ID Application" \
+            2>&1 | xcpretty
                   
       - name: Export Archive
         run: |
