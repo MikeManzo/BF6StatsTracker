@@ -102,8 +102,12 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
             -exportPath $RUNNER_TEMP/export \
-            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist
-
+            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+     
       - name: Notarize App
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
