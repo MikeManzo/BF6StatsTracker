@@ -50,7 +50,6 @@ jobs:
 
       - name: Build & Archive
         run: |
-          set -o pipefail
           xcodebuild clean archive \
             -project "BF6StatsTracker.xcodeproj" \
             -scheme "BF6StatsTracker" \
@@ -62,9 +61,8 @@ jobs:
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }} \
             -skipPackagePluginValidation \
-            -skipPackageSignatureValidation \
-            2>&1 | xcpretty
-                  
+            -skipPackageSignatureValidation
+      
       - name: Export Archive
         run: |
           cat > $RUNNER_TEMP/ExportOptions.plist << EOF
