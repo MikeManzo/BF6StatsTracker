@@ -21,7 +21,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: 'latest-stable'
-#          xcode-version: '26.3.0'
 
       - name: Download Metal Toolchain
         run: sudo xcodebuild -downloadComponent MetalToolchain
