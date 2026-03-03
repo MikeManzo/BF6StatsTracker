@@ -65,10 +65,9 @@ jobs:
             -destination "platform=macOS" \
             -configuration Release \
             -archivePath $RUNNER_TEMP/BF6StatsTracker.xcarchive \
-            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_STYLE=Automatic \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM=${{ secrets.TEAM_ID }} \
-            "PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]:BF6StatsTracker"="BF6StatsTracker Developer ID" \
             -skipPackagePluginValidation \
             -skipPackageSignatureValidation
       
