@@ -16,6 +16,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 // MARK: - Color Scheme Definition
 
@@ -42,6 +43,17 @@ enum AppColorScheme: String, Codable, CaseIterable, Identifiable {
 
     var displayColor: Color {
         primaryColor
+    }
+    
+    var nsColor: NSColor {
+        switch self {
+        case .orange: return NSColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 1.0)
+        case .blue: return NSColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0)
+        case .green: return NSColor(red: 0.2, green: 0.75, blue: 0.3, alpha: 1.0)
+        case .purple: return NSColor(red: 0.55, green: 0.27, blue: 0.88, alpha: 1.0)
+        case .red: return NSColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
+        case .teal: return NSColor(red: 0.0, green: 0.8, blue: 0.8, alpha: 1.0)
+        }
     }
 
     var iconName: String {
@@ -77,7 +89,7 @@ class ThemeManager: ObservableObject {
         // Also update the static Theme.accent for backwards compatibility
         Theme.setAccentScheme(scheme)
     }
-
+    
     private init() {}
 }
 

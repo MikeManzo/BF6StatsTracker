@@ -205,6 +205,7 @@ struct AboutView: View {
                         TechBadge(name: "SwiftUI", icon: "swift")
                         TechBadge(name: "SwiftData", icon: "internaldrive")
                         TechBadge(name: "iCloud", icon: "icloud.fill")
+                        TechBadge(name: "Sparkle", icon: "arrow.down.circle.fill")
                         TechBadge(name: "macOS", icon: "apple.logo")
                         TechBadge(name: "Combine", icon: "arrow.triangle.merge")
                     }
@@ -225,6 +226,11 @@ struct AboutView: View {
                         .foregroundColor(Theme.textPrimary)
 
                     VStack(alignment: .leading, spacing: 8) {
+                        ThanksRow(
+                            icon: "arrow.down.circle.fill",
+                            text: "Sparkle Project for providing automatic update framework"
+                        )
+                        
                         ThanksRow(
                             icon: "globe",
                             text: "GameTools.Network team for maintaining public API access"

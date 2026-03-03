@@ -32,6 +32,16 @@ struct BF6StatsTrackerApp: App {
     // SwiftData model container
     let modelContainer: ModelContainer
 
+    /// Loads the saved color scheme from UserDefaults before any views are created
+    private static func loadSavedColorScheme() {
+        if let settingsData = UserDefaults.standard.data(forKey: "appSettings"),
+           let settings = try? JSONDecoder().decode(AppSettings.self, from: settingsData) {
+            Task { @MainActor in
+                ThemeManager.shared.setColorScheme(settings.selectedColorScheme)
+            }
+        }
+    }
+    
     init() {
         logInfo("BF6 Stats Tracker starting up...", category: .general)
 
@@ -54,6 +64,10 @@ struct BF6StatsTrackerApp: App {
             modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
 
             logSuccess("SwiftData initialized successfully", category: .success)
+            
+            // Load saved color scheme before any views are created
+            // This ensures Sparkle dialogs use the correct color from the start
+            Self.loadSavedColorScheme()
         } catch {
             logError("Could not initialize ModelContainer: \(error)", category: .error)
             fatalError("Could not initialize ModelContainer: \(error)")
