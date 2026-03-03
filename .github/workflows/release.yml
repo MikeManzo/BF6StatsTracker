@@ -23,9 +23,8 @@ jobs:
           xcode-version: 'latest-stable'
 #          xcode-version: '26.3.0'
 
-#      - name: Download Metal Toolchain
-#        continue-on-error: true
-#        run: sudo xcodebuild -downloadComponent MetalToolchain
+      - name: Download Metal Toolchain
+        run: sudo xcodebuild -downloadComponent MetalToolchain
 
       - name: Import Developer ID Certificate
         env:
