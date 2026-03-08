@@ -401,6 +401,11 @@ extension StatsSnapshot {
         var totalTimePlayed = 0
 
         for currentMap in currentMaps {
+            // Skip the "all" aggregate entry from the API
+            if currentMap.mapName.lowercased() == "all" {
+                continue
+            }
+            
             if let prevMap = previousMaps.first(where: { $0.mapId == currentMap.mapId }) {
                 let timeDelta = currentMap.secondsPlayed - prevMap.secondsPlayed
                 let matchesDelta = currentMap.matches - prevMap.matches
