@@ -178,6 +178,19 @@ rm "$SPARKLE_KEY"
 [ -f "$APPCAST_DIR/appcast.xml" ] || error "Appcast generation failed"
 info "Appcast generated ✓"
 
+# ── Commit Appcast to Repository ─────────────────────────────
+info "Committing appcast.xml to repository..."
+cp "$APPCAST_DIR/appcast.xml" ./appcast.xml
+
+git add appcast.xml
+if git diff --cached --quiet; then
+  info "No changes to appcast.xml, skipping commit"
+else
+  git commit -m "Update appcast for $TAG"
+  git push origin "$RELEASE_BRANCH"
+  info "Appcast committed to $RELEASE_BRANCH ✓"
+fi
+
 # ── Tag & Push ───────────────────────────────────────────────
 info "Tagging release $TAG..."
 git tag "$TAG"
