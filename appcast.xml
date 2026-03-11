@@ -4,19 +4,11 @@
         <title>BF6StatsTracker</title>
         <item>
             <title>0.9.4.2</title>
-            <pubDate>Sun, 08 Mar 2026 13:44:11 -0400</pubDate>
+            <pubDate>Wed, 11 Mar 2026 17:37:45 -0400</pubDate>
             <sparkle:version>1</sparkle:version>
             <sparkle:shortVersionString>0.9.4.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/MikeManzo/BF6StatsTracker/releases/download/v0.9.4.2/BF6StatsTracker.dmg" length="18351449" type="application/octet-stream" sparkle:edSignature="REkkESRI4OF4r427KwP8Cgxan606EM1klHeXCmdhrTJR8736UKo0dKIzxEfuOxn/2i+8i6fpZUsq+2VCbk12DQ=="/>
-        </item>
-        <item>
-            <title>0.9.4.1</title>
-            <pubDate>Tue, 03 Mar 2026 09:16:38 -0500</pubDate>
-            <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>0.9.4.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/MikeManzo/BF6StatsTracker/releases/download/v0.9.4.1/BF6StatsTracker.dmg" length="18356787" type="application/octet-stream" sparkle:edSignature="JjeYHll6bKRfswOS3e3jfcTd4pThwWuExyKZXGDQd8glKBc9bRufZQvH1XjzyCR4dBAYy13tYO7txeAXoG3eAw=="/>
+            <enclosure url="https://github.com/MikeManzo/BF6StatsTracker/releases/download/v0.9.4.3/BF6StatsTracker.dmg" length="18352063" type="application/octet-stream" sparkle:edSignature="P4HRMs0hHWrArRN2dWh5G/2sDEvguKfJ6+BiT+oOG4qkhWIgbsCLPntBoJ+00Bij4w87HI+mEDwdSov53UjYBw=="/>
         </item>
     </channel>
 </rss>
