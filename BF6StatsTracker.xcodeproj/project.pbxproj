@@ -508,7 +508,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#!/bin/bash\n\nif [ \"${CI}\" = \"true\" ]; then\n    echo \"Skipping script in CI environment\"\n    exit 0\nfi\n\n# Auto-increment build number script for Xcode\n# This script increments CFBundleVersion in Info.plist as a 5-digit hexadecimal number\n# Uses sed instead of PlistBuddy to avoid sandbox issues\n\n# Only increment for actual builds, not for indexing or analysis\nif [ \"$ACTION\" != \"build\" ]; then\n    exit 0\nfi\n\n# Only increment for Release builds (optional - remove this if you want it for all builds)\n# if [ \"$CONFIGURATION\" != \"Release\" ]; then\n#     exit 0\n# fi\n\n# Find Info.plist in source\nif [ -n \"$INFOPLIST_FILE\" ] && [ -f \"${PROJECT_DIR}/${INFOPLIST_FILE}\" ]; then\n    SOURCE_PLIST=\"${PROJECT_DIR}/${INFOPLIST_FILE}\"\nelif [ -f \"${PROJECT_DIR}/${TARGET_NAME}/Info.plist\" ]; then\n    SOURCE_PLIST=\"${PROJECT_DIR}/${TARGET_NAME}/Info.plist\"\nelif [ -f \"${PROJECT_DIR}/BF6StatsTracker/Info.plist\" ]; then\n    SOURCE_PLIST=\"${PROJECT_DIR}/BF6StatsTracker/Info.plist\"\nelse\n    echo \"❌ Error: Could not find Info.plist\"\n    exit 1\nfi\n\necho \"📝 Updating source Info.plist at: $SOURCE_PLIST\"\n\n# Also update the built product's Info.plist if it exists\n# Try multiple possible locations for the built Info.plist\nif [ -n \"$INFOPLIST_PATH\" ]; then\n    BUILT_PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\nelse\n    # Fallback to common location\n    BUILT_PLIST=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Info.plist\"\nfi\n\n# Get current build number using grep and sed\nBUILD_NUMBER=$(grep -A 1 \"CFBundleVersion\" \"$SOURCE_PLIST\" | grep \"<string>\" | sed 's/.*<string>\\(.*\\)<\\/string>.*/\\1/' | tr -d '[:space:]')\n\nif [ -z \"$BUILD_NUMBER\" ]; then\n    echo \"⚠️  No build number found, setting to 00001\"\n    BUILD_NUMBER=\"00000\"\nfi\n\n# Convert hex to decimal, increment, convert back to hex\nif [[ \"$BUILD_NUMBER\" =~ ^[0-9A-Fa-f]+$ ]]; then\n    # Valid hex number\n    DECIMAL_BUILD=$((16#$BUILD_NUMBER))\nelse\n    # Not a valid hex, start at 0\n    echo \"⚠️  Invalid hex number '$BUILD_NUMBER', starting from 0\"\n    DECIMAL_BUILD=0\nfi\n\n# Increment\nNEW_DECIMAL_BUILD=$((DECIMAL_BUILD + 1))\n\n# Convert to 5-digit uppercase hex (pad with zeros)\nNEW_BUILD_NUMBER=$(printf \"%05X\" $NEW_DECIMAL_BUILD)\n\n# Update the source Info.plist\nsed -i '' \"/<key>CFBundleVersion<\\/key>/,/<string>/ s/<string>.*<\\/string>/<string>$NEW_BUILD_NUMBER<\\/string>/\" \"$SOURCE_PLIST\"\n\nif [ $? -eq 0 ]; then\n    echo \"✅ Build number incremented in source: $BUILD_NUMBER → $NEW_BUILD_NUMBER\"\nelse\n    echo \"❌ Error: Failed to update source build number\"\n    exit 1\nfi\n\n# Also update the built product's Info.plist if it exists (for immediate reflection)\necho \"📋 Checking built product at: $BUILT_PLIST\"\nif [ -f \"$BUILT_PLIST\" ]; then\n    sed -i '' \"/<key>CFBundleVersion<\\/key>/,/<string>/ s/<string>.*<\\/string>/<string>$NEW_BUILD_NUMBER<\\/string>/\" \"$BUILT_PLIST\"\n    if [ $? -eq 0 ]; then\n        echo \"✅ Build number also updated in built product: $BUILT_PLIST\"\n    else\n        echo \"⚠️  Failed to update built product\"\n    fi\nelse\n    echo \"⚠️  Built product Info.plist not found at: $BUILT_PLIST\"\n    echo \"   This is normal if running before 'Copy Bundle Resources' phase\"\nfi\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/increment_build.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -742,7 +742,7 @@
 				CODE_SIGN_ENTITLEMENTS = BF6StatsTracker/BF6StatsTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 13;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -761,7 +761,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.9.4.2;
+				MARKETING_VERSION = 0.9.4.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.CitizenCoder.BF6StatsTracker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -777,7 +777,7 @@
 				CODE_SIGN_ENTITLEMENTS = BF6StatsTracker/BF6StatsTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 13;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -796,7 +796,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.9.4.2;
+				MARKETING_VERSION = 0.9.4.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.CitizenCoder.BF6StatsTracker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
