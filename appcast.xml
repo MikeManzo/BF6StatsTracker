@@ -3,12 +3,12 @@
     <channel>
         <title>BF6StatsTracker</title>
         <item>
-            <title>0.9.4.2</title>
-            <pubDate>Wed, 11 Mar 2026 17:37:45 -0400</pubDate>
-            <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>0.9.4.2</sparkle:shortVersionString>
+            <title>0.9.4.3</title>
+            <pubDate>Thu, 12 Mar 2026 13:05:31 -0400</pubDate>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>0.9.4.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/MikeManzo/BF6StatsTracker/releases/download/v0.9.4.3/BF6StatsTracker.dmg" length="18352063" type="application/octet-stream" sparkle:edSignature="P4HRMs0hHWrArRN2dWh5G/2sDEvguKfJ6+BiT+oOG4qkhWIgbsCLPntBoJ+00Bij4w87HI+mEDwdSov53UjYBw=="/>
+            <enclosure url="https://github.com/MikeManzo/BF6StatsTracker/releases/download/v0.9.4.3/BF6StatsTracker.dmg" length="18353103" type="application/octet-stream" sparkle:edSignature="U8MDSRlm8LOdcCnitrxC+hHCO99rqPKNs2oSPswZq3Zv7dNoO+ixBeLQL7mzgW4iDzVFMP7pXp+lQ3osF6LmAQ=="/>
         </item>
     </channel>
 </rss>
