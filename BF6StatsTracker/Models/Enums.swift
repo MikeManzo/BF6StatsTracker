@@ -363,4 +363,12 @@ enum AppearanceMode: String, Codable, CaseIterable, Identifiable {
         case .auto: return nil  // nil means system default
         }
     }
+
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        case .auto: return nil  // nil means system default
+        }
+    }
 }

@@ -96,9 +96,14 @@ struct BF6StatsTrackerApp: App {
                     logSuccess("SwiftData managers initialized", category: .success)
                     // Sync theme manager with settings
                     themeManager.setColorScheme(viewModel.settings.selectedColorScheme)
+                    // Set NSApp appearance so AppKit panels (NSSavePanel, etc.) respect the color scheme
+                    NSApp.appearance = viewModel.settings.appearanceMode.nsAppearance
                 }
                 .onChange(of: viewModel.settings.selectedColorScheme) { _, newScheme in
                     themeManager.setColorScheme(newScheme)
+                }
+                .onChange(of: viewModel.settings.appearanceMode) { _, newMode in
+                    NSApp.appearance = newMode.nsAppearance
                 }
         }
         .windowStyle(.hiddenTitleBar)
