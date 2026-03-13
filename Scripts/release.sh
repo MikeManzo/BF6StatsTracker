@@ -178,9 +178,18 @@ rm "$SPARKLE_KEY"
 [ -f "$APPCAST_DIR/appcast.xml" ] || error "Appcast generation failed"
 info "Appcast generated ✓"
 
-# ── Commit Appcast to Repository ─────────────────────────────
-info "Committing appcast.xml to repository..."
+# ── Commit Appcast to main branch ────────────────────────────
+info "Committing appcast.xml to $RELEASE_BRANCH..."
+CURRENT_BRANCH=$(git branch --show-current)
 cp "$APPCAST_DIR/appcast.xml" ./appcast.xml
+
+if [ "$CURRENT_BRANCH" != "$RELEASE_BRANCH" ]; then
+  # Stash any other changes, switch to main, apply appcast, push, switch back
+  git stash --include-untracked -q 2>/dev/null
+  git checkout "$RELEASE_BRANCH"
+  git pull origin "$RELEASE_BRANCH" --ff-only
+  cp "$APPCAST_DIR/appcast.xml" ./appcast.xml
+fi
 
 git add appcast.xml
 if git diff --cached --quiet; then
@@ -189,6 +198,15 @@ else
   git commit -m "Update appcast for $TAG"
   git push origin "$RELEASE_BRANCH"
   info "Appcast committed to $RELEASE_BRANCH ✓"
+fi
+
+if [ "$CURRENT_BRANCH" != "$RELEASE_BRANCH" ]; then
+  git checkout "$CURRENT_BRANCH"
+  git stash pop -q 2>/dev/null || true
+  # Also update appcast on current branch
+  cp "$APPCAST_DIR/appcast.xml" ./appcast.xml
+  git add appcast.xml
+  git diff --cached --quiet || git commit -m "Update appcast for $TAG"
 fi
 
 # ── Tag & Push ───────────────────────────────────────────────
