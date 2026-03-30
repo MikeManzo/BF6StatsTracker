@@ -846,7 +846,7 @@ class StatsViewModel: ObservableObject {
     }
 
     var topClass: ClassStats? {
-        classStats.max { $0.timePlayed < $1.timePlayed }
+        classStats.filter { BF6Class(rawValue: $0.className) != nil }.max { $0.timePlayed < $1.timePlayed }
     }
     
     var weaponsByCategory: [WeaponCategory: [WeaponStats]] {
